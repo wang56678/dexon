@@ -20,8 +20,8 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/ethereum/go-ethereum/crypto/sha3"
-	"github.com/ethereum/go-ethereum/swarm/storage/encryption"
+	"github.com/dexon-foundation/dexon/crypto/sha3"
+	"github.com/dexon-foundation/dexon/swarm/storage/encryption"
 )
 
 type RefEncryption struct {

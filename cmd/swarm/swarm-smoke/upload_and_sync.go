@@ -32,12 +32,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethereum/go-ethereum/swarm/api"
-	"github.com/ethereum/go-ethereum/swarm/api/client"
-	"github.com/ethereum/go-ethereum/swarm/spancontext"
-	"github.com/ethereum/go-ethereum/swarm/testutil"
+	"github.com/dexon-foundation/dexon/log"
+	"github.com/dexon-foundation/dexon/metrics"
+	"github.com/dexon-foundation/dexon/swarm/api"
+	"github.com/dexon-foundation/dexon/swarm/api/client"
+	"github.com/dexon-foundation/dexon/swarm/spancontext"
+	"github.com/dexon-foundation/dexon/swarm/testutil"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pborman/uuid"
 
