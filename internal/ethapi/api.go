@@ -765,7 +765,7 @@ func (s *PublicBlockChainAPI) EstimateGas(ctx context.Context, args CallArgs) (h
 		hi = uint64(args.Gas)
 	} else {
 		// Retrieve the current pending block to act as the gas ceiling
-		block, err := s.b.BlockByNumber(ctx, rpc.PendingBlockNumber)
+		block, err := s.b.BlockByNumber(ctx, rpc.LatestBlockNumber)
 		if err != nil {
 			return 0, err
 		}
@@ -888,6 +888,7 @@ func RPCMarshalBlock(b *types.Block, inclTx bool, fullTx bool) (map[string]inter
 		"randomness":       hexutil.Bytes(head.Randomness),
 		"round":            hexutil.Uint64(head.Round),
 		"dexconMeta":       hexutil.Bytes(head.DexconMeta),
+		"blockReward":      (*hexutil.Big)(head.BlockReward),
 	}
 
 	if inclTx {
