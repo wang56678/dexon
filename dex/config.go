@@ -18,6 +18,7 @@ package dex
 
 import (
 	"crypto/ecdsa"
+	"math/big"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -28,6 +29,7 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/dex/gasprice"
 	"github.com/dexon-foundation/dexon/eth/downloader"
+	"github.com/dexon-foundation/dexon/params"
 )
 
 // DefaultConfig contains default settings for use on the Ethereum main net.
@@ -46,7 +48,7 @@ var DefaultConfig = Config{
 		Blocks:     20,
 		Percentile: 60,
 	},
-
+	DefaultGasPrice:   big.NewInt(params.GWei),
 	GasFloor:          8000000,
 	GasCeil:           8000000,
 	GasLimitTolerance: 1000000,
@@ -95,6 +97,7 @@ type Config struct {
 	TrieTimeout        time.Duration
 
 	// For calculate gas limit
+	DefaultGasPrice   *big.Int
 	GasFloor          uint64
 	GasCeil           uint64
 	GasLimitTolerance uint64
