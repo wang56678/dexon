@@ -17,6 +17,7 @@
 package dex
 
 import (
+	"crypto/ecdsa"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -71,6 +72,9 @@ type Config struct {
 	// The genesis block, which is inserted if the database is empty.
 	// If nil, the Ethereum main net block is used.
 	Genesis *core.Genesis `toml:",omitempty"`
+
+	// PrivateKey, also represents the node identity.
+	PrivateKey *ecdsa.PrivateKey `toml:",omitempty"`
 
 	// Protocol options
 	NetworkId uint64 // Network ID to use for selecting peers to connect to
