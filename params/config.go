@@ -68,8 +68,9 @@ var (
 		ByzantiumBlock:      big.NewInt(0),
 		ConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:     big.NewInt(0),
-		Ethash:              new(EthashConfig),
-		Dexcon:              &DexconConfig{},
+		Dexcon: &DexconConfig{
+			BlockReward: new(big.Int).SetInt64(5e+18),
+		},
 	}
 
 	// TestnetTrustedCheckpoint contains the light client trusted checkpoint for the Ropsten test network.
@@ -229,7 +230,7 @@ type DexconConfig struct {
 	RoundInterval    uint64   `json:"roundInterval"`
 	MinBlockInterval uint64   `json:"minBlockInterval"`
 	MaxBlockInterval uint64   `json:"maxBlockInterval"`
-	MiningReward     *big.Int `json:"miningReward"`
+	BlockReward      *big.Int `json:"blockReward"`
 }
 
 // String implements the stringer interface, returning the consensus engine details.
