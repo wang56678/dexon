@@ -108,8 +108,6 @@ var (
 var trustedCheckpoints = map[common.Hash]*params.TrustedCheckpoint{
 	params.MainnetGenesisHash: params.MainnetTrustedCheckpoint,
 	params.TestnetGenesisHash: params.TestnetTrustedCheckpoint,
-	params.RinkebyGenesisHash: params.RinkebyTrustedCheckpoint,
-	params.GoerliGenesisHash:  params.GoerliTrustedCheckpoint,
 }
 
 var (
