@@ -48,6 +48,7 @@ var (
 			GenesisCRSText:   "In DEXON, we trust.",
 			Owner:            common.HexToAddress("7C3c31B19395A5e2627F921Cc2802560B71f1caB"),
 			BlockReward:      big.NewInt(1e18),
+			BlockGasLimit:    80000000,
 			NumChains:        4,
 			LambdaBA:         250,
 			LambdaDKG:        2500,
@@ -86,6 +87,7 @@ var (
 			GenesisCRSText:   "In DEXON, we trust.",
 			Owner:            common.HexToAddress("7C3c31B19395A5e2627F921Cc2802560B71f1caB"),
 			BlockReward:      big.NewInt(1e18),
+			BlockGasLimit:    80000000,
 			NumChains:        4,
 			LambdaBA:         250,
 			LambdaDKG:        2500,
@@ -195,6 +197,7 @@ type DexconConfig struct {
 	GenesisCRSText   string         `json:"genesisCRSText"`
 	Owner            common.Address `json:"owner"`
 	BlockReward      *big.Int       `json:"blockReward"`
+	BlockGasLimit    uint64         `json:"blockGasLimit"`
 	NumChains        uint32         `json:"numChains"`
 	LambdaBA         uint64         `json:"lambdaBA"`
 	LambdaDKG        uint64         `json:"lambdaDKG"`
@@ -213,10 +216,11 @@ type dexconConfigSpecMarshaling struct {
 
 // String implements the stringer interface, returning the consensus engine details.
 func (d *DexconConfig) String() string {
-	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v BlockReward: %v NumChains: %v LambdaBA: %v LambdaDKG: %v K: %v PhiRatio: %v NotarySetSize: %v DKGSetSize: %v RoundInterval: %v MinBlockInterval: %v MaxBlockInterval: %v BlockReward: %v",
+	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v BlockReward: %v BlockGasLimit: %v NumChains: %v LambdaBA: %v LambdaDKG: %v K: %v PhiRatio: %v NotarySetSize: %v DKGSetSize: %v RoundInterval: %v MinBlockInterval: %v MaxBlockInterval: %v BlockReward: %v",
 		d.GenesisCRSText,
 		d.Owner,
 		d.BlockReward,
+		d.BlockGasLimit,
 		d.NumChains,
 		d.LambdaBA,
 		d.LambdaDKG,
