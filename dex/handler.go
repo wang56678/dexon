@@ -159,6 +159,9 @@ func NewProtocolManager(
 		receiveCh:   make(chan interface{}, 1024),
 	}
 
+	// TODO(w): remove this hack once we have fix block processing.
+	atomic.StoreUint32(&manager.acceptTxs, 1)
+
 	// Figure out whether to allow fast sync or not
 	if mode == downloader.FastSync && blockchain.CurrentBlock().NumberU64() > 0 {
 		log.Warn("Blockchain not empty, fast sync disabled")
