@@ -1078,6 +1078,13 @@ func (s *PublicTransactionPoolAPI) GetRawTransactionByBlockHashAndIndex(ctx cont
 
 // GetTransactionCount returns the number of transactions the given address has sent for the given block number
 func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, address common.Address, blockNr rpc.BlockNumber) (*hexutil.Uint64, error) {
+	if blockNr == rpc.PendingBlockNumber {
+		nonce, err := s.b.GetPoolNonce(ctx, address)
+		if err != nil {
+			return nil, err
+		}
+		return (*hexutil.Uint64)(&nonce), nil
+	}
 	state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
 	if state == nil || err != nil {
 		return nil, err
