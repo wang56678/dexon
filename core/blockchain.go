@@ -1373,6 +1373,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, []
 				"txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()),
 				"root", block.Root())
 			events = append(events, ChainSideEvent{block})
+			panic("fork found")
 		}
 		blockInsertTimer.UpdateSince(start)
 		stats.processed++
