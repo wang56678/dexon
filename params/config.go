@@ -53,7 +53,7 @@ var (
 			LambdaBA:         250,
 			LambdaDKG:        2500,
 			K:                0,
-			PhiRatio:         667000,
+			PhiRatio:         0.667,
 			NotarySetSize:    4,
 			DKGSetSize:       4,
 			RoundInterval:    600000,
@@ -91,7 +91,7 @@ var (
 			LambdaBA:         250,
 			LambdaDKG:        2500,
 			K:                0,
-			PhiRatio:         667000,
+			PhiRatio:         0.667,
 			NotarySetSize:    4,
 			DKGSetSize:       4,
 			RoundInterval:    600000,
@@ -199,7 +199,7 @@ type DexconConfig struct {
 	NumChains        uint32         `json:"numChains"`
 	LambdaBA         uint64         `json:"lambdaBA"`
 	LambdaDKG        uint64         `json:"lambdaDKG"`
-	K                int            `json:"k"`
+	K                uint32         `json:"k"`
 	PhiRatio         float32        `json:"phiRatio"`
 	NotarySetSize    uint32         `json:"notarySetSize"`
 	DKGSetSize       uint32         `json:"dkgSetSize"`
