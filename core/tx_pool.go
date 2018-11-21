@@ -946,7 +946,7 @@ func (pool *TxPool) removeTx(hash common.Hash, outofbound bool) {
 		}
 	}
 
-	types.DeleteTxCacheByHash(hash)
+	types.GlobalSigCache.Prune([]common.Hash{hash})
 }
 
 // promoteExecutables moves transactions that have become processable from the
