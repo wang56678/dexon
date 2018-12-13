@@ -30,6 +30,7 @@ var (
 	TestnetGenesisHash = common.HexToHash("0x63b758fa30bf833430171514448288d4e67c1d6a989d1474fdd5c5888dfe77fd")
 )
 
+// TODO(jimmy): Add DMoment in the config.
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
