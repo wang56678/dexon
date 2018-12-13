@@ -114,4 +114,7 @@ type Config struct {
 	EWASMInterpreter string
 	// Type of the EVM interpreter ("" for default)
 	EVMInterpreter string
+
+	// Dexon options
+	DMoment int64
 }
