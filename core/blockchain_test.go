@@ -1452,7 +1452,6 @@ func TestProcessPendingBlock(t *testing.T) {
 		if i == 0 {
 			witnessData := types.WitnessData{
 				Root:        gspec.ToBlock(nil).Root(),
-				TxHash:      gspec.ToBlock(nil).TxHash(),
 				ReceiptHash: gspec.ToBlock(nil).ReceiptHash(),
 			}
 			witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
@@ -1462,7 +1461,6 @@ func TestProcessPendingBlock(t *testing.T) {
 		} else {
 			witnessData := types.WitnessData{
 				Root:        chain.pendingBlocks[uint64(i)].block.Root(),
-				TxHash:      chain.pendingBlocks[uint64(i)].block.TxHash(),
 				ReceiptHash: chain.pendingBlocks[uint64(i)].block.ReceiptHash(),
 			}
 			witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
@@ -1515,7 +1513,6 @@ func TestProcessPendingBlock(t *testing.T) {
 	// Validate witness fail with unknown block.
 	witnessData := types.WitnessData{
 		Root:        chain.pendingBlocks[processNum].block.Root(),
-		TxHash:      chain.pendingBlocks[processNum].block.TxHash(),
 		ReceiptHash: chain.pendingBlocks[processNum].block.ReceiptHash(),
 	}
 	witnessDataBytes, err := rlp.EncodeToBytes(&witnessData)
@@ -1539,7 +1536,6 @@ func TestProcessPendingBlock(t *testing.T) {
 	// Validate witness fail with unexpected root.
 	witnessData = types.WitnessData{
 		Root:        chain.pendingBlocks[processNum].block.Root(),
-		TxHash:      chain.pendingBlocks[processNum].block.TxHash(),
 		ReceiptHash: chain.pendingBlocks[processNum].block.ReceiptHash(),
 	}
 	witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
@@ -1563,7 +1559,6 @@ func TestProcessPendingBlock(t *testing.T) {
 	// Apply transaction fail with insufficient fund.
 	witnessData = types.WitnessData{
 		Root:        chain.pendingBlocks[processNum].block.Root(),
-		TxHash:      chain.pendingBlocks[processNum].block.TxHash(),
 		ReceiptHash: chain.pendingBlocks[processNum].block.ReceiptHash(),
 	}
 	witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
@@ -1596,7 +1591,6 @@ func TestProcessPendingBlock(t *testing.T) {
 	// Apply transaction fail with nonce too height.
 	witnessData = types.WitnessData{
 		Root:        chain.pendingBlocks[processNum].block.Root(),
-		TxHash:      chain.pendingBlocks[processNum].block.TxHash(),
 		ReceiptHash: chain.pendingBlocks[processNum].block.ReceiptHash(),
 	}
 	witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
