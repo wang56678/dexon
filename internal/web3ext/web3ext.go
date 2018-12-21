@@ -198,6 +198,14 @@ web3._extend({
 			name: 'stopWS',
 			call: 'admin_stopWS'
 		}),
+		new web3._extend.Method({
+			name: 'startProposing',
+			call: 'admin_startProposing'
+		}),
+		new web3._extend.Method({
+			name: 'stopProposing',
+			call: 'admin_stopProposing'
+		}),
 	],
 	properties: [
 		new web3._extend.Property({
@@ -211,6 +219,14 @@ web3._extend({
 		new web3._extend.Property({
 			name: 'datadir',
 			getter: 'admin_datadir'
+		}),
+		new web3._extend.Property({
+			name: 'isLatticeSyncing',
+			getter: 'admin_isLatticeSyncing'
+		}),
+		new web3._extend.Property({
+			name: 'isProposing',
+			getter: 'admin_isProposing'
 		}),
 	]
 });

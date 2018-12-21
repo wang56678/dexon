@@ -1790,8 +1790,6 @@ func (bc *BlockChain) processPendingBlock(
 		return nil, nil, nil, fmt.Errorf("validate witness data error: %v", err)
 	}
 
-	currentBlock := bc.CurrentBlock()
-
 	var (
 		receipts types.Receipts
 		usedGas  = new(uint64)
@@ -1804,8 +1802,8 @@ func (bc *BlockChain) processPendingBlock(
 	var err error
 	parent, exist := bc.pendingBlocks[block.NumberU64()-1]
 	if !exist {
-		parentBlock = currentBlock
-		if parentBlock.NumberU64() != block.NumberU64()-1 {
+		parentBlock = bc.GetBlockByNumber(block.NumberU64() - 1)
+		if parentBlock == nil {
 			return nil, nil, nil, fmt.Errorf("parent block %d not exist", block.NumberU64()-1)
 		}
 	} else {
