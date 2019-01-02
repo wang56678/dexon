@@ -243,6 +243,7 @@ var AppHelpFlagGroups = []flagGroup{
 		Flags: []cli.Flag{
 			utils.IndexerEnableFlag,
 			utils.IndexerPluginFlag,
+			utils.IndexerPluginFlagsFlag,
 		},
 	},
 	{
