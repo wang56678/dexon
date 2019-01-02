@@ -137,6 +137,7 @@ var (
 		utils.EVMInterpreterFlag,
 		utils.IndexerEnableFlag,
 		utils.IndexerPluginFlag,
+		utils.IndexerPluginFlagsFlag,
 		configFileFlag,
 	}
 
