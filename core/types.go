@@ -20,7 +20,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	vm "github.com/dexon-foundation/dexon/core/vm/evm"
 )
 
 // Validator is an interface which defines the standard for block validation. It

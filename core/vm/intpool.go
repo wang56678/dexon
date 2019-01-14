@@ -23,84 +23,84 @@ import (
 
 var checkVal = big.NewInt(-42)
 
-const poolLimit = 256
+const PoolLimit = 256
 
-// intPool is a pool of big integers that
+// IntPool is a Pool of big integers that
 // can be reused for all big.Int operations.
-type intPool struct {
-	pool *Stack
+type IntPool struct {
+	Pool *Stack
 }
 
-func newIntPool() *intPool {
-	return &intPool{pool: newstack()}
+func newIntPool() *IntPool {
+	return &IntPool{Pool: &Stack{Data: make([]*big.Int, 0, 1024)}}
 }
 
-// get retrieves a big int from the pool, allocating one if the pool is empty.
+// get retrieves a big int from the Pool, allocating one if the Pool is empty.
 // Note, the returned int's value is arbitrary and will not be zeroed!
-func (p *intPool) get() *big.Int {
-	if p.pool.len() > 0 {
-		return p.pool.pop()
+func (p *IntPool) Get() *big.Int {
+	if p.Pool.Len() > 0 {
+		return p.Pool.Pop()
 	}
 	return new(big.Int)
 }
 
-// getZero retrieves a big int from the pool, setting it to zero or allocating
-// a new one if the pool is empty.
-func (p *intPool) getZero() *big.Int {
-	if p.pool.len() > 0 {
-		return p.pool.pop().SetUint64(0)
+// getZero retrieves a big int from the Pool, setting it to zero or allocating
+// a new one if the Pool is empty.
+func (p *IntPool) GetZero() *big.Int {
+	if p.Pool.Len() > 0 {
+		return p.Pool.Pop().SetUint64(0)
 	}
 	return new(big.Int)
 }
 
-// put returns an allocated big int to the pool to be later reused by get calls.
+// put returns an allocated big int to the Pool to be later reused by get calls.
 // Note, the values as saved as is; neither put nor get zeroes the ints out!
-func (p *intPool) put(is ...*big.Int) {
-	if len(p.pool.data) > poolLimit {
+func (p *IntPool) Put(is ...*big.Int) {
+	if len(p.Pool.Data) > PoolLimit {
 		return
 	}
 	for _, i := range is {
 		// verifyPool is a build flag. Pool verification makes sure the integrity
-		// of the integer pool by comparing values to a default value.
-		if verifyPool {
+		// of the integer Pool by comparing values to a default value.
+		if VerifyPool {
 			i.Set(checkVal)
 		}
-		p.pool.push(i)
+		p.Pool.Push(i)
 	}
 }
 
-// The intPool pool's default capacity
-const poolDefaultCap = 25
+// The IntPool Pool's default capacity
+const PoolDefaultCap = 25
 
-// intPoolPool manages a pool of intPools.
-type intPoolPool struct {
-	pools []*intPool
+// IntPoolPool manages a Pool of IntPools.
+type IntPoolPool struct {
+	Pools []*IntPool
 	lock  sync.Mutex
 }
 
-var poolOfIntPools = &intPoolPool{
-	pools: make([]*intPool, 0, poolDefaultCap),
+var PoolOfIntPools = &IntPoolPool{
+	Pools: make([]*IntPool, 0, PoolDefaultCap),
 }
 
-// get is looking for an available pool to return.
-func (ipp *intPoolPool) get() *intPool {
+// get is looking for an available Pool to return.
+func (ipp *IntPoolPool) Get() *IntPool {
 	ipp.lock.Lock()
 	defer ipp.lock.Unlock()
 
-	if len(poolOfIntPools.pools) > 0 {
-		ip := ipp.pools[len(ipp.pools)-1]
-		ipp.pools = ipp.pools[:len(ipp.pools)-1]
+	if len(PoolOfIntPools.Pools) > 0 {
+		ip := ipp.Pools[len(ipp.Pools)-1]
+		ipp.Pools = ipp.Pools[:len(ipp.Pools)-1]
 		return ip
 	}
 	return newIntPool()
 }
 
-// put a pool that has been allocated with get.
-func (ipp *intPoolPool) put(ip *intPool) {
+// put a Pool that has been allocated with get.
+func (ipp *IntPoolPool) Put(ip *IntPool) {
 	ipp.lock.Lock()
 	defer ipp.lock.Unlock()
 
-	if len(ipp.pools) < cap(ipp.pools) {
-		ipp.pools = append(ipp.pools, ip)
+	if len(ipp.Pools) < cap(ipp.Pools) {
+		ipp.Pools = append(ipp.Pools, ip)
 	}
 }
