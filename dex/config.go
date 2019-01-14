@@ -117,9 +117,6 @@ type Config struct {
 	// Type of the EVM interpreter ("" for default)
 	EVMInterpreter string
 
-	// Dexon options
-	DMoment int64
-
 	// Indexer config
 	Indexer indexer.Config
 }
