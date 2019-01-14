@@ -22,23 +22,27 @@ import (
 	"github.com/dexon-foundation/dexon/params"
 )
 
-func makeStackFunc(pop, push int) stackValidationFunc {
+type (
+	StackValidationFunc func(*Stack) error
+)
+
+func MakeStackFunc(pop, push int) StackValidationFunc {
 	return func(stack *Stack) error {
-		if err := stack.require(pop); err != nil {
+		if err := stack.Require(pop); err != nil {
 			return err
 		}
 
-		if stack.len()+push-pop > int(params.StackLimit) {
-			return fmt.Errorf("stack limit reached %d (%d)", stack.len(), params.StackLimit)
+		if stack.Len()+push-pop > int(params.StackLimit) {
+			return fmt.Errorf("stack limit reached %d (%d)", stack.Len(), params.StackLimit)
 		}
 		return nil
 	}
 }
 
-func makeDupStackFunc(n int) stackValidationFunc {
-	return makeStackFunc(n, n+1)
+func MakeDupStackFunc(n int) StackValidationFunc {
+	return MakeStackFunc(n, n+1)
 }
 
-func makeSwapStackFunc(n int) stackValidationFunc {
-	return makeStackFunc(n, n)
+func MakeSwapStackFunc(n int) StackValidationFunc {
+	return MakeStackFunc(n, n)
 }
