@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 import (
 	"fmt"
@@ -23,6 +23,7 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/common/math"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/params"
 )
 
@@ -87,7 +88,7 @@ type EVMInterpreter struct {
 	cfg      Config
 	gasTable params.GasTable
 
-	intPool *intPool
+	intPool *vm.IntPool
 
 	hasher    keccakState // Keccak256 hasher instance shared across opcodes
 	hasherBuf common.Hash // Keccak256 hasher result array shared aross opcodes
@@ -121,7 +122,7 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 	}
 }
 
-func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, stack *Stack) error {
+func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, stack *vm.Stack) error {
 	if in.evm.chainRules.IsByzantium {
 		if in.readOnly {
 			// If the interpreter is operating in readonly mode, make sure no
@@ -145,9 +146,9 @@ func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, st
 // errExecutionReverted which means revert-and-keep-gas-left.
 func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
 	if in.intPool == nil {
-		in.intPool = poolOfIntPools.get()
+		in.intPool = vm.PoolOfIntPools.Get()
 		defer func() {
-			poolOfIntPools.put(in.intPool)
+			vm.PoolOfIntPools.Put(in.intPool)
 			in.intPool = nil
 		}()
 	}
@@ -173,9 +174,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	}
 
 	var (
-		op    OpCode        // current opcode
-		mem   = NewMemory() // bound memory
-		stack = newstack()  // local stack
+		op    OpCode           // current opcode
+		mem   = vm.NewMemory() // bound memory
+		stack = NewStack()     // local stack
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
 		// to be uint256. Practically much less so feasible.
@@ -190,8 +191,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 
 	// Reclaim the stack as an int pool when the execution stops
 	defer func() {
-		in.intPool.put(stack.data...)
-		recyclestack(stack)
+		in.intPool.Put(stack.Data...)
+		Recyclestack(stack)
 	}()
 
 	if in.cfg.Debug {
@@ -234,13 +235,13 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		// calculate the new memory size and expand the memory to fit
 		// the operation
 		if operation.memorySize != nil {
-			memSize, overflow := bigUint64(operation.memorySize(stack))
+			memSize, overflow := vm.BigUint64(operation.memorySize(stack))
 			if overflow {
 				return nil, errGasUintOverflow
 			}
 			// memory is expanded in words of 32 bytes. Gas
 			// is also calculated in words.
-			if memorySize, overflow = math.SafeMul(toWordSize(memSize), 32); overflow {
+			if memorySize, overflow = math.SafeMul(vm.ToWordSize(memSize), 32); overflow {
 				return nil, errGasUintOverflow
 			}
 		}
@@ -248,7 +249,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		// cost is explicitly set so that the capture state defer method can get the proper cost
 		cost, err = operation.gasCost(in.gasTable, in.evm, contract, stack, mem, memorySize)
 		if err != nil || !contract.UseGas(cost) {
-			return nil, ErrOutOfGas
+			return nil, vm.ErrOutOfGas
 		}
 		if memorySize > 0 {
 			mem.Resize(memorySize)
@@ -263,8 +264,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		res, err := operation.execute(&pc, in, contract, mem, stack)
 		// verifyPool is a build flag. Pool verification makes sure the integrity
 		// of the integer pool by comparing values to a default value.
-		if verifyPool {
-			verifyIntegerPool(in.intPool)
+		if vm.VerifyPool {
+			vm.VerifyIntegerPool(in.intPool)
 		}
 		// if the operation clears the return data (e.g. it has returning data)
 		// set the last return to the result of the operation.

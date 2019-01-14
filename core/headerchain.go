@@ -37,7 +37,7 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/dexcon"
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/log"
@@ -420,9 +420,9 @@ func newHeaderVerifierCache(
 	}
 }
 
-func (c *headerVerifierCache) state(round uint64) *vm.GovernanceState {
+func (c *headerVerifierCache) state(round uint64) *evm.GovernanceState {
 	if state, exist := c.stateCache.Get(round); exist {
-		return state.(*vm.GovernanceState)
+		return state.(*evm.GovernanceState)
 	}
 	state := c.gov.GetStateForConfigAtRound(round)
 	c.stateCache.Add(round, state)

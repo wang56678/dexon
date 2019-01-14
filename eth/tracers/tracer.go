@@ -28,6 +28,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/common/hexutil"
 	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/log"
 	duktape "gopkg.in/olebedev/go-duktape.v3"
@@ -68,7 +69,7 @@ func pushBigInt(n *big.Int, ctx *duktape.Context) {
 
 // opWrapper provides a JavaScript wrapper around OpCode.
 type opWrapper struct {
-	op vm.OpCode
+	op evm.OpCode
 }
 
 // pushObject assembles a JSVM object wrapping a swappable opcode and pushes it
@@ -140,20 +141,20 @@ func (mw *memoryWrapper) pushObject(vm *duktape.Context) {
 	vm.PutPropString(obj, "getUint")
 }
 
-// stackWrapper provides a JavaScript wrapper around vm.Stack.
+// stackWrapper provides a JavaScript wrapper around evm.Stack.
 type stackWrapper struct {
 	stack *vm.Stack
 }
 
 // peek returns the nth-from-the-top element of the stack.
 func (sw *stackWrapper) peek(idx int) *big.Int {
-	if len(sw.stack.Data()) <= idx {
+	if len(sw.stack.Data) <= idx {
 		// TODO(karalabe): We can't js-throw from Go inside duktape inside Go. The Go
 		// runtime goes belly up https://github.com/golang/go/issues/15639.
-		log.Warn("Tracer accessed out of bound stack", "size", len(sw.stack.Data()), "index", idx)
+		log.Warn("Tracer accessed out of bound stack", "size", len(sw.stack.Data), "index", idx)
 		return new(big.Int)
 	}
-	return sw.stack.Data()[len(sw.stack.Data())-idx-1]
+	return sw.stack.Data[len(sw.stack.Data)-idx-1]
 }
 
 // pushObject assembles a JSVM object wrapping a swappable stack and pushes it
@@ -161,7 +162,7 @@ func (sw *stackWrapper) peek(idx int) *big.Int {
 func (sw *stackWrapper) pushObject(vm *duktape.Context) {
 	obj := vm.PushObject()
 
-	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushInt(len(sw.stack.Data())); return 1 })
+	vm.PushGoFunction(func(ctx *duktape.Context) int { ctx.PushInt(len(sw.stack.Data)); return 1 })
 	vm.PutPropString(obj, "length")
 
 	// Generate the `peek` method which takes an int and returns a bigint
@@ -175,9 +176,9 @@ func (sw *stackWrapper) pushObject(vm *duktape.Context) {
 	vm.PutPropString(obj, "peek")
 }
 
-// dbWrapper provides a JavaScript wrapper around vm.Database.
+// dbWrapper provides a JavaScript wrapper around evm.Database.
 type dbWrapper struct {
-	db vm.StateDB
+	db evm.StateDB
 }
 
 // pushObject assembles a JSVM object wrapping a swappable database and pushes it
@@ -230,9 +231,9 @@ func (dw *dbWrapper) pushObject(vm *duktape.Context) {
 	vm.PutPropString(obj, "exists")
 }
 
-// contractWrapper provides a JavaScript wrapper around vm.Contract
+// contractWrapper provides a JavaScript wrapper around evm.Contract
 type contractWrapper struct {
-	contract *vm.Contract
+	contract *evm.Contract
 }
 
 // pushObject assembles a JSVM object wrapping a swappable contract and pushes it
@@ -390,7 +391,7 @@ func New(code string) (*Tracer, error) {
 		return 1
 	})
 	tracer.vm.PushGlobalGoFunction("isPrecompiled", func(ctx *duktape.Context) int {
-		_, ok := vm.PrecompiledContractsByzantium[common.BytesToAddress(popSlice(ctx))]
+		_, ok := evm.PrecompiledContractsByzantium[common.BytesToAddress(popSlice(ctx))]
 		ctx.PushBoolean(ok)
 		return 1
 	})
@@ -532,7 +533,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureState(env *evm.EVM, pc uint64, op evm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *evm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -571,7 +572,7 @@ func (jst *Tracer) CaptureState(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost 
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *vm.EVM, pc uint64, op vm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureFault(env *evm.EVM, pc uint64, op evm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *evm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)

@@ -9,7 +9,7 @@ import (
 	coreTypes "github.com/dexon-foundation/dexon-consensus/core/types"
 	dkgTypes "github.com/dexon-foundation/dexon-consensus/core/types/dkg"
 	"github.com/dexon-foundation/dexon/cmd/utils"
-	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/rlp"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -42,7 +42,7 @@ func decodeInput(ctx *cli.Context) error {
 	}
 
 	// Parse input.
-	method, exists := vm.GovernanceABI.Sig2Method[string(input[:4])]
+	method, exists := evm.GovernanceABI.Sig2Method[string(input[:4])]
 	if !exists {
 		utils.Fatalf("invalid method")
 	}
@@ -110,7 +110,7 @@ func decodeInput(ctx *cli.Context) error {
 			utils.Fatalf("%s", err)
 		}
 		switch args.Type.Uint64() {
-		case vm.FineTypeForkVote:
+		case evm.FineTypeForkVote:
 			vote1 := new(coreTypes.Vote)
 			if err := rlp.DecodeBytes(args.Arg1, vote1); err != nil {
 				utils.Fatalf("%s", err)
@@ -121,7 +121,7 @@ func decodeInput(ctx *cli.Context) error {
 			}
 			fmt.Printf("Vote1: %+v\n", vote1)
 			fmt.Printf("Vote2: %+v\n", vote2)
-		case vm.FineTypeForkBlock:
+		case evm.FineTypeForkBlock:
 			block1 := new(coreTypes.Block)
 			if err := rlp.DecodeBytes(args.Arg1, block1); err != nil {
 				utils.Fatalf("%s", err)
