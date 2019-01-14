@@ -1827,7 +1827,7 @@ func (g *GovernanceContract) payFine(nodeAddr common.Address) ([]byte, error) {
 	g.state.UpdateNode(nodeOffset, node)
 
 	// Pay the fine to governance owner.
-	g.evm.StateDB.AddBalance(g.state.Owner(), g.contract.Value())
+	g.evm.StateDB.AddBalance(g.state.Owner(), g.contract.Value)
 
 	g.state.emitFinePaid(nodeAddr, g.contract.Value())
 

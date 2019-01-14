@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/dexon-foundation/dexon/cmd/utils"
-	"github.com/dexon-foundation/dexon/core/vm"
+	vm "github.com/dexon-foundation/dexon/core/vm/evm"
 )
 
 func TestState(t *testing.T) {

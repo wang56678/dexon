@@ -34,7 +34,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	vm "github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/eth/tracers"
 	"github.com/dexon-foundation/dexon/internal/ethapi"
 	"github.com/dexon-foundation/dexon/log"
@@ -64,7 +64,7 @@ type TraceConfig struct {
 
 // StdTraceConfig holds extra parameters to standard-json trace functions.
 type StdTraceConfig struct {
-	*vm.LogConfig
+	*evm.LogConfig
 	Reexec *uint64
 	TxHash common.Hash
 }
@@ -546,7 +546,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 	}
 	// Retrieve the tracing configurations, or use default values
 	var (
-		logConfig vm.LogConfig
+		logConfig evm.LogConfig
 		txHash    common.Hash
 	)
 	if config != nil {
@@ -568,7 +568,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			msg, _ = tx.AsMessage(signer)
 			vmctx  = core.NewEVMContext(msg, block.Header(), api.dex.blockchain, nil)
 
-			vmConf vm.Config
+			vmConf evm.Config
 			dump   *os.File
 			err    error
 		)
@@ -584,14 +584,14 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			dumps = append(dumps, dump.Name())
 
 			// Swap out the noop logger to the standard tracer
-			vmConf = vm.Config{
+			vmConf = evm.Config{
 				Debug:                   true,
-				Tracer:                  vm.NewJSONLogger(&logConfig, bufio.NewWriter(dump)),
+				Tracer:                  evm.NewJSONLogger(&logConfig, bufio.NewWriter(dump)),
 				EnablePreimageRecording: true,
 			}
 		}
 		// Execute the transaction and flush any traces to disk
-		vmenv := vm.NewEVM(vmctx, statedb, api.config, vmConf)
+		vmenv := evm.NewEVM(vmctx, statedb, api.config, vmConf)
 		_, _, _, err = core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas()))
 
 		if dump != nil {

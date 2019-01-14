@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with go-ethereum. If not, see <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 import (
 	"encoding/json"
@@ -24,6 +24,7 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/common/math"
+	"github.com/dexon-foundation/dexon/core/vm"
 )
 
 type JSONLogger struct {
@@ -46,7 +47,7 @@ func (l *JSONLogger) CaptureStart(from common.Address, to common.Address, create
 }
 
 // CaptureState outputs state information on the logger.
-func (l *JSONLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, depth int, err error) error {
+func (l *JSONLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *Contract, depth int, err error) error {
 	log := StructLog{
 		Pc:            pc,
 		Op:            op,
@@ -62,13 +63,13 @@ func (l *JSONLogger) CaptureState(env *EVM, pc uint64, op OpCode, gas, cost uint
 		log.Memory = memory.Data()
 	}
 	if !l.cfg.DisableStack {
-		log.Stack = stack.Data()
+		log.Stack = stack.Data
 	}
 	return l.encoder.Encode(log)
 }
 
 // CaptureFault outputs state information on the logger.
-func (l *JSONLogger) CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *Memory, stack *Stack, contract *Contract, depth int, err error) error {
+func (l *JSONLogger) CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *Contract, depth int, err error) error {
 	return nil
 }
 
