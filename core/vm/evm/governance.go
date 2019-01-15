@@ -15,7 +15,7 @@
 // along with the dexon-consensus library. If not, see
 // <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 import (
 	"bytes"
@@ -35,6 +35,7 @@ import (
 	"github.com/dexon-foundation/dexon-consensus/core"
 	coreCrypto "github.com/dexon-foundation/dexon-consensus/core/crypto"
 	coreUtils "github.com/dexon-foundation/dexon-consensus/core/utils"
+	"github.com/dexon-foundation/dexon/core/vm"
 
 	"github.com/dexon-foundation/dexon-consensus/core/crypto/ecdsa"
 	coreTypes "github.com/dexon-foundation/dexon-consensus/core/types"
@@ -1554,7 +1555,7 @@ func (g *GovernanceContract) transfer(from, to common.Address, amount *big.Int) 
 
 func (g *GovernanceContract) useGas(gas uint64) ([]byte, error) {
 	if !g.contract.UseGas(gas) {
-		return nil, ErrOutOfGas
+		return nil, vm.ErrOutOfGas
 	}
 	return nil, nil
 }

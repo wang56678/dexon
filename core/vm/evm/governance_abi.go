@@ -15,7 +15,7 @@
 // along with the dexon-consensus library. If not, see
 // <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 // The governance ABI is generated from:
 // https://github.com/dexon-foundation/governance-abi
