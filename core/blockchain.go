@@ -1778,7 +1778,7 @@ func (bc *BlockChain) insertDexonChain(chain types.Blocks) (int, []interface{}, 
 
 			blockInsertTimer.UpdateSince(bstart)
 			events = append(events, ChainSideEvent{block})
-			panic("fork found")
+			return 0, nil, nil, errors.New("fork round")
 		}
 		stats.processed++
 		stats.usedGas += usedGas
@@ -1917,7 +1917,10 @@ func (bc *BlockChain) processBlock(
 		bc.gcproc += proctime
 
 	case SideStatTy:
-		return nil, nil, nil, fmt.Errorf("insert pending block and fork found")
+		log.Debug("Inserted forked block", "number", block.Number(), "hash", block.Hash(), "diff", block.Difficulty(), "elapsed",
+			common.PrettyDuration(time.Since(bstart)), "txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()))
+
+		return nil, nil, nil, errors.New("fork round")
 	}
 
 	stats.processed++
@@ -1996,7 +1999,9 @@ func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error
 		bc.gcproc += proctime
 
 	case SideStatTy:
-		return nil, fmt.Errorf("insert pending block and fork found")
+		log.Debug("Inserted forked block", "number", block.Number(), "hash", block.Hash(), "diff", block.Difficulty(), "elapsed",
+			common.PrettyDuration(time.Since(bstart)), "txs", len(block.Transactions()), "gas", block.GasUsed(), "uncles", len(block.Uncles()))
+		return nil, fmt.Errorf("fork found")
 	}
 
 	stats.processed++
@@ -2284,7 +2289,6 @@ func (bc *BlockChain) InsertDexonHeaderChain(chain []*types.HeaderWithGovState, 
 		if status == SideStatTy {
 			log.Debug("Inserted forked block header", "number", header.Number, "hash", header.Hash, "diff", header.Difficulty,
 				"gas", header.GasUsed)
-			panic("fork found")
 		}
 		return err
 	}
