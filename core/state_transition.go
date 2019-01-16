@@ -27,6 +27,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm"
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -70,8 +71,9 @@ type StateTransition struct {
 	initialGas uint64
 	value      *big.Int
 	data       []byte
-	state      evm.StateDB
+	state      vm.StateDB
 	evm        *evm.EVM
+	sqlvm      *sqlvm.SQLVM
 }
 
 // Message represents a message sent to a contract.
@@ -246,7 +248,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		return
 	}
 	msg := st.msg
-	sender := evm.AccountRef(msg.From())
+	sender := vm.AccountRef(msg.From())
 	homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
 	contractCreation := msg.To() == nil
 
@@ -260,14 +262,19 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	}
 
 	var (
-		evm = st.evm
+		evm   = st.evm
+		sqlvm = st.sqlvm
 		// vm errors do not effect consensus and are therefor
 		// not assigned to err, except for insufficient balance
 		// error.
 		vmerr error
 	)
 	if contractCreation {
-		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
+		if len(st.data) != 0 && st.data[0] == 0xed {
+			ret, _, st.gas, vmerr = sqlvm.Create(sender, st.data, st.gas, st.value)
+		} else {
+			ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
+		}
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)

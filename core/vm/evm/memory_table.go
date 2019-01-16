@@ -23,6 +23,11 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm"
 )
 
+var (
+	big1  = big.NewInt(1)
+	big32 = big.NewInt(32)
+)
+
 func memorySha3(stack *vm.Stack) *big.Int {
 	return vm.CalcMemSize(stack.Back(0), stack.Back(1))
 }
