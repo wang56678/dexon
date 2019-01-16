@@ -29,6 +29,7 @@ import (
 	"github.com/dexon-foundation/dexon/accounts/abi"
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
+	vmlib "github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -84,9 +85,9 @@ func newTestVM() *testVM {
 		panic(err)
 	}
 
-	context := Context{
-		CanTransfer: func(StateDB, common.Address, *big.Int) bool { return true },
-		Transfer:    func(StateDB, common.Address, common.Address, *big.Int) {},
+	context := vmlib.Context{
+		CanTransfer: func(vmlib.StateDB, common.Address, *big.Int) bool { return true },
+		Transfer:    func(vmlib.StateDB, common.Address, common.Address, *big.Int) {},
 		Time:        big.NewInt(time.Now().UnixNano() / 1000000000),
 		BlockNumber: big.NewInt(0),
 	}
@@ -106,9 +107,9 @@ func (vm *testVM) create(caller string, code []byte, value *big.Int) (
 	ret []byte, contractAddr common.Address, err error) {
 	callerAddr := common.HexToAddress(caller)
 	contractAddr = crypto.CreateAddress(callerAddr, uint64(0))
-	contract := NewContract(AccountRef(callerAddr),
-		AccountRef(contractAddr), value, math.MaxUint64)
-	contract.SetCodeOptionalHash(&callerAddr, &codeAndHash{code: code})
+	contract := vmlib.NewContract(vmlib.AccountRef(callerAddr),
+		vmlib.AccountRef(contractAddr), value, math.MaxUint64)
+	contract.SetCodeOptionalHash(&callerAddr, &vmlib.CodeAndHash{Code: code})
 	ret, err = vm.interpreter.Run(contract, nil, false)
 	if err != nil {
 		contractAddr = common.Address{}
@@ -126,17 +127,17 @@ func (vm *testVM) call(
 }
 
 func (vm *testVM) createContract(
-	caller string, addr common.Address, value *big.Int) *Contract {
+	caller string, addr common.Address, value *big.Int) *vmlib.Contract {
 	callerAddr := common.HexToAddress(caller)
 	vm.evm.StateDB.CreateAccount(callerAddr)
-	contract := NewContract(AccountRef(callerAddr),
-		AccountRef(addr), value, math.MaxUint64)
+	contract := vmlib.NewContract(vmlib.AccountRef(callerAddr),
+		vmlib.AccountRef(addr), value, math.MaxUint64)
 	contract.SetCallCode(
 		&addr, vm.evm.StateDB.GetCodeHash(addr), vm.evm.StateDB.GetCode(addr))
 	return contract
 }
 
-func (vm *testVM) callContract(contract *Contract, input []byte) (
+func (vm *testVM) callContract(contract *vmlib.Contract, input []byte) (
 	ret []byte, err error) {
 	if len(contract.Code) == 0 {
 		panic(fmt.Errorf("no code"))
