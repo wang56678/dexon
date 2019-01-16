@@ -33,9 +33,9 @@ type twoOperandTest struct {
 	expected string
 }
 
-func testTwoOperandOp(t *testing.T, tests []twoOperandTest, opFn func(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error)) {
+func testTwoOperandOp(t *testing.T, tests []twoOperandTest, opFn func(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error)) {
 	var (
-		env            = NewEVM(Context{}, nil, params.TestChainConfig, Config{})
+		env            = NewEVM(vm.Context{}, nil, params.TestChainConfig, Config{})
 		stack          = NewStack()
 		pc             = uint64(0)
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
@@ -76,7 +76,7 @@ func testTwoOperandOp(t *testing.T, tests []twoOperandTest, opFn func(pc *uint64
 
 func TestByteOp(t *testing.T) {
 	var (
-		env            = NewEVM(Context{}, nil, params.TestChainConfig, Config{})
+		env            = NewEVM(vm.Context{}, nil, params.TestChainConfig, Config{})
 		stack          = NewStack()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
 	)
@@ -209,9 +209,9 @@ func TestSLT(t *testing.T) {
 	testTwoOperandOp(t, tests, opSlt)
 }
 
-func opBenchmark(bench *testing.B, op func(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error), args ...string) {
+func opBenchmark(bench *testing.B, op func(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error), args ...string) {
 	var (
-		env            = NewEVM(Context{}, nil, params.TestChainConfig, Config{})
+		env            = NewEVM(vm.Context{}, nil, params.TestChainConfig, Config{})
 		stack          = NewStack()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
 	)
@@ -446,7 +446,7 @@ func BenchmarkOpIsZero(b *testing.B) {
 
 func TestOpMstore(t *testing.T) {
 	var (
-		env            = NewEVM(Context{}, nil, params.TestChainConfig, Config{})
+		env            = NewEVM(vm.Context{}, nil, params.TestChainConfig, Config{})
 		stack          = NewStack()
 		mem            = vm.NewMemory()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
@@ -472,7 +472,7 @@ func TestOpMstore(t *testing.T) {
 
 func BenchmarkOpMstore(bench *testing.B) {
 	var (
-		env            = NewEVM(Context{}, nil, params.TestChainConfig, Config{})
+		env            = NewEVM(vm.Context{}, nil, params.TestChainConfig, Config{})
 		stack          = NewStack()
 		mem            = vm.NewMemory()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
@@ -495,7 +495,7 @@ func BenchmarkOpMstore(bench *testing.B) {
 
 func BenchmarkOpSHA3(bench *testing.B) {
 	var (
-		env            = NewEVM(Context{}, nil, params.TestChainConfig, Config{})
+		env            = NewEVM(vm.Context{}, nil, params.TestChainConfig, Config{})
 		stack          = NewStack()
 		mem            = vm.NewMemory()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)

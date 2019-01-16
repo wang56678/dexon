@@ -34,6 +34,7 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -149,11 +150,11 @@ func (g *GovernanceContractTestSuite) newPrefundAccount() (*ecdsa.PrivateKey, co
 }
 
 func (g *GovernanceContractTestSuite) call(caller common.Address, input []byte, value *big.Int) ([]byte, error) {
-	context := Context{
-		CanTransfer: func(db StateDB, addr common.Address, amount *big.Int) bool {
+	context := vm.Context{
+		CanTransfer: func(db vm.StateDB, addr common.Address, amount *big.Int) bool {
 			return db.GetBalance(addr).Cmp(amount) >= 0
 		},
-		Transfer: func(db StateDB, sender common.Address, recipient common.Address, amount *big.Int) {
+		Transfer: func(db vm.StateDB, sender common.Address, recipient common.Address, amount *big.Int) {
 			db.SubBalance(sender, amount)
 			db.AddBalance(recipient, amount)
 		},
@@ -173,7 +174,7 @@ func (g *GovernanceContractTestSuite) call(caller common.Address, input []byte, 
 	}
 
 	evm := NewEVM(context, g.stateDB, params.TestChainConfig, Config{IsBlockProposer: true})
-	ret, _, err := evm.Call(AccountRef(caller), GovernanceContractAddress, input, 10000000, value)
+	ret, _, err := evm.Call(vm.AccountRef(caller), GovernanceContractAddress, input, 10000000, value)
 	return ret, err
 }
 

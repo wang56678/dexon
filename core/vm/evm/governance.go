@@ -86,7 +86,7 @@ func init() {
 }
 
 // RunGovernanceContract executes governance contract.
-func RunGovernanceContract(evm *EVM, input []byte, contract *Contract) (ret []byte, err error) {
+func RunGovernanceContract(evm *EVM, input []byte, contract *vm.Contract) (ret []byte, err error) {
 	if len(input) < 4 {
 		return nil, nil
 	}
@@ -574,7 +574,7 @@ func publicKeyToNodeID(pkBytes []byte) (Bytes32, error) {
 
 // State manipulation helper fro the governance contract.
 type GovernanceStateHelper struct {
-	StateDB StateDB
+	StateDB vm.StateDB
 }
 
 func (s *GovernanceStateHelper) getState(loc common.Hash) common.Hash {
@@ -1529,10 +1529,10 @@ func (s *GovernanceStateHelper) emitFinePaid(nodeAddr common.Address, amount *bi
 type GovernanceContract struct {
 	evm      *EVM
 	state    GovernanceStateHelper
-	contract *Contract
+	contract *vm.Contract
 }
 
-func newGovernanceContract(evm *EVM, contract *Contract) *GovernanceContract {
+func newGovernanceContract(evm *EVM, contract *vm.Contract) *GovernanceContract {
 	return &GovernanceContract{
 		evm:      evm,
 		state:    GovernanceStateHelper{evm.StateDB},
@@ -1777,7 +1777,7 @@ func (g *GovernanceContract) delegate(nodeAddr common.Address) ([]byte, error) {
 	}
 
 	caller := g.contract.Caller()
-	value := g.contract.Value()
+	value := g.contract.Value
 
 	// Can not delegate if no fund was sent.
 	if value.Cmp(big.NewInt(0)) == 0 {
@@ -1792,11 +1792,11 @@ func (g *GovernanceContract) delegate(nodeAddr common.Address) ([]byte, error) {
 
 	// Add to the total staked of node.
 	node := g.state.Node(offset)
-	node.Staked = new(big.Int).Add(node.Staked, g.contract.Value())
+	node.Staked = new(big.Int).Add(node.Staked, g.contract.Value)
 	g.state.UpdateNode(offset, node)
 
 	// Add to network total staked.
-	g.state.IncTotalStaked(g.contract.Value())
+	g.state.IncTotalStaked(g.contract.Value)
 
 	// Push delegator record.
 	offset = g.state.LenDelegators(nodeAddr)
@@ -1855,7 +1855,7 @@ func (g *GovernanceContract) stake(
 	}
 
 	// Delegate fund to itself.
-	if g.contract.Value().Cmp(big.NewInt(0)) > 0 {
+	if g.contract.Value.Cmp(big.NewInt(0)) > 0 {
 		if ret, err := g.delegate(caller); err != nil {
 			return ret, err
 		}
@@ -2013,16 +2013,16 @@ func (g *GovernanceContract) payFine(nodeAddr common.Address) ([]byte, error) {
 	}
 
 	node := g.state.Node(nodeOffset)
-	if node.Fined.Cmp(big.NewInt(0)) <= 0 || node.Fined.Cmp(g.contract.Value()) < 0 {
+	if node.Fined.Cmp(big.NewInt(0)) <= 0 || node.Fined.Cmp(g.contract.Value) < 0 {
 		return nil, errExecutionReverted
 	}
 
-	node.Fined = new(big.Int).Sub(node.Fined, g.contract.Value())
+	node.Fined = new(big.Int).Sub(node.Fined, g.contract.Value)
 	g.state.UpdateNode(nodeOffset, node)
 
 	// TODO: paid fine should be added to award pool.
 
-	g.state.emitFinePaid(nodeAddr, g.contract.Value())
+	g.state.emitFinePaid(nodeAddr, g.contract.Value)
 
 	return g.useGas(100000)
 }

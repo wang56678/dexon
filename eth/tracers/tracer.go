@@ -178,7 +178,7 @@ func (sw *stackWrapper) pushObject(vm *duktape.Context) {
 
 // dbWrapper provides a JavaScript wrapper around evm.Database.
 type dbWrapper struct {
-	db evm.StateDB
+	db vm.StateDB
 }
 
 // pushObject assembles a JSVM object wrapping a swappable database and pushes it
@@ -233,7 +233,7 @@ func (dw *dbWrapper) pushObject(vm *duktape.Context) {
 
 // contractWrapper provides a JavaScript wrapper around evm.Contract
 type contractWrapper struct {
-	contract *evm.Contract
+	contract *vm.Contract
 }
 
 // pushObject assembles a JSVM object wrapping a swappable contract and pushes it
@@ -259,7 +259,7 @@ func (cw *contractWrapper) pushObject(vm *duktape.Context) {
 
 	// Push the wrapper for contract.Value
 	vm.PushGoFunction(func(ctx *duktape.Context) int {
-		pushBigInt(cw.contract.Value(), ctx)
+		pushBigInt(cw.contract.Value, ctx)
 		return 1
 	})
 	vm.PutPropString(obj, "getValue")
@@ -391,7 +391,7 @@ func New(code string) (*Tracer, error) {
 		return 1
 	})
 	tracer.vm.PushGlobalGoFunction("isPrecompiled", func(ctx *duktape.Context) int {
-		_, ok := evm.PrecompiledContractsByzantium[common.BytesToAddress(popSlice(ctx))]
+		_, ok := vm.PrecompiledContractsByzantium[common.BytesToAddress(popSlice(ctx))]
 		ctx.PushBoolean(ok)
 		return 1
 	})
@@ -533,7 +533,7 @@ func (jst *Tracer) CaptureStart(from common.Address, to common.Address, create b
 }
 
 // CaptureState implements the Tracer interface to trace a single step of VM execution.
-func (jst *Tracer) CaptureState(env *evm.EVM, pc uint64, op evm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *evm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureState(env *evm.EVM, pc uint64, op evm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Initialize the context if it wasn't done yet
 		if !jst.inited {
@@ -572,7 +572,7 @@ func (jst *Tracer) CaptureState(env *evm.EVM, pc uint64, op evm.OpCode, gas, cos
 
 // CaptureFault implements the Tracer interface to trace an execution fault
 // while running an opcode.
-func (jst *Tracer) CaptureFault(env *evm.EVM, pc uint64, op evm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *evm.Contract, depth int, err error) error {
+func (jst *Tracer) CaptureFault(env *evm.EVM, pc uint64, op evm.OpCode, gas, cost uint64, memory *vm.Memory, stack *vm.Stack, contract *vm.Contract, depth int, err error) error {
 	if jst.err == nil {
 		// Apart from the error, everything matches the previous invocation
 		jst.errorValue = new(string)
