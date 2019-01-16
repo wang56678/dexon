@@ -19,10 +19,11 @@ package runtime
 import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 )
 
-func NewEnv(cfg *Config) *vm.EVM {
+func NewEnv(cfg *Config) *evm.EVM {
 	context := vm.Context{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
@@ -37,5 +38,5 @@ func NewEnv(cfg *Config) *vm.EVM {
 		GasPrice:    cfg.GasPrice,
 	}
 
-	return vm.NewEVM(context, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
+	return evm.NewEVM(context, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
 }

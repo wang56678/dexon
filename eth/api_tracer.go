@@ -34,7 +34,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/eth/tracers"
 	"github.com/dexon-foundation/dexon/internal/ethapi"
 	"github.com/dexon-foundation/dexon/log"
@@ -56,7 +57,7 @@ const (
 
 // TraceConfig holds extra parameters to trace functions.
 type TraceConfig struct {
-	*vm.LogConfig
+	*evm.LogConfig
 	Tracer  *string
 	Timeout *string
 	Reexec  *uint64
@@ -64,7 +65,7 @@ type TraceConfig struct {
 
 // StdTraceConfig holds extra parameters to standard-json trace functions.
 type StdTraceConfig struct {
-	*vm.LogConfig
+	*evm.LogConfig
 	Reexec *uint64
 	TxHash common.Hash
 }
@@ -289,7 +290,7 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 				traced += uint64(len(txs))
 			}
 			// Generate the next state snapshot fast without tracing
-			_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, vm.Config{})
+			_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, evm.Config{})
 			if err != nil {
 				failed = err
 				break
@@ -501,7 +502,7 @@ func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, 
 		msg, _ := tx.AsMessage(signer)
 		vmctx := core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
 
-		vmenv := vm.NewEVM(vmctx, statedb, api.config, vm.Config{})
+		vmenv := evm.NewEVM(vmctx, statedb, api.config, evm.Config{})
 		if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas())); err != nil {
 			failed = err
 			break
@@ -554,7 +555,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 	}
 	// Retrieve the tracing configurations, or use default values
 	var (
-		logConfig vm.LogConfig
+		logConfig evm.LogConfig
 		txHash    common.Hash
 	)
 	if config != nil {
@@ -576,7 +577,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			msg, _ = tx.AsMessage(signer)
 			vmctx  = core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
 
-			vmConf vm.Config
+			vmConf evm.Config
 			dump   *os.File
 			err    error
 		)
@@ -592,14 +593,14 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			dumps = append(dumps, dump.Name())
 
 			// Swap out the noop logger to the standard tracer
-			vmConf = vm.Config{
+			vmConf = evm.Config{
 				Debug:                   true,
-				Tracer:                  vm.NewJSONLogger(&logConfig, bufio.NewWriter(dump)),
+				Tracer:                  evm.NewJSONLogger(&logConfig, bufio.NewWriter(dump)),
 				EnablePreimageRecording: true,
 			}
 		}
 		// Execute the transaction and flush any traces to disk
-		vmenv := vm.NewEVM(vmctx, statedb, api.config, vmConf)
+		vmenv := evm.NewEVM(vmctx, statedb, api.config, vmConf)
 		_, _, _, err = core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas()))
 
 		if dump != nil {
@@ -667,7 +668,7 @@ func (api *PrivateDebugAPI) computeStateDB(block *types.Block, reexec uint64) (*
 		if block = api.eth.blockchain.GetBlockByNumber(block.NumberU64() + 1); block == nil {
 			return nil, fmt.Errorf("block #%d not found", block.NumberU64()+1)
 		}
-		_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, vm.Config{})
+		_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, evm.Config{})
 		if err != nil {
 			return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
 		}
@@ -716,7 +717,7 @@ func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Ha
 func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, vmctx vm.Context, statedb *state.StateDB, config *TraceConfig) (interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer vm.Tracer
+		tracer evm.Tracer
 		err    error
 	)
 	switch {
@@ -741,13 +742,13 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 		defer cancel()
 
 	case config == nil:
-		tracer = vm.NewStructLogger(nil)
+		tracer = evm.NewStructLogger(nil)
 
 	default:
-		tracer = vm.NewStructLogger(config.LogConfig)
+		tracer = evm.NewStructLogger(config.LogConfig)
 	}
 	// Run the transaction with tracing enabled.
-	vmenv := vm.NewEVM(vmctx, statedb, api.config, vm.Config{Debug: true, Tracer: tracer})
+	vmenv := evm.NewEVM(vmctx, statedb, api.config, evm.Config{Debug: true, Tracer: tracer})
 
 	ret, gas, failed, err := core.ApplyMessage(vmenv, message, new(core.GasPool).AddGas(message.Gas()))
 	if err != nil {
@@ -755,7 +756,7 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 	}
 	// Depending on the tracer type, format and return the output
 	switch tracer := tracer.(type) {
-	case *vm.StructLogger:
+	case *evm.StructLogger:
 		return &ethapi.ExecutionResult{
 			Gas:         gas,
 			Failed:      failed,
@@ -797,7 +798,7 @@ func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, ree
 			return msg, context, statedb, nil
 		}
 		// Not yet the searched for transaction, execute on top of the current state
-		vmenv := vm.NewEVM(context, statedb, api.config, vm.Config{})
+		vmenv := evm.NewEVM(context, statedb, api.config, evm.Config{})
 		if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
 			return nil, vm.Context{}, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}

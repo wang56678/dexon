@@ -27,7 +27,8 @@ import (
 	"github.com/dexon-foundation/dexon/common/math"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -78,7 +79,7 @@ type vmExecMarshaling struct {
 	GasPrice *math.HexOrDecimal256
 }
 
-func (t *VMTest) Run(vmconfig vm.Config) error {
+func (t *VMTest) Run(vmconfig evm.Config) error {
 	statedb := MakePreState(ethdb.NewMemDatabase(), t.json.Pre)
 	ret, gasRemaining, err := t.exec(statedb, vmconfig)
 
@@ -114,13 +115,13 @@ func (t *VMTest) Run(vmconfig vm.Config) error {
 	return nil
 }
 
-func (t *VMTest) exec(statedb *state.StateDB, vmconfig vm.Config) ([]byte, uint64, error) {
+func (t *VMTest) exec(statedb *state.StateDB, vmconfig evm.Config) ([]byte, uint64, error) {
 	evm := t.newEVM(statedb, vmconfig)
 	e := t.json.Exec
 	return evm.Call(vm.AccountRef(e.Caller), e.Address, e.Data, e.GasLimit, e.Value)
 }
 
-func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig vm.Config) *vm.EVM {
+func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig evm.Config) *evm.EVM {
 	initialCall := true
 	canTransfer := func(db vm.StateDB, address common.Address, amount *big.Int) bool {
 		if initialCall {
@@ -143,7 +144,7 @@ func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig vm.Config) *vm.EVM {
 		GasPrice:    t.json.Exec.GasPrice,
 	}
 	vmconfig.NoRecursion = true
-	return vm.NewEVM(context, statedb, params.EthereumMainnetChainConfig, vmconfig)
+	return evm.NewEVM(context, statedb, params.EthereumMainnetChainConfig, vmconfig)
 }
 
 func vmTestBlockHash(n uint64) common.Hash {

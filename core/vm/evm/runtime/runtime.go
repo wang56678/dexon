@@ -23,7 +23,8 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -42,7 +43,7 @@ type Config struct {
 	GasPrice    *big.Int
 	Value       *big.Int
 	Debug       bool
-	EVMConfig   vm.Config
+	EVMConfig   evm.Config
 
 	State     *state.StateDB
 	GetHashFn func(n uint64) common.Hash
