@@ -19,7 +19,7 @@ package tests
 import (
 	"testing"
 
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 )
 
 func TestVM(t *testing.T) {

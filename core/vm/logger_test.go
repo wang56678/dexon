@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package evm
+package vm
 
 import (
 	"math/big"
@@ -22,7 +22,6 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
-	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/params"
 )
 
@@ -53,12 +52,12 @@ func TestStoreCapture(t *testing.T) {
 	var (
 		env      = NewEVM(Context{}, &dummyStatedb{}, params.TestChainConfig, Config{})
 		logger   = NewStructLogger(nil)
-		mem      = vm.NewMemory()
-		stack    = NewStack()
+		mem      = NewMemory()
+		stack    = newstack()
 		contract = NewContract(&dummyContractRef{}, &dummyContractRef{}, new(big.Int), 0)
 	)
-	stack.Push(big.NewInt(1))
-	stack.Push(big.NewInt(0))
+	stack.push(big.NewInt(1))
+	stack.push(big.NewInt(0))
 	var index common.Hash
 	logger.CaptureState(env, 0, SSTORE, 0, 0, mem, stack, contract, 0, nil)
 	if len(logger.changedValues[contract.Address()]) == 0 {

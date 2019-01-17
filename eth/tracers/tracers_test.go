@@ -30,7 +30,7 @@ import (
 	"github.com/dexon-foundation/dexon/common/math"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/rlp"
 	"github.com/dexon-foundation/dexon/tests"

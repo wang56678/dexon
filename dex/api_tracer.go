@@ -32,7 +32,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/eth/tracers"
 	"github.com/dexon-foundation/dexon/internal/ethapi"
 	"github.com/dexon-foundation/dexon/log"

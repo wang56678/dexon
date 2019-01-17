@@ -14,28 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package runtime
+/*
+Package vm implements the Ethereum Virtual Machine.
 
-import (
-	"github.com/dexon-foundation/dexon/common"
-	"github.com/dexon-foundation/dexon/core"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
-)
-
-func NewEnv(cfg *Config) *vm.EVM {
-	context := vm.Context{
-		CanTransfer: core.CanTransfer,
-		Transfer:    core.Transfer,
-		GetHash:     func(uint64) common.Hash { return common.Hash{} },
-
-		Origin:      cfg.Origin,
-		Coinbase:    cfg.Coinbase,
-		BlockNumber: cfg.BlockNumber,
-		Time:        cfg.Time,
-		Difficulty:  cfg.Difficulty,
-		GasLimit:    cfg.GasLimit,
-		GasPrice:    cfg.GasPrice,
-	}
-
-	return vm.NewEVM(context, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
-}
+The vm package implements one EVM, a byte code VM. The BC (Byte Code) VM loops
+over a set of bytes and executes them according to the set of rules defined
+in the Ethereum yellow paper.
+*/
+package vm

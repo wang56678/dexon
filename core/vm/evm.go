@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package evm
+package vm
 
 import (
 	"math/big"
@@ -23,7 +23,6 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
-	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -73,7 +72,7 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 			return interpreter.Run(contract, input, readOnly)
 		}
 	}
-	return nil, vm.ErrNoCompatibleInterpreter
+	return nil, ErrNoCompatibleInterpreter
 }
 
 // Context provides the EVM with auxiliary information. Once provided
@@ -199,11 +198,11 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
-		return nil, gas, vm.ErrDepth
+		return nil, gas, ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
 	if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
-		return nil, gas, vm.ErrInsufficientBalance
+		return nil, gas, ErrInsufficientBalance
 	}
 
 	var (
@@ -270,11 +269,11 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
-		return nil, gas, vm.ErrDepth
+		return nil, gas, ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
 	if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
-		return nil, gas, vm.ErrInsufficientBalance
+		return nil, gas, ErrInsufficientBalance
 	}
 
 	var (
@@ -308,7 +307,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 	}
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
-		return nil, gas, vm.ErrDepth
+		return nil, gas, ErrDepth
 	}
 
 	var (
@@ -340,7 +339,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	}
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(params.CallCreateDepth) {
-		return nil, gas, vm.ErrDepth
+		return nil, gas, ErrDepth
 	}
 
 	var (
@@ -389,10 +388,10 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
 	if evm.depth > int(params.CallCreateDepth) {
-		return nil, common.Address{}, gas, vm.ErrDepth
+		return nil, common.Address{}, gas, ErrDepth
 	}
 	if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
-		return nil, common.Address{}, gas, vm.ErrInsufficientBalance
+		return nil, common.Address{}, gas, ErrInsufficientBalance
 	}
 	nonce := evm.StateDB.GetNonce(caller.Address())
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
@@ -400,7 +399,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// Ensure there's no existing contract already at the designated address
 	contractHash := evm.StateDB.GetCodeHash(address)
 	if evm.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != emptyCodeHash) {
-		return nil, common.Address{}, 0, vm.ErrContractAddressCollision
+		return nil, common.Address{}, 0, ErrContractAddressCollision
 	}
 	// Create a new account on the state
 	snapshot := evm.StateDB.Snapshot()
@@ -438,14 +437,14 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		if contract.UseGas(createDataGas) {
 			evm.StateDB.SetCode(address, ret)
 		} else {
-			err = vm.ErrCodeStoreOutOfGas
+			err = ErrCodeStoreOutOfGas
 		}
 	}
 
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
-	if maxCodeSizeExceeded || (err != nil && (evm.ChainConfig().IsHomestead(evm.BlockNumber) || err != vm.ErrCodeStoreOutOfGas)) {
+	if maxCodeSizeExceeded || (err != nil && (evm.ChainConfig().IsHomestead(evm.BlockNumber) || err != ErrCodeStoreOutOfGas)) {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != errExecutionReverted {
 			contract.UseGas(contract.Gas)

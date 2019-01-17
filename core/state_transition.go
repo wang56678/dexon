@@ -23,7 +23,6 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm"
-	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -57,8 +56,8 @@ type StateTransition struct {
 	initialGas uint64
 	value      *big.Int
 	data       []byte
-	state      evm.StateDB
-	evm        *evm.EVM
+	state      vm.StateDB
+	evm        *vm.EVM
 }
 
 // Message represents a message sent to a contract.
@@ -110,7 +109,7 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 }
 
 // NewStateTransition initialises and returns a new state transition object.
-func NewStateTransition(evm *evm.EVM, msg Message, gp *GasPool) *StateTransition {
+func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
 	return &StateTransition{
 		gp:       gp,
 		evm:      evm,
@@ -129,7 +128,7 @@ func NewStateTransition(evm *evm.EVM, msg Message, gp *GasPool) *StateTransition
 // the gas used (which includes gas refunds) and an error if it failed. An error always
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
-func ApplyMessage(evm *evm.EVM, msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
+func ApplyMessage(evm *vm.EVM, msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
 	return NewStateTransition(evm, msg, gp).TransitionDb()
 }
 
@@ -186,7 +185,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		return
 	}
 	msg := st.msg
-	sender := evm.AccountRef(msg.From())
+	sender := vm.AccountRef(msg.From())
 	homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
 	contractCreation := msg.To() == nil
 

@@ -10,7 +10,7 @@ import (
 	dkgTypes "github.com/dexon-foundation/dexon-consensus/core/types/dkg"
 
 	"github.com/dexon-foundation/dexon/core/state"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/rlp"
 )

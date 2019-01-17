@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/dexon-foundation/dexon/common/math"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 )
 
 // Compiler contains information about the parsed source

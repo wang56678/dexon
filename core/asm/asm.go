@@ -21,7 +21,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 )
 
 // Iterator for disassembled EVM instructions

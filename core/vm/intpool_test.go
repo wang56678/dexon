@@ -21,35 +21,35 @@ import (
 )
 
 func TestIntPoolPoolGet(t *testing.T) {
-	PoolOfIntPools.Pools = make([]*IntPool, 0, PoolDefaultCap)
+	poolOfIntPools.pools = make([]*intPool, 0, poolDefaultCap)
 
-	nip := PoolOfIntPools.Get()
+	nip := poolOfIntPools.get()
 	if nip == nil {
 		t.Fatalf("Invalid pool allocation")
 	}
 }
 
 func TestIntPoolPoolPut(t *testing.T) {
-	PoolOfIntPools.Pools = make([]*IntPool, 0, PoolDefaultCap)
+	poolOfIntPools.pools = make([]*intPool, 0, poolDefaultCap)
 
-	nip := PoolOfIntPools.Get()
-	if len(PoolOfIntPools.Pools) != 0 {
+	nip := poolOfIntPools.get()
+	if len(poolOfIntPools.pools) != 0 {
 		t.Fatalf("Pool got added to list when none should have been")
 	}
 
-	PoolOfIntPools.Put(nip)
-	if len(PoolOfIntPools.Pools) == 0 {
+	poolOfIntPools.put(nip)
+	if len(poolOfIntPools.pools) == 0 {
 		t.Fatalf("Pool did not get added to list when one should have been")
 	}
 }
 
 func TestIntPoolPoolReUse(t *testing.T) {
-	PoolOfIntPools.Pools = make([]*IntPool, 0, PoolDefaultCap)
-	nip := PoolOfIntPools.Get()
-	PoolOfIntPools.Put(nip)
-	PoolOfIntPools.Get()
+	poolOfIntPools.pools = make([]*intPool, 0, poolDefaultCap)
+	nip := poolOfIntPools.get()
+	poolOfIntPools.put(nip)
+	poolOfIntPools.get()
 
-	if len(PoolOfIntPools.Pools) != 0 {
-		t.Fatalf("Invalid number of pools. Got %d, expected %d", len(PoolOfIntPools.Pools), 0)
+	if len(poolOfIntPools.pools) != 0 {
+		t.Fatalf("Invalid number of pools. Got %d, expected %d", len(poolOfIntPools.pools), 0)
 	}
 }
