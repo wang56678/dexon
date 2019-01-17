@@ -1,0 +1,763 @@
+{
+package sqlvm
+}
+
+S
+	<- _ x:Stmt? _ xs:( ';' _ s:Stmt? _ { return s, nil } )* EOF
+{ return prepend(x, xs), nil }
+
+/* statement */
+Stmt
+	= SelectStmt
+	/ UpdateStmt
+	/ DeleteStmt
+	/ InsertStmt
+	/ CreateTableStmt
+	/ CreateIndexStmt
+
+SelectStmt
+	= SelectToken
+	_ f:SelectColumn fs:( _ SeparatorToken _ s:SelectColumn { return s, nil } )*
+	table:( _ FromToken _ i:Identifier { return i, nil } )?
+	where:( _ w:WhereClause { return w, nil } )?
+	group:( _ g:GroupByClause { return g, nil } )?
+	order:( _ or:OrderByClause { return or, nil } )?
+	limit:( _ l:LimitClause { return l, nil } )?
+	offset:( _ of:OffsetClause { return of, nil } )?
+{
+	var (
+		tableNode  *identifierNode
+		whereNode  *whereOptionNode
+		limitNode  *limitOptionNode
+		offsetNode *offsetOptionNode
+	)
+	if table != nil {
+		t := table.(identifierNode)
+		tableNode = &t
+	}
+	if where != nil {
+		w := where.(whereOptionNode)
+		whereNode = &w
+	}
+	if limit != nil {
+		l := limit.(limitOptionNode)
+		limitNode = &l
+	}
+	if offset != nil {
+		of := offset.(offsetOptionNode)
+		offsetNode = &of
+	}
+	return selectStmtNode{
+		column: prepend(f, fs),
+		table:  tableNode,
+		where:  whereNode,
+		group:  toSlice(group),
+		order:  toSlice(order),
+		limit:  limitNode,
+		offset: offsetNode,
+	}, nil
+}
+
+SelectColumn
+	= AnyLiteral
+	/ Expr
+
+UpdateStmt
+	= UpdateToken
+	_ table:Identifier
+	_ SetToken
+	_ a:Assignment as:( _ SeparatorToken _ s:Assignment { return s, nil } )*
+	where:( _ w:WhereClause { return w, nil } )?
+{
+	var (
+		whereNode *whereOptionNode
+	)
+	if where != nil {
+		w := where.(whereOptionNode)
+		whereNode = &w
+	}
+	return updateStmtNode{
+		table:      table.(identifierNode),
+		assignment: prepend(a, as),
+		where:      whereNode,
+	}, nil
+}
+
+DeleteStmt
+	= DeleteToken
+	_ FromToken
+	_ table:Identifier
+	where:( _ w:WhereClause { return w, nil } )?
+{
+	var (
+		whereNode *whereOptionNode
+	)
+	if where != nil {
+		w := where.(whereOptionNode)
+		whereNode = &w
+	}
+	return deleteStmtNode{
+		table: table.(identifierNode),
+		where: whereNode,
+	}, nil
+}
+
+InsertStmt
+	= InsertToken
+	_ IntoToken
+	_ table:Identifier
+	_ insert:( InsertWithColumnClause / InsertWithDefaultClause )
+{
+	return insertStmtNode{
+		table:  table.(identifierNode),
+		insert: insert,
+	}, nil
+}
+
+InsertValue
+	= '(' _ e:MultiExprWithDefault _ ')'
+{ return e, nil }
+
+CreateTableStmt
+	= CreateToken
+	_ TableToken
+	_ table:Identifier
+	_ '('
+	_ column:(
+		s:ColumnSchema
+		ss:( _ SeparatorToken _ t:ColumnSchema { return t, nil } )*
+		{ return prepend(s, ss), nil }
+	)?
+	_ ')'
+{
+	return createTableStmtNode{
+		table:  table.(identifierNode),
+		column: toSlice(column),
+	}, nil
+}
+
+ColumnSchema
+	= i:Identifier
+	_ t:DataType
+	cs:( _ s:ColumnConstraint { return s, nil } )*
+{
+	return columnSchemaNode{
+		column:     i.(identifierNode),
+		dataType:   t,
+		constraint: toSlice(cs),
+	}, nil
+}
+
+ColumnConstraint
+	= PrimaryKeyClause
+	/ NotNullClause
+	/ UniqueClause
+	/ DefaultClause
+	/ ForeignClause
+	/ AutoincrementClause
+
+CreateIndexStmt
+	= CreateToken
+	unique:( _ u:UniqueClause { return u, nil } )?
+	_ IndexToken
+	_ index:Identifier
+	_ OnToken
+	_ table:Identifier
+	_ '(' _ i:Identifier is:( _ SeparatorToken _ x:Identifier { return x, nil } )* _ ')'
+{
+	var (
+		uniqueNode *uniqueOptionNode
+	)
+	if unique != nil {
+		u := unique.(uniqueOptionNode)
+		uniqueNode = &u
+	}
+	return createIndexStmtNode{
+		index:  index.(identifierNode),
+		table:  table.(identifierNode),
+		column: prepend(i, is),
+		unique: uniqueNode,
+	}, nil
+}
+
+/* clause */
+WhereClause
+	= WhereToken _ e:Expr
+{ return whereOptionNode{condition: e}, nil }
+
+OrderByClause
+	= OrderToken
+	_ ByToken
+	_ f:OrderColumn
+	fs:( _ SeparatorToken _ s:OrderColumn { return s, nil } )*
+{ return prepend(f, fs), nil }
+
+OrderColumn
+	= i:Expr
+	s:( _ t:( AscToken / DescToken ) { return t, nil } )?
+	n:( _ NullsToken _ l:( LastToken / FirstToken ) { return l, nil } )?
+{
+	return orderOptionNode{
+		expr:      i,
+		desc:      s != nil && string(s.([]byte)) == "desc",
+		nullfirst: n != nil && string(n.([]byte)) == "first",
+	}, nil
+}
+
+GroupByClause
+	= GroupToken
+	_ ByToken
+	_ i:Expr
+	is:( _ SeparatorToken _ s:Expr { return groupOptionNode{expr: s}, nil } )*
+{ return prepend(groupOptionNode{expr: i}, is), nil }
+
+OffsetClause
+	= OffsetToken _ i:Integer
+{ return offsetOptionNode{value: i.(integerValueNode)}, nil }
+
+LimitClause
+	= LimitToken _ i:Integer
+{ return limitOptionNode{value: i.(integerValueNode)}, nil }
+
+InsertWithColumnClause
+	= cs:( '('
+			_ f:Identifier
+			fs:( _ SeparatorToken _ x:Identifier { return x, nil } )*
+			_ ')'
+			_ { return prepend(f, fs), nil }
+		)?
+		ValuesToken
+	_ v:InsertValue
+	vs:( _ SeparatorToken _ y:InsertValue { return y, nil } )*
+{
+	return insertWithColumnOptionNode{
+		column: toSlice(cs),
+		value:  prepend(v, vs),
+	}, nil
+}
+
+InsertWithDefaultClause
+	= DefaultToken _ ValuesToken
+{ return insertWithDefaultOptionNode{}, nil }
+
+PrimaryKeyClause
+	= PrimaryToken _ KeyToken
+{ return primaryOptionNode{}, nil }
+
+NotNullClause
+	= NotToken _ NullToken
+{ return notNullOptionNode{}, nil }
+
+UniqueClause
+	= UniqueToken
+{ return uniqueOptionNode{}, nil }
+
+DefaultClause
+	= DefaultToken _ e:Expr
+{ return defaultOptionNode{value: e}, nil }
+
+ForeignClause
+	= ReferencesToken _ t:Identifier _ '(' _ f:Identifier _ ')'
+{
+	return foreignOptionNode{
+		table:  t.(identifierNode),
+		column: f.(identifierNode),
+	}, nil
+}
+
+AutoincrementClause
+	= AutoincrementToken
+{ return autoincrementOptionNode{}, nil }
+
+/* expression */
+Expr
+	= LogicExpr
+
+ExprWithDefault
+	= &(DefaultLiteral) d:DefaultLiteral { return d, nil }
+	/ Expr
+
+LogicExpr
+	= LogicExpr4
+
+LogicExpr4
+	= o:LogicExpr3
+		os:( _ op:OrOperator _ s:LogicExpr3 { return opSetSubject(op, s), nil } )*
+{ return rightJoinOperators(o, os), nil }
+
+LogicExpr3
+	= o:LogicExpr2
+		os:( _ op:AndOperator _ s:LogicExpr2 { return opSetSubject(op, s), nil } )*
+{ return rightJoinOperators(o, os), nil }
+
+LogicExpr2
+	= op:NotOperator _ s:LogicExpr2
+	{ return opSetTarget(op, s), nil }
+	/ LogicExpr1
+
+LogicExpr1
+	= o:ArithmeticExpr os:( _ l:LogicExpr1Op { return l, nil } )*
+{ return rightJoinOperators(o, os), nil }
+
+LogicExpr1Op
+	= LogicExpr1In
+	/ LogicExpr1Null
+	/ LogicExpr1Like
+	/ LogicExpr1Cmp
+
+LogicExpr1In
+	= n:( t:NotOperator _ { return t, nil } )? InToken _ '(' _ s:MultiExpr _ ')'
+{
+	op := opSetSubject(&inOperatorNode{}, s)
+	if n != nil {
+		return opSetTarget(n, op), nil
+	}
+	return op, nil
+}
+
+LogicExpr1Null
+	= IsToken n:( _ t:NotOperator { return t, nil } )? _ NullToken
+{
+	op := opSetSubject(&isOperatorNode{}, nullValueNode{})
+	if n != nil {
+		return opSetTarget(n, op), nil
+	}
+	return op, nil
+}
+
+LogicExpr1Like
+	= n:( t:NotOperator _ { return t, nil } )? LikeToken _ s:Expr
+{
+	op := opSetSubject(&likeOperatorNode{}, s)
+	if n != nil {
+		return opSetTarget(n, op), nil
+	}
+	return op, nil
+}
+
+LogicExpr1Cmp
+	= op:CmpOperator _ s:ArithmeticExpr
+{ return opSetSubject(op, s), nil }
+
+ArithmeticExpr
+	= ArithmeticExpr3
+
+ArithmeticExpr3
+	= o:ArithmeticExpr2 os:( _ op:ConcatOperator _ s:ArithmeticExpr2 { return opSetSubject(op, s), nil } )*
+{ return rightJoinOperators(o, os), nil }
+
+ArithmeticExpr2
+	= o:ArithmeticExpr1 os:( _ op:AddSubOperator _ s:ArithmeticExpr1 { return opSetSubject(op, s), nil } )*
+{ return rightJoinOperators(o, os), nil }
+
+ArithmeticExpr1
+	= o:Operand os:( _ op:MulDivModOperator _ s:Operand { return opSetSubject(op, s), nil } )*
+{ return rightJoinOperators(o, os), nil }
+
+MultiExpr
+	= x:Expr xs:( _ SeparatorToken _ e:Expr { return e, nil } )*
+{ return prepend(x, xs), nil }
+
+MultiExprWithDefault
+	= x:ExprWithDefault xs:( _ SeparatorToken _ e:ExprWithDefault { return e, nil } )*
+{ return prepend(x, xs), nil }
+
+Operand
+	= op:UnaryOperator _ s:Operand { return opSetTarget(op, s), nil }
+	/ '(' _ e:Expr _ ')' { return e, nil }
+	/ &(CastToken) t:TypeCast { return t, nil }
+	/ FunctionCall
+	/ Value
+	/ Identifier
+
+TypeCast
+	= CastToken _ '(' _ o:Expr _ AsToken _ s:DataType _ ')'
+{ return opSetSubject(opSetObject(&castOperatorNode{}, o), s), nil }
+
+FunctionCall
+	= i:Identifier _ '(' _ r:FunctionArgs? _ ')'
+{ return opSetSubject(opSetObject(&functionOperatorNode{}, i), r), nil }
+
+FunctionArgs
+	= a:AnyLiteral { return []interface{}{a}, nil }
+	/ MultiExpr
+
+Assignment
+	= i:Identifier _ '=' _ e:ExprWithDefault
+{ return opSetSubject(opSetObject(&assignOperatorNode{}, i), e), nil }
+
+/* operator */
+UnaryOperator
+	= SignOperator
+
+SignOperator
+	= Sign
+{
+	switch string(c.text) {
+	case "+":
+		return &posOperatorNode{}, nil
+	case "-":
+		return &negOperatorNode{}, nil
+	}
+	return nil, errors.New("unknown sign")
+}
+
+NotOperator
+	= NotToken
+{ return &notOperatorNode{}, nil }
+
+AndOperator
+	= AndToken
+{ return &andOperatorNode{}, nil }
+
+OrOperator
+	= OrToken
+{ return &orOperatorNode{}, nil }
+
+CmpOperator
+	= ( "<=" / ">=" / "<>" / "!=" / [<>=] )
+{
+	switch string(c.text) {
+	case "<=":
+		return &lessOrEqualOperatorNode{}, nil
+	case ">=":
+		return &greaterOrEqualOperatorNode{}, nil
+	case "<>":
+		return &notEqualOperatorNode{}, nil
+	case "!=":
+		return &notEqualOperatorNode{}, nil
+	case "<":
+		return &lessOperatorNode{}, nil
+	case ">":
+		return &greaterOperatorNode{}, nil
+	case "=":
+		return &equalOperatorNode{}, nil
+	}
+	return nil, errors.New("unknown cmp")
+}
+
+ConcatOperator
+	= "||"
+{ return &concatOperatorNode{}, nil }
+
+AddSubOperator
+	= [+-]
+{
+	switch string(c.text) {
+	case "+":
+		return &addOperatorNode{}, nil
+	case "-":
+		return &subOperatorNode{}, nil
+	}
+	return nil, errors.New("unknown add sub")
+}
+
+MulDivModOperator
+	= [*/%]
+{
+	switch string(c.text) {
+	case "*":
+		return &mulOperatorNode{}, nil
+	case "/":
+		return &divOperatorNode{}, nil
+	case "%":
+		return &modOperatorNode{}, nil
+	}
+	return nil, errors.New("unknown mul div mod")
+}
+
+/* type */
+DataType
+	= UIntType
+	/ IntType
+	/ UFixedType
+	/ FixedType
+	/ FixedBytesType
+	/ DynamicBytesType
+	/ BoolType
+	/ AddressType
+
+UIntType
+	= "UINT"i s:NonZeroLeadingInteger !NormalIdentifierRest
+{ return intTypeNode{size: toInt(s.([]byte)), unsigned: true}, nil }
+
+IntType
+	= "INT"i s:NonZeroLeadingInteger !NormalIdentifierRest
+{ return intTypeNode{size: toInt(s.([]byte))}, nil }
+
+UFixedType
+	= "UFIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
+{
+	return fixedTypeNode{
+		integerSize:    toInt(s.([]byte)),
+		fractionalSize: toInt(t.([]byte)),
+		unsigned:       true,
+	}, nil
+}
+
+FixedType
+	= "FIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
+{
+	return fixedTypeNode{
+		integerSize:    toInt(s.([]byte)),
+		fractionalSize: toInt(t.([]byte)),
+	}, nil
+}
+
+FixedBytesType
+	= "BYTES"i s:NonZeroLeadingInteger !NormalIdentifierRest
+{ return fixedBytesTypeNode{size: toInt(s.([]byte))}, nil }
+	/ "BYTE"i !NormalIdentifierRest
+{ return fixedBytesTypeNode{size: 1}, nil }
+
+DynamicBytesType
+	= ( "BYTES"i !NormalIdentifierRest
+		/ "STRING"i !NormalIdentifierRest
+		/ "TEXT"i !NormalIdentifierRest
+	)
+{ return dynamicBytesTypeNode{}, nil }
+
+AddressType
+	= "ADDRESS"i !NormalIdentifierRest
+{ return addressTypeNode{}, nil }
+
+BoolType
+	= ( "BOOL"i !NormalIdentifierRest
+		/ "BOOLEAN"i !NormalIdentifierRest
+	)
+{ return boolTypeNode{}, nil }
+
+/* value */
+Value
+	= NumberLiteral
+	/ StringLiteral
+	/ BoolLiteral
+	/ NullLiteral
+
+AnyLiteral
+	= AnyToken
+{ return anyValueNode{}, nil }
+
+DefaultLiteral
+	= DefaultToken
+{ return defaultValueNode{}, nil }
+
+BoolLiteral
+	= b:( TrueToken / FalseToken )
+{ return boolValueNode(string(b.([]byte)) == "true"), nil }
+
+NullLiteral
+	= NullToken
+{ return nullValueNode{}, nil }
+
+NumberLiteral
+	= &("0" "X"i) h:Hex { return h, nil }
+	/ Decimal
+
+Sign
+	= [-+]
+
+Integer
+	= [0-9]+
+{ return integerValueNode{v: toDecimal(c.text)}, nil }
+
+NonZeroLeadingInteger
+	= ( "0" / [1-9][0-9]* )
+{ return c.text, nil }
+
+Fixnum
+	= Integer "." Integer
+	/ Integer "."?
+	/ "." Integer
+
+Decimal
+	= Fixnum ( "E"i Sign? Integer )?
+{ return decimalValueNode(toDecimal(c.text)), nil }
+
+Hex
+	= "0" "X"i s:( [0-9A-Fa-f] )+ !NormalIdentifierRest
+{ return hexToInteger(joinBytes(s)), nil }
+
+StringLiteral
+	= HexString
+	/ NormalString
+
+HexString
+	= ( "HEX"i / "X"i ) "'" s:([0-9a-fA-F][0-9a-fA-F] { return c.text, nil } )* "'"
+{ return bytesValueNode(hexToBytes(joinBytes(s))), nil }
+
+NormalString
+	= "'" s:( ( [^'\r\n\\] / "\\" . ) { return c.text, nil } )* "'"
+{ return bytesValueNode(resolveString(joinBytes(s))), nil }
+
+/* token */
+SelectToken
+	= "SELECT"i !NormalIdentifierRest
+
+FromToken
+	= "FROM"i !NormalIdentifierRest
+
+WhereToken
+	= "WHERE"i !NormalIdentifierRest
+
+OrderToken
+	= "ORDER"i !NormalIdentifierRest
+
+ByToken
+	= "BY"i !NormalIdentifierRest
+
+GroupToken
+	= "GROUP"i !NormalIdentifierRest
+
+LimitToken
+	= "LIMIT"i !NormalIdentifierRest
+
+OffsetToken
+	= "OFFSET"i !NormalIdentifierRest
+
+UpdateToken
+	= "UPDATE"i !NormalIdentifierRest
+
+SetToken
+	= "SET"i !NormalIdentifierRest
+
+DeleteToken
+	= "DELETE"i !NormalIdentifierRest
+
+InsertToken
+	= "INSERT"i !NormalIdentifierRest
+
+IntoToken
+	= "INTO"i !NormalIdentifierRest
+
+ValuesToken
+	= "VALUES"i !NormalIdentifierRest
+
+CreateToken
+	= "CREATE"i !NormalIdentifierRest
+
+TableToken
+	= "TABLE"i !NormalIdentifierRest
+
+IndexToken
+	= "INDEX"i !NormalIdentifierRest
+
+UniqueToken
+	= "UNIQUE"i !NormalIdentifierRest
+
+DefaultToken
+	= "DEFAULT"i !NormalIdentifierRest
+
+PrimaryToken
+	= "PRIMARY"i !NormalIdentifierRest
+
+KeyToken
+	= "KEY"i !NormalIdentifierRest
+
+ReferencesToken
+	= "REFERENCES"i !NormalIdentifierRest
+
+AutoincrementToken
+	= "AUTOINCREMENT"i !NormalIdentifierRest
+
+OnToken
+	= "ON"i !NormalIdentifierRest
+
+TrueToken
+	= "TRUE"i !NormalIdentifierRest
+{ return toLower(c.text), nil }
+
+FalseToken
+	= "FALSE"i !NormalIdentifierRest
+{ return toLower(c.text), nil }
+
+NullToken
+	= "NULL"i !NormalIdentifierRest
+
+IsToken
+	= "IS"i !NormalIdentifierRest
+
+NullsToken
+	= "NULLS"i !NormalIdentifierRest
+
+LastToken
+	= "LAST"i !NormalIdentifierRest
+{ return toLower(c.text), nil }
+
+FirstToken
+	= "FIRST"i !NormalIdentifierRest
+{ return toLower(c.text), nil }
+
+AndToken
+	= "AND"i !NormalIdentifierRest
+
+OrToken
+	= "OR"i !NormalIdentifierRest
+
+NotToken
+	= "NOT"i !NormalIdentifierRest
+
+InToken
+	= "IN"i !NormalIdentifierRest
+
+LikeToken
+	= "LIKE"i !NormalIdentifierRest
+
+AscToken
+	= "ASC"i !NormalIdentifierRest
+{ return toLower(c.text), nil }
+
+DescToken
+	= "DESC"i !NormalIdentifierRest
+{ return toLower(c.text), nil }
+
+CastToken
+	= "CAST"i !NormalIdentifierRest
+
+AsToken
+	= "AS"i !NormalIdentifierRest
+
+SeparatorToken
+	= ","
+
+AnyToken
+	= "*"
+
+/* identifier */
+Identifier
+	= NormalIdentifier
+	/ StringIdentifier
+
+NormalIdentifier
+	= NormalIdentifierStart NormalIdentifierRest*
+{ return identifierNode(c.text), nil }
+
+NormalIdentifierStart
+	= [a-zA-Z@#_\u0080-\uffff]
+
+NormalIdentifierRest
+	= [a-zA-Z0-9@#$_\u0080-\uffff]
+
+StringIdentifier
+	= "\"" s:( ( [^"\r\n\\] / "\\" . ) { return c.text, nil } )* "\""
+{
+	return identifierNode(resolveString(joinBytes(s))), nil
+}
+
+/* skip */
+_
+	= ( Whitespace / Newline )*
+
+Newline
+	= "\r\n"
+	/ "\r"
+	/ "\n"
+
+Whitespace
+	= " "
+	/ "\t"
+	/ "\v"
+	/ "\f"
+
+EOF
+	= !.
