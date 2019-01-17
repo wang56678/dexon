@@ -1812,7 +1812,6 @@ func (bc *BlockChain) ProcessBlock(block *types.Block, witness *coreTypes.Witnes
 
 func (bc *BlockChain) processBlock(
 	block *types.Block, witness *coreTypes.Witness) (*common.Hash, []interface{}, []*types.Log, error) {
-	// Pre-checks passed, start the full block imports
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
@@ -1935,6 +1934,12 @@ func (bc *BlockChain) processBlock(
 }
 
 func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error) {
+	bc.wg.Add(1)
+	defer bc.wg.Done()
+
+	bc.chainmu.Lock()
+	defer bc.chainmu.Unlock()
+
 	bstart := time.Now()
 	var stats = insertStats{startTime: mclock.Now()}
 	var header = block.Header()
