@@ -1456,20 +1456,12 @@ func TestProcessBlock(t *testing.T) {
 	for i := 0; i < processNum; i++ {
 		var witnessDataBytes []byte
 		if i == 0 {
-			witnessData := types.WitnessData{
-				Root:        gspec.ToBlock(nil).Root(),
-				ReceiptHash: gspec.ToBlock(nil).ReceiptHash(),
-			}
-			witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
+			witnessDataBytes, err = rlp.EncodeToBytes(gspec.ToBlock(nil).Hash())
 			if err != nil {
 				t.Fatalf("rlp encode fail: %v", err)
 			}
 		} else {
-			witnessData := types.WitnessData{
-				Root:        chain.CurrentBlock().Root(),
-				ReceiptHash: chain.CurrentBlock().ReceiptHash(),
-			}
-			witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
+			witnessDataBytes, err = rlp.EncodeToBytes(chain.CurrentBlock().Hash())
 			if err != nil {
 				t.Fatalf("rlp encode fail: %v", err)
 			}
@@ -1517,11 +1509,7 @@ func TestProcessBlock(t *testing.T) {
 	}
 
 	// Validate witness fail with unknown block.
-	witnessData := types.WitnessData{
-		Root:        chain.CurrentBlock().Root(),
-		ReceiptHash: chain.CurrentBlock().ReceiptHash(),
-	}
-	witnessDataBytes, err := rlp.EncodeToBytes(&witnessData)
+	witnessDataBytes, err := rlp.EncodeToBytes(chain.CurrentBlock().Hash())
 	if err != nil {
 		t.Fatalf("rlp encode fail: %v", err)
 	}
@@ -1540,11 +1528,7 @@ func TestProcessBlock(t *testing.T) {
 	}
 
 	// Validate witness fail with unexpected root.
-	witnessData = types.WitnessData{
-		Root:        chain.CurrentBlock().Root(),
-		ReceiptHash: chain.CurrentBlock().ReceiptHash(),
-	}
-	witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
+	witnessDataBytes, err = rlp.EncodeToBytes(chain.CurrentBlock().Hash())
 	if err != nil {
 		t.Fatalf("rlp encode fail: %v", err)
 	}
@@ -1558,16 +1542,12 @@ func TestProcessBlock(t *testing.T) {
 		Height: processNum - 1,
 		Data:   witnessDataBytes,
 	})
-	if err == nil || !strings.Contains(err.Error(), "invalid witness root") {
+	if err == nil || !strings.Contains(err.Error(), "invalid witness block") {
 		t.Fatalf("not expected fail: %v", err)
 	}
 
 	// Apply transaction fail with insufficient fund.
-	witnessData = types.WitnessData{
-		Root:        chain.CurrentBlock().Root(),
-		ReceiptHash: chain.CurrentBlock().ReceiptHash(),
-	}
-	witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
+	witnessDataBytes, err = rlp.EncodeToBytes(chain.CurrentBlock().Hash())
 	if err != nil {
 		t.Fatalf("rlp encode fail: %v", err)
 	}
@@ -1595,11 +1575,7 @@ func TestProcessBlock(t *testing.T) {
 	}
 
 	// Apply transaction fail with nonce too height.
-	witnessData = types.WitnessData{
-		Root:        chain.CurrentBlock().Root(),
-		ReceiptHash: chain.CurrentBlock().ReceiptHash(),
-	}
-	witnessDataBytes, err = rlp.EncodeToBytes(&witnessData)
+	witnessDataBytes, err = rlp.EncodeToBytes(chain.CurrentBlock().Hash())
 	if err != nil {
 		t.Fatalf("rlp encode fail: %v", err)
 	}
