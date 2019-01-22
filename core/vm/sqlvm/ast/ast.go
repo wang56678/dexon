@@ -239,27 +239,9 @@ type FunctionOperatorNode struct{ BinaryOperatorNode }
 // Options
 // ---------------------------------------------------------------------------
 
-// Optional defines the interface for printing AST.
-type Optional interface {
-	GetOption() map[string]interface{}
-}
-
-// NilOptionNode is a base struct implementing Optional interface.
-type NilOptionNode struct{}
-
-// GetOption returns a value for printing AST.
-func (n NilOptionNode) GetOption() map[string]interface{} { return nil }
-
 // WhereOptionNode is 'WHERE' used in SELECT, UPDATE, DELETE.
 type WhereOptionNode struct {
 	Condition interface{}
-}
-
-// GetOption returns a value for printing AST.
-func (n WhereOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Condition": n.Condition,
-	}
 }
 
 // OrderOptionNode is an expression in 'ORDER BY' used in SELECT.
@@ -269,25 +251,9 @@ type OrderOptionNode struct {
 	NullsFirst bool
 }
 
-// GetOption returns a value for printing AST.
-func (n OrderOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Expr":       n.Expr,
-		"Desc":       n.Desc,
-		"NullsFirst": n.NullsFirst,
-	}
-}
-
 // GroupOptionNode is 'GROUP BY' used in SELECT.
 type GroupOptionNode struct {
 	Expr interface{}
-}
-
-// GetOption returns a value for printing AST.
-func (n GroupOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Expr": n.Expr,
-	}
 }
 
 // OffsetOptionNode is 'OFFSET' used in SELECT.
@@ -295,23 +261,9 @@ type OffsetOptionNode struct {
 	Value IntegerValueNode
 }
 
-// GetOption returns a value for printing AST.
-func (n OffsetOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Value": n.Value,
-	}
-}
-
 // LimitOptionNode is 'LIMIT' used in SELECT.
 type LimitOptionNode struct {
 	Value IntegerValueNode
-}
-
-// GetOption returns a value for printing AST.
-func (n LimitOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Value": n.Value,
-	}
 }
 
 // InsertWithColumnOptionNode stores columns and values used in INSERT.
@@ -320,53 +272,30 @@ type InsertWithColumnOptionNode struct {
 	Value  []interface{}
 }
 
-// GetOption returns a value for printing AST.
-func (n InsertWithColumnOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Column": n.Column,
-		"Value":  n.Value,
-	}
-}
-
 // InsertWithDefaultOptionNode is 'DEFAULT VALUES' used in INSERT.
-type InsertWithDefaultOptionNode struct{ NilOptionNode }
+type InsertWithDefaultOptionNode struct{}
 
 // PrimaryOptionNode is 'PRIMARY KEY' used in CREATE TABLE.
-type PrimaryOptionNode struct{ NilOptionNode }
+type PrimaryOptionNode struct{}
 
 // NotNullOptionNode is 'NOT NULL' used in CREATE TABLE.
-type NotNullOptionNode struct{ NilOptionNode }
+type NotNullOptionNode struct{}
 
 // UniqueOptionNode is 'UNIQUE' used in CREATE TABLE and CREATE INDEX.
-type UniqueOptionNode struct{ NilOptionNode }
+type UniqueOptionNode struct{}
 
 // AutoIncrementOptionNode is 'AUTOINCREMENT' used in CREATE TABLE.
-type AutoIncrementOptionNode struct{ NilOptionNode }
+type AutoIncrementOptionNode struct{}
 
 // DefaultOptionNode is 'DEFAULT' used in CREATE TABLE.
 type DefaultOptionNode struct {
 	Value interface{}
 }
 
-// GetOption returns a value for printing AST.
-func (n DefaultOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Value": n.Value,
-	}
-}
-
 // ForeignOptionNode is 'REFERENCES' used in CREATE TABLE.
 type ForeignOptionNode struct {
 	Table  IdentifierNode
 	Column IdentifierNode
-}
-
-// GetOption returns a value for printing AST.
-func (n ForeignOptionNode) GetOption() map[string]interface{} {
-	return map[string]interface{}{
-		"Table":  n.Table,
-		"Column": n.Column,
-	}
 }
 
 // ---------------------------------------------------------------------------

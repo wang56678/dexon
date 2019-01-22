@@ -1,17 +1,23 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"os"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/parser"
 )
 
 func main() {
-	n, err := parser.ParseString(os.Args[1])
+	var detail bool
+	flag.BoolVar(&detail, "detail", false, "print struct detail")
+
+	flag.Parse()
+
+	n, err := parser.ParseString(flag.Arg(0))
+	fmt.Printf("detail: %t\n", detail)
 	fmt.Printf("err: %+v\n", err)
 	if err == nil {
-		ast.PrintAST(n, "")
+		ast.PrintAST(n, "", detail)
 	}
 }
