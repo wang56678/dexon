@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dexon-foundation/dexon/core/vm/sqlvm"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/parser"
 )
 
 func main() {
-	n, err := sqlvm.ParseString(os.Args[1])
+	n, err := parser.ParseString(os.Args[1])
 	fmt.Printf("err: %+v\n", err)
 	if err == nil {
-		sqlvm.PrintAST(n, "")
+		ast.PrintAST(n, "")
 	}
 }
