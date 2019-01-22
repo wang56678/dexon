@@ -1,10 +1,11 @@
-package sqlvm
+package parser
 
 import (
 	"encoding/hex"
 	"strconv"
 	"strings"
 
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/shopspring/decimal"
 )
 
@@ -39,7 +40,7 @@ func hexToInteger(h []byte) interface{} {
 				Mul(base.Pow(decimal.New(int64(l-idx-1), 0))),
 		)
 	}
-	return integerValueNode{v: d, address: isAddress(h)}
+	return ast.IntegerValueNode{V: d, IsAddress: isAddress(h)}
 }
 
 func hexToBytes(h []byte) []byte {
@@ -47,9 +48,9 @@ func hexToBytes(h []byte) []byte {
 	return bs
 }
 
-func toInt(b []byte) int32 {
-	i, _ := strconv.ParseInt(string(b), 10, 32)
-	return int32(i)
+func toUint(b []byte) uint32 {
+	i, _ := strconv.ParseUint(string(b), 10, 32)
+	return uint32(i)
 }
 
 func toDecimal(b []byte) decimal.Decimal {
@@ -70,30 +71,30 @@ func joinBytes(x interface{}) []byte {
 }
 
 func opSetSubject(op interface{}, s interface{}) interface{} {
-	x := op.(binaryOperator)
-	x.setSubject(s)
+	x := op.(ast.BinaryOperator)
+	x.SetSubject(s)
 	return x
 }
 
 func opSetObject(op interface{}, o interface{}) interface{} {
-	x := op.(binaryOperator)
-	x.setObject(o)
+	x := op.(ast.BinaryOperator)
+	x.SetObject(o)
 	return x
 }
 
 func opSetTarget(op interface{}, t interface{}) interface{} {
-	x := op.(unaryOperator)
-	x.setTarget(t)
+	x := op.(ast.UnaryOperator)
+	x.SetTarget(t)
 	return x
 }
 
 func joinOperator(x interface{}, o interface{}) {
-	if op, ok := x.(unaryOperator); ok {
-		joinOperator(op.getTarget(), o)
+	if op, ok := x.(ast.UnaryOperator); ok {
+		joinOperator(op.GetTarget(), o)
 		return
 	}
-	if op, ok := x.(binaryOperator); ok {
-		op.setObject(o)
+	if op, ok := x.(ast.BinaryOperator); ok {
+		op.SetObject(o)
 		return
 	}
 }

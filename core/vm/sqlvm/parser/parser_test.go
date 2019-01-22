@@ -1,4 +1,4 @@
-package sqlvm
+package parser
 
 import (
 	"testing"
