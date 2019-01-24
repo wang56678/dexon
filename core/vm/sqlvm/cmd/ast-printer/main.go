@@ -16,7 +16,7 @@ func main() {
 
 	n, err := parser.ParseString(flag.Arg(0))
 	fmt.Printf("detail: %t\n", detail)
-	fmt.Printf("err: %+v\n", err)
+	fmt.Printf("err:\n%+v\n", err)
 	if err == nil {
 		ast.PrintAST(n, "", detail)
 	}
