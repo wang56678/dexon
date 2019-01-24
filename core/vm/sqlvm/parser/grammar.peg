@@ -1,5 +1,10 @@
 {
 package parser
+
+import (
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
+)
 }
 
 S
@@ -399,7 +404,7 @@ SignOperator
 	case "-":
 		return &ast.NegOperatorNode{}, nil
 	}
-	return nil, errors.New("unknown sign")
+	panic(fmt.Sprintf("unknown sign %s", c.text))
 }
 
 NotOperator
@@ -433,7 +438,7 @@ CmpOperator
 	case "=":
 		return &ast.EqualOperatorNode{}, nil
 	}
-	return nil, errors.New("unknown cmp")
+	panic(fmt.Sprintf("unknown comparison operator %s", c.text))
 }
 
 ConcatOperator
@@ -449,7 +454,7 @@ AddSubOperator
 	case "-":
 		return &ast.SubOperatorNode{}, nil
 	}
-	return nil, errors.New("unknown add sub")
+	panic(fmt.Sprintf("unknown addition or subtraction operator %s", c.text))
 }
 
 MulDivModOperator
@@ -463,7 +468,7 @@ MulDivModOperator
 	case "%":
 		return &ast.ModOperatorNode{}, nil
 	}
-	return nil, errors.New("unknown mul div mod")
+	panic(fmt.Sprintf("unknown multiplication, division, modulo operator: %s", c.text))
 }
 
 /* Types */
@@ -480,46 +485,132 @@ DataType
 UIntType
 	= "UINT"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	return ast.IntTypeNode{
-		Unsigned: true,
-		Size:     toUint(s.([]byte)),
-	}, nil
+	node := ast.IntTypeNode{Unsigned: true}
+	size, code := toUint(s.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "UIntType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
+		}
+		return node, err
+	}
+	node.Size = size
+	return node, nil
 }
 
 IntType
 	= "INT"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	return ast.IntTypeNode{
-		Unsigned: false,
-		Size:     toUint(s.([]byte)),
-	}, nil
+	node := ast.IntTypeNode{Unsigned: false}
+	size, code := toUint(s.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "IntType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
+		}
+		return node, err
+	}
+	node.Size = size
+	return node, nil
 }
 
 UFixedType
 	= "UFIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	return ast.FixedTypeNode{
-		Unsigned:         true,
-		Size:             toUint(s.([]byte)),
-		FractionalDigits: toUint(t.([]byte)),
-	}, nil
+	node := ast.FixedTypeNode{Unsigned: true}
+	size, code := toUint(s.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "UFixedType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
+		}
+		return node, err
+	}
+	fractionalDigits, code := toUint(t.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "UFixedType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", t, code),
+		}
+		return node, err
+	}
+	node.Size = size
+	node.FractionalDigits = fractionalDigits
+	return node, nil
 }
 
 FixedType
 	= "FIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	return ast.FixedTypeNode{
-		Unsigned:         false,
-		Size:             toUint(s.([]byte)),
-		FractionalDigits: toUint(t.([]byte)),
-	}, nil
+	node := ast.FixedTypeNode{Unsigned: false}
+	size, code := toUint(s.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "FixedType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
+		}
+		return node, err
+	}
+	fractionalDigits, code := toUint(t.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "FixedType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", t, code),
+		}
+		return node, err
+	}
+	node.Size = size
+	node.FractionalDigits = fractionalDigits
+	return node, nil
 }
 
 FixedBytesType
 	= "BYTES"i s:NonZeroLeadingInteger !NormalIdentifierRest
-{ return ast.FixedBytesTypeNode{Size: toUint(s.([]byte))}, nil }
+{
+	node := ast.FixedBytesTypeNode{}
+	size, code := toUint(s.([]byte))
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "FixedBytesType",
+			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
+		}
+		return node, err
+	}
+	node.Size = size
+	return node, nil
+}
 	/ "BYTE"i !NormalIdentifierRest
-{ return ast.FixedBytesTypeNode{Size: 1}, nil }
+{
+	return ast.FixedBytesTypeNode{Size: 1}, nil
+}
 
 DynamicBytesType
 	= ( "BYTES"i !NormalIdentifierRest
@@ -570,7 +661,23 @@ Sign
 
 Integer
 	= [0-9]+
-{ return ast.IntegerValueNode{V: toDecimal(c.text)}, nil }
+{
+	node := ast.IntegerValueNode{IsAddress: false, V: decimal.Zero}
+	v, code := toDecimal(c.text)
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "Integer",
+			Message:  fmt.Sprintf("cannot parse %s as decimal: %v", c.text, code),
+		}
+		return node, err
+	}
+	node.V = v
+	return node, nil
+}
 
 NonZeroLeadingInteger
 	= ( "0" / [1-9][0-9]* )
@@ -583,7 +690,23 @@ Fixnum
 
 Decimal
 	= Fixnum ( "E"i Sign? Integer )?
-{ return ast.DecimalValueNode{V: toDecimal(c.text)}, nil }
+{
+	node := ast.DecimalValueNode{V: decimal.Zero}
+	v, code := toDecimal(c.text)
+	if code != errors.ErrorCodeNil {
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "Decimal",
+			Message:  fmt.Sprintf("cannot parse %s as decimal: %v", c.text, code),
+		}
+		return node, err
+	}
+	node.V = v
+	return node, nil
+}
 
 Hex
 	= "0" "X"i s:( [0-9A-Fa-f] )+ !NormalIdentifierRest
