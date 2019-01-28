@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"golang.org/x/text/encoding/traditionalchinese"
 )
 
 type ParserTestSuite struct{ suite.Suite }
 
 func (s *ParserTestSuite) requireParseNoError(sql string) {
-	_, err := ParseString(sql)
+	_, err := Parse([]byte(sql))
 	s.Require().NoError(err)
 }
 
@@ -75,6 +76,14 @@ func (s *ParserTestSuite) TestParse() {
 	// Test create index.
 	s.requireParseNoError(`create unique index a on a (a)`)
 	s.requireParseNoError(`create index "~!@#$%^&*()" on ㄅ ( a , b )`)
+	s.requireParseNoError(`create index ㄅㄆㄇ on 👍 ( 🌍 , 💯 )`)
+}
+
+func (s *ParserTestSuite) TestParseInvalidUTF8() {
+	query := `SELECT ㄅ FROM 東 WHERE — - ─ = ██`
+	query, err := traditionalchinese.Big5.NewEncoder().String(query)
+	s.Require().NoError(err)
+	s.requireParseNoError(query)
 }
 
 func TestParser(t *testing.T) {
