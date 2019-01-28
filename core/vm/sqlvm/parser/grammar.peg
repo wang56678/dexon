@@ -722,7 +722,26 @@ HexString
 
 NormalString
 	= "'" s:( ( [^'\r\n\\] / "\\" . ) { return c.text, nil } )* "'"
-{ return ast.BytesValueNode{V: resolveString(joinBytes(s))}, nil }
+{
+	node := ast.BytesValueNode{}
+	bs := joinBytes(s)
+	v, bad, code := resolveString(bs)
+	if code != errors.ErrorCodeNil {
+		msg := fmt.Sprintf("cannot resolve escape sequence '%s': %v",
+			sanitizeBadEscape(bad), code)
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "NormalString",
+			Message:  msg,
+		}
+		return node, err
+	}
+	node.V = v
+	return node, nil
+}
 
 /* Tokens */
 SelectToken
@@ -864,34 +883,50 @@ Identifier
 
 NormalIdentifier
 	= NormalIdentifierStart NormalIdentifierRest*
-{ return ast.IdentifierNode{Name: c.text}, nil }
+{
+	return ast.IdentifierNode{Name: decodeString(c.text)}, nil
+}
 
 NormalIdentifierStart
-	= [a-zA-Z@#_\u0080-\uffff]
+	= [a-zA-Z@#_\x80-\xff]
 
 NormalIdentifierRest
-	= [a-zA-Z0-9@#$_\u0080-\uffff]
+	= [a-zA-Z0-9@#$_\x80-\xff]
 
 StringIdentifier
 	= "\"" s:( ( [^"\r\n\\] / "\\" . ) { return c.text, nil } )* "\""
 {
-	return ast.IdentifierNode{Name: resolveString(joinBytes(s))}, nil
+	node := ast.IdentifierNode{}
+	bs := joinBytes(s)
+	name, bad, code := resolveString(bs)
+	if code != errors.ErrorCodeNil {
+		msg := fmt.Sprintf("cannot resolve escape sequence '%s': %v",
+			sanitizeBadEscape(bad), code)
+		err := errors.Error{
+			Position: uint32(c.pos.offset),
+			Category: errors.ErrorCategoryGrammar,
+			Code:     code,
+			Token:    string(c.text),
+			Prefix:   "StringIdentifier",
+			Message:  msg,
+		}
+		return node, err
+	}
+	node.Name = name
+	return node, nil
 }
 
 /* Skip */
 _
-	= ( Whitespace / Newline )*
-
-Newline
-	= "\r\n"
-	/ "\r"
-	/ "\n"
+	= Whitespace*
 
 Whitespace
-	= " "
-	/ "\t"
-	/ "\v"
-	/ "\f"
+	= "\t" // \x09 (HT)
+	/ "\n" // \x0a (LF)
+	/ "\v" // \x0b (VT)
+	/ "\f" // \x0c (FF)
+	/ "\r" // \x0d (CR)
+	/ " "  // \x20 (SPACE)
 
 EOF
 	= !.
