@@ -81,16 +81,26 @@ type ErrorCode uint16
 const (
 	ErrorCodeNil ErrorCode = iota
 	ErrorCodeParser
-	ErrorCodeSyntax
-	ErrorCodeIntegerRange
+	ErrorCodeInvalidIntegerSyntax
+	ErrorCodeInvalidNumberSyntax
+	ErrorCodeIntegerOutOfRange
+	ErrorCodeNumberOutOfRange
 	ErrorCodeFractionalPartTooLong
+	ErrorCodeEscapeSequenceTooShort
+	ErrorCodeInvalidUnicodeCodePoint
+	ErrorCodeUnknownEscapeSequence
 )
 
 var errorCodeMap = [...]string{
-	ErrorCodeParser:                "parser error",
-	ErrorCodeSyntax:                "syntax error",
-	ErrorCodeIntegerRange:          "integer out of range",
-	ErrorCodeFractionalPartTooLong: "fractional part too long",
+	ErrorCodeParser:                  "parser error",
+	ErrorCodeInvalidIntegerSyntax:    "invalid integer syntax",
+	ErrorCodeInvalidNumberSyntax:     "invalid number syntax",
+	ErrorCodeIntegerOutOfRange:       "integer out of range",
+	ErrorCodeNumberOutOfRange:        "number out of range",
+	ErrorCodeFractionalPartTooLong:   "fractional part too long",
+	ErrorCodeEscapeSequenceTooShort:  "escape sequence too short",
+	ErrorCodeInvalidUnicodeCodePoint: "invalid unicode code point",
+	ErrorCodeUnknownEscapeSequence:   "unknown escape sequence",
 }
 
 func (c ErrorCode) Error() string {
