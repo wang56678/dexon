@@ -969,6 +969,15 @@ func (s *GovernanceStateHelper) emitUnstaked(nodeAddr common.Address) {
 	})
 }
 
+// event NodeRemoved(address indexed NodeAddress);
+func (s *GovernanceStateHelper) emitNodeRemoved(nodeAddr common.Address) {
+	s.StateDB.AddLog(&types.Log{
+		Address: GovernanceContractAddress,
+		Topics:  []common.Hash{GovernanceABI.Events["NodeRemoved"].Id(), nodeAddr.Hash()},
+		Data:    []byte{},
+	})
+}
+
 // event Delegated(address indexed NodeAddress, address indexed DelegatorAddress, uint256 Amount);
 func (s *GovernanceStateHelper) emitDelegated(nodeAddr, delegatorAddr common.Address, amount *big.Int) {
 	s.StateDB.AddLog(&types.Log{
@@ -987,11 +996,11 @@ func (s *GovernanceStateHelper) emitUndelegated(nodeAddr, delegatorAddr common.A
 	})
 }
 
-// event Withdrawn(address indexed NodeAddress, uint256 Amount);
-func (s *GovernanceStateHelper) emitWithdrawn(nodeAddr common.Address, amount *big.Int) {
+// event Withdrawn(address indexed NodeAddress, address indexed DelegatorAddress, uint256 Amount);
+func (s *GovernanceStateHelper) emitWithdrawn(nodeAddr common.Address, delegatorAddr common.Address, amount *big.Int) {
 	s.StateDB.AddLog(&types.Log{
 		Address: GovernanceContractAddress,
-		Topics:  []common.Hash{GovernanceABI.Events["Withdrawn"].Id(), nodeAddr.Hash()},
+		Topics:  []common.Hash{GovernanceABI.Events["Withdrawn"].Id(), nodeAddr.Hash(), delegatorAddr.Hash()},
 		Data:    common.BigToHash(amount).Bytes(),
 	})
 }
@@ -1462,7 +1471,7 @@ func (g *GovernanceContract) withdraw(nodeAddr common.Address) ([]byte, error) {
 		return nil, errExecutionReverted
 	}
 
-	g.state.emitWithdrawn(nodeAddr, delegator.Value)
+	g.state.emitWithdrawn(nodeAddr, delegator.Owner, delegator.Value)
 
 	// We are the last delegator to withdraw the fund, remove the node info.
 	if g.state.LenDelegators(nodeAddr).Cmp(big.NewInt(0)) == 0 {
@@ -1479,6 +1488,7 @@ func (g *GovernanceContract) withdraw(nodeAddr common.Address) ([]byte, error) {
 		}
 		g.state.DeleteNodesOffsetByAddress(nodeAddr)
 		g.state.PopLastNode()
+		g.state.emitNodeRemoved(nodeAddr)
 	}
 
 	return g.useGas(100000)
