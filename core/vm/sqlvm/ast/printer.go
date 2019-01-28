@@ -3,8 +3,35 @@ package ast
 import (
 	"fmt"
 	"reflect"
+	"strconv"
+	"unicode"
 	"unicode/utf8"
 )
+
+func formatBytes(b []byte) string {
+	if utf8.Valid(b) {
+		for r, i, size := rune(0), 0, 0; i < len(b); i += size {
+			r, size = utf8.DecodeRune(b[i:])
+			if !unicode.IsPrint(r) {
+				return strconv.Quote(string(b))
+			}
+		}
+		return string(b)
+	}
+	return fmt.Sprintf("%v", b)
+}
+
+func formatString(s string) string {
+	if utf8.ValidString(s) {
+		for _, r := range s {
+			if !unicode.IsPrint(r) {
+				return strconv.Quote(s)
+			}
+		}
+		return s
+	}
+	return fmt.Sprintf("%v", []byte(s))
+}
 
 // PrintAST prints ast to stdout.
 func PrintAST(n interface{}, indent string, detail bool) {
@@ -53,7 +80,8 @@ func PrintAST(n interface{}, indent string, detail bool) {
 		return
 	}
 	if stringer, ok := n.(fmt.Stringer); ok {
-		fmt.Printf("%s%s: %s\n", indent, name, stringer.String())
+		s := stringer.String()
+		fmt.Printf("%s%s: %s\n", indent, name, formatString(s))
 		return
 	}
 	if typeOf.Kind() == reflect.Struct {
@@ -75,10 +103,8 @@ func PrintAST(n interface{}, indent string, detail bool) {
 		return
 	}
 	if bs, ok := n.([]byte); ok {
-		if utf8.Valid(bs) {
-			fmt.Printf("%s%s\n", indent, bs)
-			return
-		}
+		fmt.Printf("%s%s\n", indent, formatBytes(bs))
+		return
 	}
 	fmt.Printf("%s%+v\n", indent, valueOf.Interface())
 }
