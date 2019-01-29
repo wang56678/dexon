@@ -2,8 +2,10 @@ package ast
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -33,10 +35,11 @@ func formatString(s string) string {
 	return fmt.Sprintf("%v", []byte(s))
 }
 
-// PrintAST prints ast to stdout.
-func PrintAST(n interface{}, indent string, detail bool) {
+func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
+	indent := strings.Repeat(base, depth)
+	indentLong := strings.Repeat(base, depth+1)
 	if n == nil {
-		fmt.Printf("%snil\n", indent)
+		fmt.Fprintf(w, "%snil\n", indent)
 		return
 	}
 	typeOf := reflect.TypeOf(n)
@@ -44,7 +47,7 @@ func PrintAST(n interface{}, indent string, detail bool) {
 	name := ""
 	if typeOf.Kind() == reflect.Ptr {
 		if valueOf.IsNil() {
-			fmt.Printf("%snil\n", indent)
+			fmt.Fprintf(w, "%snil\n", indent)
 			return
 		}
 		name = "*"
@@ -54,57 +57,62 @@ func PrintAST(n interface{}, indent string, detail bool) {
 	name = name + typeOf.Name()
 
 	if op, ok := n.(UnaryOperator); ok {
-		fmt.Printf("%s%s:\n", indent, name)
-		fmt.Printf("%s  Target:\n", indent)
-		PrintAST(op.GetTarget(), indent+"    ", detail)
+		fmt.Fprintf(w, "%s%s:\n", indent, name)
+		fmt.Fprintf(w, "%sTarget:\n", indentLong)
+		printAST(w, op.GetTarget(), depth+2, base, detail)
 		return
 	}
 	if op, ok := n.(BinaryOperator); ok {
-		fmt.Printf("%s%s:\n", indent, name)
-		fmt.Printf("%s  Object:\n", indent)
-		PrintAST(op.GetObject(), indent+"    ", detail)
-		fmt.Printf("%s  Subject:\n", indent)
-		PrintAST(op.GetSubject(), indent+"    ", detail)
+		fmt.Fprintf(w, "%s%s:\n", indent, name)
+		fmt.Fprintf(w, "%sObject:\n", indentLong)
+		printAST(w, op.GetObject(), depth+2, base, detail)
+		fmt.Fprintf(w, "%sSubject:\n", indentLong)
+		printAST(w, op.GetSubject(), depth+2, base, detail)
 		return
 	}
 	if arr, ok := n.([]interface{}); ok {
 		if len(arr) == 0 {
-			fmt.Printf("%s[]\n", indent)
+			fmt.Fprintf(w, "%s[]\n", indent)
 			return
 		}
-		fmt.Printf("%s[\n", indent)
+		fmt.Fprintf(w, "%s[\n", indent)
 		for idx := range arr {
-			PrintAST(arr[idx], indent+"  ", detail)
+			printAST(w, arr[idx], depth+1, base, detail)
 		}
-		fmt.Printf("%s]\n", indent)
+		fmt.Fprintf(w, "%s]\n", indent)
 		return
 	}
 	if stringer, ok := n.(fmt.Stringer); ok {
 		s := stringer.String()
-		fmt.Printf("%s%s: %s\n", indent, name, formatString(s))
+		fmt.Fprintf(w, "%s%s: %s\n", indent, name, formatString(s))
 		return
 	}
 	if typeOf.Kind() == reflect.Struct {
-		fmt.Printf("%s%s", indent, name)
+		fmt.Fprintf(w, "%s%s", indent, name)
 		l := typeOf.NumField()
 		if l == 0 {
-			fmt.Printf(" {}\n")
+			fmt.Fprintf(w, " {}\n")
 			return
 		}
-		fmt.Printf(" {\n")
+		fmt.Fprintf(w, " {\n")
 		for i := 0; i < l; i++ {
 			if !detail && typeOf.Field(i).Tag.Get("print") == "-" {
 				continue
 			}
-			fmt.Printf("%s  %s:\n", indent, typeOf.Field(i).Name)
-			PrintAST(valueOf.Field(i).Interface(), indent+"    ", detail)
+			fmt.Fprintf(w, "%s%s:\n", indentLong, typeOf.Field(i).Name)
+			printAST(w, valueOf.Field(i).Interface(), depth+2, base, detail)
 		}
-		fmt.Printf("%s}\n", indent)
+		fmt.Fprintf(w, "%s}\n", indent)
 		return
 	}
 	if bs, ok := n.([]byte); ok {
-		fmt.Printf("%s%s\n", indent, formatBytes(bs))
+		fmt.Fprintf(w, "%s%s\n", indent, formatBytes(bs))
 		return
 	}
-	fmt.Printf("%s%+v\n", indent, valueOf.Interface())
+	fmt.Fprintf(w, "%s%+v\n", indent, valueOf.Interface())
+}
+
+// PrintAST prints AST for debugging.
+func PrintAST(w io.Writer, n interface{}, indent string, detail bool) {
+	printAST(w, n, 0, indent, detail)
 }
