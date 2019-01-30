@@ -2,13 +2,25 @@ package ast
 
 import (
 	"errors"
+	"math/big"
 	"reflect"
+
+	"github.com/shopspring/decimal"
+
+	"github.com/dexon-foundation/dexon/common"
+)
+
+var (
+	bigIntOne = big.NewInt(1)
+	bigIntTen = big.NewInt(10)
 )
 
 // Error defines.
 var (
 	ErrDataTypeEncode = errors.New("data type encode failed")
 	ErrDataTypeDecode = errors.New("data type decode failed")
+	ErrDecimalEncode  = errors.New("decimal encode failed")
+	ErrDecimalDecode  = errors.New("decimal decode failed")
 )
 
 // DataTypeMajor defines type for high byte of DataType.
@@ -43,6 +55,16 @@ func decomposeDataType(t DataType) (DataTypeMajor, DataTypeMinor) {
 
 func composeDataType(major DataTypeMajor, minor DataTypeMinor) DataType {
 	return (DataType(major) << 8) | DataType(minor)
+}
+
+// IsFixedRange checks if major is in range of DataTypeMajorFixed.
+func (d DataTypeMajor) IsFixedRange() bool {
+	return d >= DataTypeMajorFixed && d-DataTypeMajorFixed <= 0x1f
+}
+
+// IsUfixedRange checks if major is in range of DataTypeMajorUfixed.
+func (d DataTypeMajor) IsUfixedRange() bool {
+	return d >= DataTypeMajorUfixed && d-DataTypeMajorUfixed <= 0x1f
 }
 
 // DataTypeEncode encodes data type node into DataType.
@@ -137,7 +159,7 @@ func DataTypeDecode(t DataType) (interface{}, error) {
 		}
 	}
 	switch {
-	case major >= DataTypeMajorFixed && major-DataTypeMajorFixed <= 0x1f:
+	case major.IsFixedRange():
 		if minor <= 80 {
 			size := (uint32(major-DataTypeMajorFixed) + 1) * 8
 			return FixedTypeNode{
@@ -146,7 +168,7 @@ func DataTypeDecode(t DataType) (interface{}, error) {
 				FractionalDigits: uint32(minor),
 			}, nil
 		}
-	case major >= DataTypeMajorUfixed && major-DataTypeMajorUfixed <= 0x1f:
+	case major.IsUfixedRange():
 		if minor <= 80 {
 			size := (uint32(major-DataTypeMajorUfixed) + 1) * 8
 			return FixedTypeNode{
@@ -157,4 +179,94 @@ func DataTypeDecode(t DataType) (interface{}, error) {
 		}
 	}
 	return nil, ErrDataTypeDecode
+}
+
+// Don't handle overflow here.
+func decimalEncode(size int, d decimal.Decimal) []byte {
+	ret := make([]byte, size)
+	s := d.Sign()
+	if s == 0 {
+		return ret
+	}
+
+	exp := new(big.Int).Exp(bigIntTen, big.NewInt(int64(d.Exponent())), nil)
+	b := new(big.Int).Mul(d.Coefficient(), exp)
+
+	if s > 0 {
+		bs := b.Bytes()
+		copy(ret[size-len(bs):], bs)
+		return ret
+	}
+
+	b.Add(b, bigIntOne)
+	bs := b.Bytes()
+	copy(ret[size-len(bs):], bs)
+	for idx := range ret {
+		ret[idx] = ^ret[idx]
+	}
+	return ret
+}
+
+// Don't handle overflow here.
+func decimalDecode(signed bool, bs []byte) decimal.Decimal {
+	neg := false
+	if signed && (bs[0]&0x80 != 0) {
+		neg = true
+		for idx := range bs {
+			bs[idx] = ^bs[idx]
+		}
+	}
+
+	b := new(big.Int).SetBytes(bs)
+
+	if neg {
+		b.Add(b, bigIntOne)
+		b.Neg(b)
+	}
+
+	return decimal.NewFromBigInt(b, 0)
+}
+
+// DecimalEncode encodes decimal to bytes depend on data type.
+func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
+	major, minor := decomposeDataType(dt)
+	switch major {
+	case DataTypeMajorInt,
+		DataTypeMajorUint:
+		return decimalEncode(int(minor)+1, d), nil
+	case DataTypeMajorAddress:
+		return decimalEncode(common.AddressLength, d), nil
+	}
+	switch {
+	case major.IsFixedRange():
+		return decimalEncode(
+			int(major-DataTypeMajorFixed)+1,
+			d.Shift(int32(minor))), nil
+	case major.IsUfixedRange():
+		return decimalEncode(
+			int(major-DataTypeMajorUfixed)+1,
+			d.Shift(int32(minor))), nil
+	}
+
+	return nil, ErrDecimalEncode
+}
+
+// DecimalDecode decodes decimal from bytes.
+func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
+	major, minor := decomposeDataType(dt)
+	switch major {
+	case DataTypeMajorInt:
+		return decimalDecode(true, b), nil
+	case DataTypeMajorUint,
+		DataTypeMajorAddress:
+		return decimalDecode(false, b), nil
+	}
+	switch {
+	case major.IsFixedRange():
+		return decimalDecode(true, b).Shift(-int32(minor)), nil
+	case major.IsUfixedRange():
+		return decimalDecode(false, b).Shift(-int32(minor)), nil
+	}
+
+	return decimal.Zero, ErrDecimalDecode
 }
