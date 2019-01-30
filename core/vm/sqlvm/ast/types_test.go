@@ -3,12 +3,23 @@ package ast
 import (
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 )
 
-type TypeTestSuite struct{ suite.Suite }
+type TypesTestSuite struct{ suite.Suite }
 
-func (s *TypeTestSuite) requireEncodeAndDecodeNoError(
+func (s *TypesTestSuite) requireEncodeAndDecodeDecimalNoError(
+	d DataType, t decimal.Decimal, bs int) {
+	encode, err := DecimalEncode(d, t)
+	s.Require().NoError(err)
+	s.Require().Len(encode, bs)
+	decode, err := DecimalDecode(d, encode)
+	s.Require().NoError(err)
+	s.Require().Equal(t.String(), decode.String())
+}
+
+func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
 	d DataType, t interface{}) {
 	encode, err := DataTypeEncode(t)
 	s.Require().NoError(err)
@@ -18,17 +29,17 @@ func (s *TypeTestSuite) requireEncodeAndDecodeNoError(
 	s.Require().Equal(t, decode)
 }
 
-func (s *TypeTestSuite) requireEncodeError(input interface{}) {
+func (s *TypesTestSuite) requireEncodeError(input interface{}) {
 	_, err := DataTypeEncode(input)
 	s.Require().Error(err)
 }
 
-func (s *TypeTestSuite) requireDecodeError(input DataType) {
+func (s *TypesTestSuite) requireDecodeError(input DataType) {
 	_, err := DataTypeDecode(input)
 	s.Require().Error(err)
 }
 
-func (s *TypeTestSuite) TestEncodeAndDecode() {
+func (s *TypesTestSuite) TestEncodeAndDecode() {
 	s.requireEncodeAndDecodeNoError(
 		composeDataType(DataTypeMajorBool, 0),
 		BoolTypeNode{})
@@ -55,7 +66,7 @@ func (s *TypeTestSuite) TestEncodeAndDecode() {
 		FixedTypeNode{Unsigned: true, Size: 16, FractionalDigits: 2})
 }
 
-func (s *TypeTestSuite) TestEncodeError() {
+func (s *TypesTestSuite) TestEncodeError() {
 	s.requireEncodeError(struct{}{})
 	s.requireEncodeError(IntTypeNode{Size: 1})
 	s.requireEncodeError(IntTypeNode{Size: 257})
@@ -66,7 +77,7 @@ func (s *TypeTestSuite) TestEncodeError() {
 	s.requireEncodeError(FixedTypeNode{Size: 8, FractionalDigits: 81})
 }
 
-func (s *TypeTestSuite) TestDecodeError() {
+func (s *TypesTestSuite) TestDecodeError() {
 	s.requireDecodeError(DataTypeUnknown)
 	s.requireDecodeError(composeDataType(DataTypeMajorBool, 1))
 	s.requireDecodeError(composeDataType(DataTypeMajorAddress, 1))
@@ -79,6 +90,68 @@ func (s *TypeTestSuite) TestDecodeError() {
 	s.requireDecodeError(composeDataType(DataTypeMajorUfixed+0x20, 80))
 }
 
-func TestType(t *testing.T) {
-	suite.Run(t, new(TypeTestSuite))
+func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
+	pos := decimal.New(15, 0)
+	zero := decimal.Zero
+	neg := decimal.New(-15, 0)
+
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorInt, 2),
+		pos,
+		3)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorInt, 2),
+		zero,
+		3)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorInt, 2),
+		neg,
+		3)
+
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorUint, 2),
+		pos,
+		3)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorUint, 2),
+		zero,
+		3)
+
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorAddress, 0),
+		pos,
+		20)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorAddress, 0),
+		zero,
+		20)
+
+	pos = decimal.New(15, -2)
+	neg = decimal.New(-15, -2)
+
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorFixed+2, 2),
+		pos,
+		3)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorFixed+2, 2),
+		zero,
+		3)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorFixed+2, 2),
+		neg,
+		3)
+
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorUfixed+2, 2),
+		pos,
+		3)
+	s.requireEncodeAndDecodeDecimalNoError(
+		composeDataType(DataTypeMajorUfixed+2, 2),
+		zero,
+		3)
+}
+
+func TestTypes(t *testing.T) {
+	suite.Run(t, new(TypesTestSuite))
 }
