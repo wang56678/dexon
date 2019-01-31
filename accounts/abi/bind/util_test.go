@@ -27,6 +27,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/crypto"
 )
 
@@ -60,6 +61,7 @@ func TestWaitDeployed(t *testing.T) {
 		)
 
 		// Create the transaction.
+		test.code = tools.Patch(test.code)
 		tx := types.NewContractCreation(0, big.NewInt(0), test.gas, big.NewInt(1), common.FromHex(test.code))
 		tx, _ = types.SignTx(tx, types.HomesteadSigner{}, testKey)
 

@@ -491,8 +491,7 @@ func opReturnDataCopy(pc *uint64, interpreter *EVMInterpreter, contract *vm.Cont
 		memOffset  = stack.Pop()
 		dataOffset = stack.Pop()
 		length     = stack.Pop()
-
-		end = interpreter.intPool.Get().Add(dataOffset, length)
+		end        = interpreter.intPool.Get().Add(dataOffset, length)
 	)
 	defer interpreter.intPool.Put(memOffset, dataOffset, length, end)
 
@@ -725,12 +724,12 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 		input        = memory.Get(offset.Int64(), size.Int64())
 		gas          = contract.Gas
 	)
+	// size.Add(size, big1)
 	if interpreter.evm.ChainConfig().IsEIP150(interpreter.evm.BlockNumber) {
 		gas -= gas / 64
 	}
-
 	contract.UseGas(gas)
-	res, addr, returnGas, suberr := interpreter.evm.Create(contract, input, gas, value)
+	res, addr, returnGas, suberr := vm.Create(contract, input, gas, value, interpreter)
 	// Push item on the stack based on the returned error. If the ruleset is
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
@@ -763,7 +762,7 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, m
 	// Apply EIP150
 	gas -= gas / 64
 	contract.UseGas(gas)
-	res, addr, returnGas, suberr := interpreter.evm.Create2(contract, input, gas, endowment, salt)
+	res, addr, returnGas, suberr := vm.Create2(contract, input, gas, endowment, salt, interpreter)
 	// Push item on the stack based on the returned error.
 	if suberr != nil {
 		stack.Push(interpreter.intPool.GetZero())
@@ -793,7 +792,7 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 	if value.Sign() != 0 {
 		gas += params.CallStipend
 	}
-	ret, returnGas, err := interpreter.evm.Call(contract, toAddr, args, gas, value)
+	ret, returnGas, err := vm.Call(contract, toAddr, args, gas, value, interpreter)
 	if err != nil {
 		stack.Push(interpreter.intPool.GetZero())
 	} else {
@@ -822,7 +821,7 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, 
 	if value.Sign() != 0 {
 		gas += params.CallStipend
 	}
-	ret, returnGas, err := interpreter.evm.CallCode(contract, toAddr, args, gas, value)
+	ret, returnGas, err := vm.CallCode(contract, toAddr, args, gas, value, interpreter)
 	if err != nil {
 		stack.Push(interpreter.intPool.GetZero())
 	} else {
@@ -847,7 +846,7 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contra
 	// Get arguments from the memory.
 	args := memory.Get(inOffset.Int64(), inSize.Int64())
 
-	ret, returnGas, err := interpreter.evm.DelegateCall(contract, toAddr, args, gas)
+	ret, returnGas, err := vm.DelegateCall(contract, toAddr, args, gas, interpreter)
 	if err != nil {
 		stack.Push(interpreter.intPool.GetZero())
 	} else {
@@ -872,7 +871,7 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract
 	// Get arguments from the memory.
 	args := memory.Get(inOffset.Int64(), inSize.Int64())
 
-	ret, returnGas, err := interpreter.evm.StaticCall(contract, toAddr, args, gas)
+	ret, returnGas, err := vm.StaticCall(contract, toAddr, args, gas, interpreter)
 	if err != nil {
 		stack.Push(interpreter.intPool.GetZero())
 	} else {

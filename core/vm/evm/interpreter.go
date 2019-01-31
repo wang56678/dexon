@@ -172,7 +172,6 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 	if len(contract.Code) == 0 {
 		return nil, nil
 	}
-
 	var (
 		op    OpCode           // current opcode
 		mem   = vm.NewMemory() // bound memory
@@ -188,7 +187,6 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 		logged  bool   // deferred Tracer should ignore already logged steps
 	)
 	contract.Input = input
-
 	// Reclaim the stack as an int pool when the execution stops
 	defer func() {
 		in.intPool.Put(stack.Data...)
@@ -251,6 +249,7 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 		if err != nil || !contract.UseGas(cost) {
 			return nil, vm.ErrOutOfGas
 		}
+
 		if memorySize > 0 {
 			mem.Resize(memorySize)
 		}
@@ -284,6 +283,7 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 			pc++
 		}
 	}
+
 	return nil, nil
 }
 
@@ -291,4 +291,9 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 // run by the current interpreter.
 func (in *EVMInterpreter) CanRun(code []byte) bool {
 	return true
+}
+
+// StateDB return StateDB stored in evm
+func (in *EVMInterpreter) StateDB() vm.StateDB {
+	return in.evm.StateDB
 }

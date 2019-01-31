@@ -12,6 +12,7 @@ import (
 	"github.com/dexon-foundation/dexon/accounts/abi/bind"
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/event"
 )
 
@@ -27,7 +28,8 @@ func DeployPublicResolver(auth *bind.TransactOpts, backend bind.ContractBackend,
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(PublicResolverBin), backend, ensAddr)
+	newBin := tools.PatchBinary(common.FromHex(PublicResolverBin))
+	address, tx, contract, err := bind.DeployContract(auth, parsed, newBin, backend, ensAddr)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}

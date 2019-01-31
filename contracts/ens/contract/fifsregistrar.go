@@ -10,6 +10,7 @@ import (
 	"github.com/dexon-foundation/dexon/accounts/abi/bind"
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 )
 
 // FIFSRegistrarABI is the input ABI used to generate the binding from.
@@ -24,7 +25,8 @@ func DeployFIFSRegistrar(auth *bind.TransactOpts, backend bind.ContractBackend, 
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(FIFSRegistrarBin), backend, ensAddr, node)
+	newBin := tools.PatchBinary(common.FromHex(FIFSRegistrarBin))
+	address, tx, contract, err := bind.DeployContract(auth, parsed, newBin, backend, ensAddr, node)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
