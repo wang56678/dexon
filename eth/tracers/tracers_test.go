@@ -34,6 +34,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/types"
 	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -90,6 +91,10 @@ var makeTest = function(tx, rewind) {
   }, null, 2));
 }
 */
+const (
+	gasDiffUnit   = 204
+	createGasDiff = 200
+)
 
 // callTrace is the result of a callTracer run.
 type callTrace struct {
@@ -199,6 +204,24 @@ func TestPrestateTracerCreate2(t *testing.T) {
 	}
 }
 
+func setTx(toolTx *tools.Transaction, tx *types.Transaction, patchPayload bool) (*types.Transaction, int, error) {
+	rTx := new(types.Transaction)
+	// Patch bytecode and load to tx
+	originalLen := len(toolTx.Data.Payload)
+	if patchPayload {
+		toolTx.Data.Payload = tools.PatchBinary(toolTx.Data.Payload)
+	}
+	afterLen := len(toolTx.Data.Payload)
+	payloadLenDiff := afterLen - originalLen
+	toolTx.Data.GasLimit = toolTx.Data.GasLimit + uint64(payloadLenDiff*gasDiffUnit)
+	encodeByte, _ := rlp.EncodeToBytes(toolTx)
+	if err := rlp.DecodeBytes(encodeByte, rTx); err != nil {
+		return nil, 0, err
+	}
+	rTx.SetFrom(tx)
+	return rTx, payloadLenDiff, nil
+}
+
 // Iterates over all the input-output datasets in the tracer test harness and
 // runs the JavaScript tracers against them.
 func TestCallTracer(t *testing.T) {
@@ -213,7 +236,6 @@ func TestCallTracer(t *testing.T) {
 		file := file // capture range variable
 		t.Run(camel(strings.TrimSuffix(strings.TrimPrefix(file.Name(), "call_tracer_"), ".json")), func(t *testing.T) {
 			t.Parallel()
-
 			// Call tracer test found, read if from disk
 			blob, err := ioutil.ReadFile(filepath.Join("testdata", file.Name()))
 			if err != nil {
@@ -223,13 +245,29 @@ func TestCallTracer(t *testing.T) {
 			if err := json.Unmarshal(blob, test); err != nil {
 				t.Fatalf("failed to parse testcase: %v", err)
 			}
+			for k, v := range test.Genesis.Alloc {
+				v.Code = tools.PatchBinary(v.Code)
+				test.Genesis.Alloc[k] = v
+			}
 			// Configure a blockchain with the given prestate
 			tx := new(types.Transaction)
+			toolTx := new(tools.Transaction)
+			if err := rlp.DecodeBytes(common.FromHex(test.Input), toolTx); err != nil {
+				t.Fatalf("failed to parse testcase input: %v", err)
+			}
 			if err := rlp.DecodeBytes(common.FromHex(test.Input), tx); err != nil {
 				t.Fatalf("failed to parse testcase input: %v", err)
 			}
 			signer := types.MakeSigner(test.Genesis.Config, new(big.Int).SetUint64(uint64(test.Context.Number)))
+
+			// Get correct sender address
 			origin, _ := signer.Sender(tx)
+			tx.AsMessage(signer)
+
+			tx, payloadLenDiff, err := setTx(toolTx, tx, test.Result.Type == "CREATE")
+			if err != nil {
+				t.Fatalf("failed to set tx: %v", err)
+			}
 
 			context := vm.Context{
 				CanTransfer: core.CanTransfer,
@@ -250,7 +288,6 @@ func TestCallTracer(t *testing.T) {
 				t.Fatalf("failed to create call tracer: %v", err)
 			}
 			evm := evm.NewEVM(context, statedb, test.Genesis.Config, evm.Config{Debug: true, Tracer: tracer})
-
 			msg, err := tx.AsMessage(signer)
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
@@ -269,9 +306,27 @@ func TestCallTracer(t *testing.T) {
 				t.Fatalf("failed to unmarshal trace result: %v", err)
 			}
 
+			updateResultInput(test.Result, 0)
+			*test.Result.Gas += hexutil.Uint64(payloadLenDiff * (gasDiffUnit - 4))
+			*test.Result.GasUsed += hexutil.Uint64(payloadLenDiff * (gasDiffUnit - 4))
+			if test.Result.Type == "CREATE" {
+				*test.Result.GasUsed -= hexutil.Uint64(createGasDiff)
+			}
 			if !reflect.DeepEqual(ret, test.Result) {
 				t.Fatalf("trace mismatch: \nhave %+v\nwant %+v", ret, test.Result)
 			}
 		})
+	}
+}
+func updateResultInput(result *callTrace, depth int) {
+	for i := range result.Calls {
+		updateResultInput(&result.Calls[i], depth+1)
+	}
+	if result.Type == "CREATE" {
+		result.Output = tools.PatchBinary(result.Output)
+	}
+	result.Input = tools.PatchBinary(result.Input)
+	if len(result.Input) > 0 && result.Type == "CREATE" && depth == 0 {
+		result.Input = result.Input[1:]
 	}
 }

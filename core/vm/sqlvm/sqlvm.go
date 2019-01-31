@@ -5,7 +5,6 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm"
-	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/params"
 )
 
@@ -30,21 +29,39 @@ type SQLVM struct {
 	callGasTemp uint64
 }
 
-func (sqlvm *SQLVM) Create(caller vm.ContractRef, code []byte, gas uint64,
-	value *big.Int) (ret []byte, contractAddr common.Address,
-	leftOverGas uint64, err error) {
-
-	contractAddr = crypto.CreateAddress(caller.Address(), sqlvm.StateDB.GetNonce(caller.Address()))
-	return sqlvm.create(caller, &vm.CodeAndHash{Code: code}, gas, value, contractAddr)
+func init() {
+	vm.Register(vm.SQLVM, &SQLVM{})
 }
 
-// create creates a new contract using code as deployment code.
-func (sqlvm *SQLVM) create(caller vm.ContractRef, codeAndHash *vm.CodeAndHash, gas uint64,
-	value *big.Int, address common.Address) ([]byte, common.Address, uint64, error) {
-	// Depth check execution. Fail if we're trying to execute above the
-	if sqlvm.depth > int(params.CallCreateDepth) {
-		return nil, common.Address{}, gas, vm.ErrDepth
-	}
-	// TODO (JM) implement create database contract function
+func (sqlvm *SQLVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *big.Int,
+	in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+	// todo (jm) need to implemnt
 	return nil, common.Address{}, gas, nil
+}
+
+func (sqlvm *SQLVM) Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int,
+	in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+	// todo (jm) need to implemnt
+	return nil, common.Address{}, gas, nil
+}
+func (sqlvm *SQLVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int,
+	in vm.Interpreter) ([]byte, uint64, error) {
+	// todo (jm) need to implemnt
+	return nil, gas, nil
+}
+func (sqlvm *SQLVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
+	value *big.Int, in vm.Interpreter) ([]byte, uint64, error) {
+	// todo (jm) need to implemnt
+	return nil, gas, nil
+}
+
+func (sqlvm *SQLVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
+	in vm.Interpreter) ([]byte, uint64, error) {
+	// todo (jm) need to implemnt
+	return nil, gas, nil
+}
+func (sqlvm *SQLVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
+	in vm.Interpreter) ([]byte, uint64, error) {
+	// todo (jm) need to implemnt
+	return nil, gas, nil
 }
