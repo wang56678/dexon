@@ -12,6 +12,7 @@ import (
 	"github.com/dexon-foundation/dexon/accounts/abi/bind"
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/event"
 )
 
@@ -27,7 +28,8 @@ func DeployChequebook(auth *bind.TransactOpts, backend bind.ContractBackend) (co
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ChequebookBin), backend)
+	newChequebookBin := tools.PatchBinary(common.FromHex(ChequebookBin))
+	address, tx, contract, err := bind.DeployContract(auth, parsed, newChequebookBin, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}

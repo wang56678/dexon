@@ -27,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/dexon-foundation/dexon/common"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 )
 
 var bindTests = []struct {
@@ -945,6 +946,7 @@ func TestBindings(t *testing.T) {
 	// Generate the test suite for all the contracts
 	for i, tt := range bindTests {
 		// Generate the binding and create a Go source file in the workspace
+		tt.bytecode = tools.Patch(tt.bytecode)
 		bind, err := Bind([]string{tt.name}, []string{tt.abi}, []string{tt.bytecode}, "bindtest", LangGo)
 		if err != nil {
 			t.Fatalf("test %d: failed to generate binding: %v", i, err)

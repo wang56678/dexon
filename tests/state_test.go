@@ -25,7 +25,8 @@ import (
 	"testing"
 
 	"github.com/dexon-foundation/dexon/cmd/utils"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 )
 
 func TestState(t *testing.T) {
@@ -59,28 +60,30 @@ func TestState(t *testing.T) {
 			key := fmt.Sprintf("%s/%d", subtest.Fork, subtest.Index)
 			name := name + "/" + key
 			t.Run(key, func(t *testing.T) {
-				withTrace(t, test.gasLimit(subtest), func(vmconfig vm.Config) error {
+				withTrace(t, test.gasLimit(subtest), func(vmconfig evm.Config) error {
+					vm.MULTIVM = false
 					_, err := test.Run(subtest, vmconfig)
 					return st.checkFailure(t, name, err)
 				})
 			})
 		}
 	})
+	vm.MULTIVM = true
 }
 
 // Transactions with gasLimit above this value will not get a VM trace on failure.
 const traceErrorLimit = 400000
 
 // The VM config for state tests that accepts --vm.* command line arguments.
-var testVMConfig = func() vm.Config {
-	vmconfig := vm.Config{}
+var testVMConfig = func() evm.Config {
+	vmconfig := evm.Config{}
 	flag.StringVar(&vmconfig.EVMInterpreter, utils.EVMInterpreterFlag.Name, utils.EVMInterpreterFlag.Value, utils.EVMInterpreterFlag.Usage)
 	flag.StringVar(&vmconfig.EWASMInterpreter, utils.EWASMInterpreterFlag.Name, utils.EWASMInterpreterFlag.Value, utils.EWASMInterpreterFlag.Usage)
 	flag.Parse()
 	return vmconfig
 }()
 
-func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
+func withTrace(t *testing.T, gasLimit uint64, test func(evm.Config) error) {
 	err := test(testVMConfig)
 	if err == nil {
 		return
@@ -92,8 +95,8 @@ func withTrace(t *testing.T, gasLimit uint64, test func(vm.Config) error) {
 	}
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
-	tracer := vm.NewJSONLogger(&vm.LogConfig{DisableMemory: true}, w)
-	err2 := test(vm.Config{Debug: true, Tracer: tracer})
+	tracer := vm.NewJSONLogger(&evm.LogConfig{DisableMemory: true}, w)
+	err2 := test(evm.Config{Debug: true, Tracer: tracer})
 	if !reflect.DeepEqual(err, err2) {
 		t.Errorf("different error for second run: %v", err2)
 	}

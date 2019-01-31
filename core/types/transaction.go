@@ -42,7 +42,6 @@ type Transaction struct {
 	size atomic.Value
 	from atomic.Value
 }
-
 type txdata struct {
 	AccountNonce uint64          `json:"nonce"    gencodec:"required"`
 	Price        *big.Int        `json:"gasPrice" gencodec:"required"`
@@ -171,7 +170,9 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	*tx = Transaction{data: dec}
 	return nil
 }
-
+func (tx *Transaction) SetFrom(fromTx *Transaction) {
+	tx.from.Store(fromTx.from.Load())
+}
 func (tx *Transaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
 func (tx *Transaction) Gas() uint64        { return tx.data.GasLimit }
 func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
