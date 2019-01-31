@@ -31,6 +31,57 @@ import (
 // deployed contract addresses (relevant after the account abstraction).
 var emptyCodeHash = crypto.Keccak256Hash(nil)
 
+func init() {
+	vm.Register(vm.EVM, &EVMImplement{})
+}
+
+type EVMImplement struct{}
+
+func (evmImpl *EVMImplement) Create(caller vm.ContractRef, code []byte, gas uint64,
+	value *big.Int, interpreter vm.Interpreter) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+	i := interpreter.(*EVMInterpreter)
+	return i.evm.Create(caller, code, gas, value)
+}
+
+func (evmImpl *EVMImplement) Create2(caller vm.ContractRef, code []byte, gas uint64,
+	endowment *big.Int, salt *big.Int,
+	interpreter vm.Interpreter) (ret []byte, contractAddr common.Address, leftOverGas uint64, err error) {
+
+	i := interpreter.(*EVMInterpreter)
+	return i.evm.Create2(caller, code, gas, endowment, salt)
+}
+
+func (evmImpl *EVMImplement) Call(caller vm.ContractRef, addr common.Address,
+	input []byte, gas uint64, value *big.Int,
+	interpreter vm.Interpreter) (ret []byte, leftOverGas uint64, err error) {
+	i := interpreter.(*EVMInterpreter)
+	return i.evm.Call(caller, addr, input, gas, value)
+
+}
+func (evmImpl *EVMImplement) CallCode(caller vm.ContractRef, addr common.Address,
+	input []byte, gas uint64, value *big.Int,
+	interpreter vm.Interpreter) (ret []byte, leftOverGas uint64, err error) {
+
+	i := interpreter.(*EVMInterpreter)
+	return i.evm.CallCode(caller, addr, input, gas, value)
+}
+
+func (evmImpl *EVMImplement) DelegateCall(caller vm.ContractRef, addr common.Address,
+	input []byte, gas uint64,
+	interpreter vm.Interpreter) (ret []byte, leftOverGas uint64, err error) {
+
+	i := interpreter.(*EVMInterpreter)
+	return i.evm.DelegateCall(caller, addr, input, gas)
+}
+
+func (evmImpl *EVMImplement) StaticCall(caller vm.ContractRef, addr common.Address,
+	input []byte, gas uint64,
+	interpreter vm.Interpreter) (ret []byte, leftovergas uint64, err error) {
+
+	i := interpreter.(*EVMInterpreter)
+	return i.evm.StaticCall(caller, addr, input, gas)
+}
+
 // run runs the given contract and takes care of running precompiles with a fallback to the byte code interpreter.
 func run(evm *EVM, contract *vm.Contract, input []byte, readOnly bool) ([]byte, error) {
 	if contract.CodeAddr != nil {
@@ -187,8 +238,12 @@ func (evm *EVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
 	contract := vm.NewContract(caller, to, value, gas)
-	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
-
+	code := evm.StateDB.GetCode(addr)
+	if len(code) > 0 && code[0] == vm.EVM && vm.MULTIVM {
+		code = code[1:]
+	}
+	codeAndHash := vm.CodeAndHash{Code: code}
+	contract.SetCodeOptionalHash(&addr, &codeAndHash)
 	// Even if the account has no code, we need to continue because it might be a precompile
 	start := time.Now()
 
@@ -243,7 +298,12 @@ func (evm *EVM) CallCode(caller vm.ContractRef, addr common.Address, input []byt
 	// EVM. The contract is a scoped environment for this execution context
 	// only.
 	contract := vm.NewContract(caller, to, value, gas)
-	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
+	code := evm.StateDB.GetCode(addr)
+	if len(code) > 0 && vm.MULTIVM {
+		code = code[1:]
+	}
+	codeAndHash := vm.CodeAndHash{Code: code}
+	contract.SetCodeOptionalHash(&addr, &codeAndHash)
 
 	ret, err = run(evm, contract, input, false)
 	if err != nil {
@@ -276,7 +336,12 @@ func (evm *EVM) DelegateCall(caller vm.ContractRef, addr common.Address, input [
 
 	// Initialise a new contract and make initialise the delegate values
 	contract := vm.NewContract(caller, to, nil, gas).AsDelegate()
-	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
+	code := evm.StateDB.GetCode(addr)
+	if len(code) > 0 && vm.MULTIVM {
+		code = code[1:]
+	}
+	codeAndHash := vm.CodeAndHash{Code: code}
+	contract.SetCodeOptionalHash(&addr, &codeAndHash)
 
 	ret, err = run(evm, contract, input, false)
 	if err != nil {
@@ -309,7 +374,12 @@ func (evm *EVM) StaticCall(caller vm.ContractRef, addr common.Address, input []b
 	// EVM. The contract is a scoped environment for this execution context
 	// only.
 	contract := vm.NewContract(caller, to, new(big.Int), gas)
-	contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
+	code := evm.StateDB.GetCode(addr)
+	if len(code) > 0 && vm.MULTIVM {
+		code = code[1:]
+	}
+	codeAndHash := vm.CodeAndHash{Code: code}
+	contract.SetCodeOptionalHash(&addr, &codeAndHash)
 
 	// We do an AddBalance of zero here, just in order to trigger a touch.
 	// This doesn't matter on Mainnet, where all empties are gone at the time of Byzantium,
@@ -370,7 +440,6 @@ func (evm *EVM) create(caller vm.ContractRef, codeAndHash *vm.CodeAndHash, gas u
 		evm.vmConfig.Tracer.CaptureStart(caller.Address(), address, true, codeAndHash.Code, gas, value)
 	}
 	start := time.Now()
-
 	ret, err := run(evm, contract, nil, false)
 
 	// check whether the max code size has been exceeded

@@ -11,6 +11,7 @@ import (
 	"github.com/dexon-foundation/dexon/accounts/abi/bind"
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/event"
 )
 
@@ -26,7 +27,8 @@ func DeployENS(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Ad
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(ENSBin), backend)
+	newENSBin := tools.PatchBinary(common.FromHex(ENSBin))
+	address, tx, contract, err := bind.DeployContract(auth, parsed, newENSBin, backend)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
