@@ -91,6 +91,13 @@ const (
 	ErrorCodeEscapeSequenceTooShort
 	ErrorCodeInvalidUnicodeCodePoint
 	ErrorCodeUnknownEscapeSequence
+	ErrorCodeInvalidBytesSize
+	ErrorCodeInvalidIntSize
+	ErrorCodeInvalidUintSize
+	ErrorCodeInvalidFixedSize
+	ErrorCodeInvalidUfixedSize
+	ErrorCodeInvalidFixedFractionalDigits
+	ErrorCodeInvalidUfixedFractionalDigits
 	// Runtime Error
 	ErrorCodeInvalidDataType
 	ErrorCodeOverflow
@@ -101,15 +108,22 @@ const (
 )
 
 var errorCodeMap = [...]string{
-	ErrorCodeParser:                  "parser error",
-	ErrorCodeInvalidIntegerSyntax:    "invalid integer syntax",
-	ErrorCodeInvalidNumberSyntax:     "invalid number syntax",
-	ErrorCodeIntegerOutOfRange:       "integer out of range",
-	ErrorCodeNumberOutOfRange:        "number out of range",
-	ErrorCodeFractionalPartTooLong:   "fractional part too long",
-	ErrorCodeEscapeSequenceTooShort:  "escape sequence too short",
-	ErrorCodeInvalidUnicodeCodePoint: "invalid unicode code point",
-	ErrorCodeUnknownEscapeSequence:   "unknown escape sequence",
+	ErrorCodeParser:                        "parser error",
+	ErrorCodeInvalidIntegerSyntax:          "invalid integer syntax",
+	ErrorCodeInvalidNumberSyntax:           "invalid number syntax",
+	ErrorCodeIntegerOutOfRange:             "integer out of range",
+	ErrorCodeNumberOutOfRange:              "number out of range",
+	ErrorCodeFractionalPartTooLong:         "fractional part too long",
+	ErrorCodeEscapeSequenceTooShort:        "escape sequence too short",
+	ErrorCodeInvalidUnicodeCodePoint:       "invalid unicode code point",
+	ErrorCodeUnknownEscapeSequence:         "unknown escape sequence",
+	ErrorCodeInvalidBytesSize:              "invalid bytes size",
+	ErrorCodeInvalidIntSize:                "invalid int size",
+	ErrorCodeInvalidUintSize:               "invalid uint size",
+	ErrorCodeInvalidFixedSize:              "invalid fixed size",
+	ErrorCodeInvalidUfixedSize:             "invalid ufixed size",
+	ErrorCodeInvalidFixedFractionalDigits:  "invalid fixed fractional digits",
+	ErrorCodeInvalidUfixedFractionalDigits: "invalid ufixed fractional digits",
 	// Runtime Error
 	ErrorCodeInvalidDataType: "invalid data type",
 	ErrorCodeOverflow:        "overflow",
