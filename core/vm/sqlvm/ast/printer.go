@@ -54,6 +54,7 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 		valueOf = valueOf.Elem()
 		typeOf = typeOf.Elem()
 	}
+	kind := typeOf.Kind()
 	name = name + typeOf.Name()
 
 	if op, ok := n.(UnaryOperator); ok {
@@ -70,43 +71,67 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 		printAST(w, op.GetSubject(), depth+2, base, detail)
 		return
 	}
-	if arr, ok := n.([]interface{}); ok {
-		if len(arr) == 0 {
-			fmt.Fprintf(w, "%s[]\n", indent)
-			return
-		}
-		fmt.Fprintf(w, "%s[\n", indent)
-		for idx := range arr {
-			printAST(w, arr[idx], depth+1, base, detail)
-		}
-		fmt.Fprintf(w, "%s]\n", indent)
-		return
-	}
 	if stringer, ok := n.(fmt.Stringer); ok {
 		s := stringer.String()
 		fmt.Fprintf(w, "%s%s: %s\n", indent, name, formatString(s))
 		return
 	}
-	if typeOf.Kind() == reflect.Struct {
-		fmt.Fprintf(w, "%s%s", indent, name)
-		l := typeOf.NumField()
+	if bs, ok := n.([]byte); ok {
+		fmt.Fprintf(w, "%s%s\n", indent, formatBytes(bs))
+		return
+	}
+	if kind == reflect.Slice {
+		l := valueOf.Len()
 		if l == 0 {
+			fmt.Fprintf(w, "%s[]\n", indent)
+			return
+		}
+		fmt.Fprintf(w, "%s[\n", indent)
+		for i := 0; i < l; i++ {
+			v := valueOf.Index(i)
+			printAST(w, v.Interface(), depth+1, base, detail)
+		}
+		fmt.Fprintf(w, "%s]\n", indent)
+		return
+	}
+	if kind == reflect.Struct {
+		type field struct {
+			name  string
+			value interface{}
+		}
+		var fields []field
+		var collect func(reflect.Type, reflect.Value)
+		collect = func(typeOf reflect.Type, valueOf reflect.Value) {
+			l := typeOf.NumField()
+			for i := 0; i < l; i++ {
+				if !detail && typeOf.Field(i).Tag.Get("print") == "-" {
+					continue
+				}
+				if typeOf.Field(i).Anonymous {
+					embeddedInterface := valueOf.Field(i).Interface()
+					embeddedTypeOf := reflect.TypeOf(embeddedInterface)
+					embeddedValueOf := reflect.ValueOf(embeddedInterface)
+					collect(embeddedTypeOf, embeddedValueOf)
+					continue
+				}
+				fields = append(fields, field{
+					name:  typeOf.Field(i).Name,
+					value: valueOf.Field(i).Interface(),
+				})
+			}
+		}
+		collect(typeOf, valueOf)
+		fmt.Fprintf(w, "%s%s", indent, name)
+		if len(fields) == 0 {
 			fmt.Fprintf(w, " {}\n")
 			return
 		}
 		fmt.Fprintf(w, " {\n")
-		for i := 0; i < l; i++ {
-			if !detail && typeOf.Field(i).Tag.Get("print") == "-" {
-				continue
-			}
-			fmt.Fprintf(w, "%s%s:\n", indentLong, typeOf.Field(i).Name)
-			printAST(w, valueOf.Field(i).Interface(), depth+2, base, detail)
+		for i := 0; i < len(fields); i++ {
+			fmt.Fprintf(w, "%s%s:\n", indentLong, fields[i].name)
+			printAST(w, fields[i].value, depth+2, base, detail)
 		}
 		fmt.Fprintf(w, "%s}\n", indent)
-		return
-	}
-	if bs, ok := n.([]byte); ok {
-		fmt.Fprintf(w, "%s%s\n", indent, formatBytes(bs))
 		return
 	}
 	fmt.Fprintf(w, "%s%+v\n", indent, valueOf.Interface())

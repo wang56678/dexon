@@ -60,6 +60,14 @@ const (
 	DataTypeMajorUfixed DataTypeMajor = 0x30
 )
 
+// DataTypeMinor enums.
+const (
+	DataTypeMinorDontCare       DataTypeMinor = 0x00
+	DataTypeMinorSpecialNull    DataTypeMinor = 0x00
+	DataTypeMinorSpecialAny     DataTypeMinor = 0x01
+	DataTypeMinorSpecialDefault DataTypeMinor = 0x02
+)
+
 // DataTypeUnknown for unknown data type.
 const DataTypeUnknown DataType = 0
 

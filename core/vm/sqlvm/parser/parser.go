@@ -19,15 +19,37 @@ import (
 //go:generate mv grammar_new.go grammar.go
 //go:generate goimports -w grammar.go
 
-func prepend(x interface{}, xs interface{}) []interface{} {
-	return append([]interface{}{x}, toSlice(xs)...)
+func prepend(x interface{}, xs []interface{}) []interface{} {
+	return append([]interface{}{x}, xs...)
 }
 
-func toSlice(x interface{}) []interface{} {
+func assertSlice(x interface{}) []interface{} {
 	if x == nil {
 		return nil
 	}
 	return x.([]interface{})
+}
+
+func assertNodeSlice(x interface{}) []ast.Node {
+	xs := assertSlice(x)
+	ns := make([]ast.Node, len(xs))
+	for i := 0; i < len(xs); i++ {
+		if xs[i] != nil {
+			ns[i] = xs[i].(ast.Node)
+		}
+	}
+	return ns
+}
+
+func assertExprSlice(x interface{}) []ast.ExprNode {
+	xs := assertSlice(x)
+	es := make([]ast.ExprNode, len(xs))
+	for i := 0; i < len(xs); i++ {
+		if xs[i] != nil {
+			es[i] = xs[i].(ast.ExprNode)
+		}
+	}
+	return es
 }
 
 // TODO(wmin0): finish it.
@@ -35,7 +57,7 @@ func isAddress(h []byte) bool {
 	return false
 }
 
-func hexToInteger(h []byte) interface{} {
+func hexToInteger(h []byte) *ast.IntegerValueNode {
 	d := decimal.Zero
 	l := len(h)
 	base := decimal.New(16, 0)
@@ -49,7 +71,10 @@ func hexToInteger(h []byte) interface{} {
 				Mul(base.Pow(decimal.New(int64(l-idx-1), 0))),
 		)
 	}
-	return ast.IntegerValueNode{V: d, IsAddress: isAddress(h)}
+	node := &ast.IntegerValueNode{}
+	node.IsAddress = isAddress(h)
+	node.V = d
+	return node
 }
 
 func hexToBytes(h []byte) []byte {
@@ -106,55 +131,54 @@ func toLower(b []byte) []byte {
 	return bytes.ToLower(b)
 }
 
-func joinBytes(x interface{}) []byte {
-	xs := toSlice(x)
+func joinBytes(x []interface{}) []byte {
 	bs := []byte{}
-	for _, b := range xs {
+	for _, b := range x {
 		bs = append(bs, b.([]byte)...)
 	}
 	return bs
 }
 
-func opSetSubject(op interface{}, s interface{}) interface{} {
-	x := op.(ast.BinaryOperator)
-	x.SetSubject(s)
-	return x
+func opSetSubject(op ast.BinaryOperator, s ast.ExprNode) ast.BinaryOperator {
+	op.SetSubject(s)
+	return op
 }
 
-func opSetObject(op interface{}, o interface{}) interface{} {
-	x := op.(ast.BinaryOperator)
-	x.SetObject(o)
-	return x
+func opSetObject(op ast.BinaryOperator, o ast.ExprNode) ast.BinaryOperator {
+	op.SetObject(o)
+	return op
 }
 
-func opSetTarget(op interface{}, t interface{}) interface{} {
-	x := op.(ast.UnaryOperator)
-	x.SetTarget(t)
-	return x
+func opSetTarget(op ast.UnaryOperator, t ast.ExprNode) ast.UnaryOperator {
+	op.SetTarget(t)
+	return op
 }
 
-func joinOperator(x interface{}, o interface{}) {
-	if op, ok := x.(ast.UnaryOperator); ok {
+func joinOperator(x ast.ExprNode, o ast.ExprNode) {
+	switch op := x.(type) {
+	case ast.UnaryOperator:
 		joinOperator(op.GetTarget(), o)
-		return
-	}
-	if op, ok := x.(ast.BinaryOperator); ok {
+	case ast.BinaryOperator:
 		op.SetObject(o)
-		return
+	case *ast.CastOperatorNode:
+		op.SourceExpr = o
+	case *ast.InOperatorNode:
+		op.Left = o
+	default:
+		panic(fmt.Sprintf("unable to join operators %T and %T", x, o))
 	}
 }
 
-func rightJoinOperators(o interface{}, x interface{}) interface{} {
-	xs := toSlice(x)
-	if len(xs) == 0 {
+func rightJoinOperators(o ast.ExprNode, x []ast.ExprNode) ast.ExprNode {
+	if len(x) == 0 {
 		return o
 	}
-	l := len(xs)
+	l := len(x)
 	for idx := 0; idx < l-1; idx++ {
-		joinOperator(xs[idx+1], xs[idx])
+		joinOperator(x[idx+1], x[idx])
 	}
-	joinOperator(xs[0], o)
-	return xs[l-1]
+	joinOperator(x[0], o)
+	return x[l-1]
 }
 
 func sanitizeBadEscape(s []byte) []byte {
@@ -254,7 +278,7 @@ func resolveString(s []byte) ([]byte, []byte, errors.ErrorCode) {
 				if err != nil {
 					return nil, s[i : i+10], convertNumError(err)
 				}
-				if r >= 0x10ffff || (r >= 0xd800 && r <= 0xdfff) {
+				if r > 0x10ffff || (r >= 0xd800 && r <= 0xdfff) {
 					return nil, s[i : i+10], errors.ErrorCodeInvalidUnicodeCodePoint
 				}
 				o.WriteRune(rune(r))
@@ -272,7 +296,7 @@ func resolveString(s []byte) ([]byte, []byte, errors.ErrorCode) {
 }
 
 // Parse parses SQL commands text and return an AST.
-func Parse(b []byte, o ...Option) (interface{}, error) {
+func Parse(b []byte, o ...Option) ([]ast.Node, error) {
 	// The string sent from the caller is not guaranteed to be valid UTF-8.
 	// We don't really care non-ASCII characters in the string because all
 	// keywords and special symbols are defined in ASCII. Therefore, as long
@@ -301,10 +325,11 @@ func Parse(b []byte, o ...Option) (interface{}, error) {
 	eb := encBuf.Bytes()
 	options := append([]Option{Recover(false)}, o...)
 	root, pigeonErr := parse("", eb, options...)
+	stmts := assertNodeSlice(root)
 
 	// Process the AST.
 	if pigeonErr == nil {
-		return root, pigeonErr
+		return stmts, pigeonErr
 	}
 
 	// Process errors.
@@ -333,5 +358,5 @@ func Parse(b []byte, o ...Option) (interface{}, error) {
 				"cannot fix byte offset %d", sqlvmErrList[i].Position))
 		}
 	}
-	return root, sqlvmErrList
+	return stmts, sqlvmErrList
 }
