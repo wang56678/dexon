@@ -80,6 +80,106 @@ func (s *ParserTestSuite) TestParse() {
 	s.requireParseNoError(`create index ㄅㄆㄇ on 👍 ( 🌍 , 💯 )`)
 }
 
+func (s *ParserTestSuite) TestParseRules() {
+	s.requireParseNoError(`
+		SELECT
+			C1,
+			*,
+			SUM(*),
+			COUNT(*) + 1,
+			*,
+			NOT A >= B,
+			NULL IS NULL,
+			C2 OR C3 AND TRUE OR FALSE,
+			C4 NOT IN (C5, 849, 2899 - C6),
+			C7 + C8 IN (C9, 5566, 9487 * C10),
+			C10 IS NULL,
+			C11 IS NOT NULL,
+			C12 LIKE 'dek_s%n',
+			C13 || C14 NOT LIKE 'cob%h__d%',
+			C15 <= C16 + 45,
+			C17 >= C18 - 54,
+			C19 <> 46 * C20,
+			C21 != 64 / C21,
+			C22 < C23 % C24,
+			C25 > C26 / (C27 + C28),
+			C29 = C30 * (C31 - C32),
+			C33 || C34 || 'vm' || 'sql',
+			C35 + C36 - C37 * C38 / C39 % C40,
+			C41 - - C42 + + (C43) * -C44 ++ C45 / -C46,
+			C47 + CAST(C48 % C49 AS INT88) - TSAC(),
+			F(C50) * "F"(C51, "C52") + "!"('\U0010FFFF', '\x11\x23\xfd'),
+			0x845 - 0x6ea - 0xbf,
+			00244 - 1.56 + 24. - .34,
+			1.2e1 - 2.04e-5 + -4.53e+10,
+			1e1 + 1.e1 - .1e1,
+			-1e1 + -1.e1 - -.1e1,
+			0.0 + 0e0 - 0.e0 + .0e0 * 0.,
+			-0.0 + -0e0 - -0.e0 + -.0e0 * -0.,
+			'normal' || x'8e7a' || hex'abcdef' || C53
+			FROM T
+			WHERE W
+			GROUP BY
+				1,
+				C1,
+				C2 + 2,
+				C3 - C4,
+				C5 AND C6
+			ORDER BY
+				1,
+				2 ASC,
+				C1 DESC,
+				C2 NULLS FIRST,
+				C3 + C4 NULLS LAST,
+				C5 * (C6 - C7) ASC NULLS FIRST,
+				C8 || C9 || 'dexon' DESC NULLS LAST
+			LIMIT 218 OFFSET 2019;
+
+		UPDATE T
+			SET
+				C1 = C1 = C2 OR C3 <> C4,
+				C2 = C2 IS NOT NULL,
+				C3 = DEFAULT
+			WHERE W;
+
+		DELETE FROM T WHERE W;
+
+		INSERT INTO T DEFAULT VALUES;
+		INSERT INTO T VALUES (V1, V2, V3, V4, V5);
+		INSERT INTO T VALUES (DEFAULT, DEFAULT, DEFAULT, DEFAULT, DEFAULT);
+		INSERT INTO T (C1) VALUES (V1), (DEFAULT);
+		INSERT INTO T (C1, C2, C3)
+			VALUES (V1, V2, V3 + V4), (V5 IS NULL, DEFAULT, NULL);
+
+		CREATE TABLE T (
+			C1 UINT64 PRIMARY KEY AUTOINCREMENT,
+			C2 ADDRESS REFERENCES U (D) NOT NULL,
+			C3 UINT256 DEFAULT 3 * 2 + 1,
+			C4 BYTES5 DEFAULT 'hello',
+			C5 INT24 UNIQUE NOT NULL,
+			C6 TEXT
+		);
+
+		CREATE TABLE T (
+			C1 INT224,
+			C2 UINT168,
+			C3 FIXED72X0,
+			C4 UFIXED80X80,
+			C5 BYTES32,
+			C6 BYTES1,
+			C7 BYTE,
+			C8 BYTES,
+			C9 TEXT,
+			C10 STRING,
+			C11 ADDRESS,
+			C12 BOOL
+		);
+
+		CREATE INDEX I ON T (C1);
+		CREATE UNIQUE INDEX I ON T (C2, C3);
+	`)
+}
+
 func (s *ParserTestSuite) TestParseInvalidUTF8() {
 	query := `SELECT ㄅ FROM 東 WHERE — - ─ = ██`
 	query, err := traditionalchinese.Big5.NewEncoder().String(query)

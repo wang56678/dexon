@@ -9,7 +9,7 @@ import (
 
 S
 	<- _ x:Stmt? _ xs:( ';' _ s:Stmt? _ { return s, nil } )* EOF
-{ return prepend(x, xs), nil }
+{ return prepend(x, assertSlice(xs)), nil }
 
 /* Statements */
 Stmt
@@ -30,37 +30,31 @@ SelectStmt
 	limit:( _ l:LimitClause { return l, nil } )?
 	offset:( _ of:OffsetClause { return of, nil } )?
 {
-	var (
-		tableNode  *ast.IdentifierNode
-		whereNode  *ast.WhereOptionNode
-		limitNode  *ast.LimitOptionNode
-		offsetNode *ast.OffsetOptionNode
-	)
+	node := &ast.SelectStmtNode{}
+	node.Column = assertExprSlice(prepend(f, assertSlice(fs)))
 	if table != nil {
-		t := table.(ast.IdentifierNode)
-		tableNode = &t
+		node.Table = table.(*ast.IdentifierNode)
 	}
 	if where != nil {
-		w := where.(ast.WhereOptionNode)
-		whereNode = &w
+		node.Where = where.(*ast.WhereOptionNode)
+	}
+	groupSlice := assertSlice(group)
+	node.Group = make([]*ast.GroupOptionNode, len(groupSlice))
+	for idx := range groupSlice {
+		node.Group[idx] = groupSlice[idx].(*ast.GroupOptionNode)
+	}
+	orderSlice := assertSlice(order)
+	node.Order = make([]*ast.OrderOptionNode, len(orderSlice))
+	for idx := range orderSlice {
+		node.Order[idx] = orderSlice[idx].(*ast.OrderOptionNode)
 	}
 	if limit != nil {
-		l := limit.(ast.LimitOptionNode)
-		limitNode = &l
+		node.Limit = limit.(*ast.LimitOptionNode)
 	}
 	if offset != nil {
-		o := offset.(ast.OffsetOptionNode)
-		offsetNode = &o
+		node.Offset = offset.(*ast.OffsetOptionNode)
 	}
-	return ast.SelectStmtNode{
-		Column: prepend(f, fs),
-		Table:  tableNode,
-		Where:  whereNode,
-		Group:  toSlice(group),
-		Order:  toSlice(order),
-		Limit:  limitNode,
-		Offset: offsetNode,
-	}, nil
+	return node, nil
 }
 
 SelectColumn
@@ -74,18 +68,17 @@ UpdateStmt
 	_ a:Assignment as:( _ SeparatorToken _ s:Assignment { return s, nil } )*
 	where:( _ w:WhereClause { return w, nil } )?
 {
-	var (
-		whereNode *ast.WhereOptionNode
-	)
-	if where != nil {
-		w := where.(ast.WhereOptionNode)
-		whereNode = &w
+	node := &ast.UpdateStmtNode{}
+	node.Table = table.(*ast.IdentifierNode)
+	assignSlice := prepend(a, assertSlice(as))
+	node.Assignment = make([]*ast.AssignOperatorNode, len(assignSlice))
+	for idx := range assignSlice {
+		node.Assignment[idx] = assignSlice[idx].(*ast.AssignOperatorNode)
 	}
-	return ast.UpdateStmtNode{
-		Table:      table.(ast.IdentifierNode),
-		Assignment: prepend(a, as),
-		Where:      whereNode,
-	}, nil
+	if where != nil {
+		node.Where = where.(*ast.WhereOptionNode)
+	}
+	return node, nil
 }
 
 DeleteStmt
@@ -94,17 +87,12 @@ DeleteStmt
 	_ table:Identifier
 	where:( _ w:WhereClause { return w, nil } )?
 {
-	var (
-		whereNode *ast.WhereOptionNode
-	)
+	node := &ast.DeleteStmtNode{}
+	node.Table = table.(*ast.IdentifierNode)
 	if where != nil {
-		w := where.(ast.WhereOptionNode)
-		whereNode = &w
+		node.Where = where.(*ast.WhereOptionNode)
 	}
-	return ast.DeleteStmtNode{
-		Table: table.(ast.IdentifierNode),
-		Where: whereNode,
-	}, nil
+	return node, nil
 }
 
 InsertStmt
@@ -113,10 +101,17 @@ InsertStmt
 	_ table:Identifier
 	_ insert:( InsertWithColumnClause / InsertWithDefaultClause )
 {
-	return ast.InsertStmtNode{
-		Table:  table.(ast.IdentifierNode),
-		Insert: insert,
-	}, nil
+	node := &ast.InsertStmtNode{}
+	node.Table = table.(*ast.IdentifierNode)
+	switch i := insert.(type) {
+	case *ast.InsertWithColumnOptionNode:
+		node.Insert = i
+	case *ast.InsertWithDefaultOptionNode:
+		node.Insert = i
+	default:
+		panic(fmt.Sprintf("unknown insert type %T", insert))
+	}
+	return node, nil
 }
 
 InsertValue
@@ -131,14 +126,18 @@ CreateTableStmt
 	_ column:(
 		s:ColumnSchema
 		ss:( _ SeparatorToken _ t:ColumnSchema { return t, nil } )*
-		{ return prepend(s, ss), nil }
+		{ return prepend(s, assertSlice(ss)), nil }
 	)?
 	_ ')'
 {
-	return ast.CreateTableStmtNode{
-		Table:  table.(ast.IdentifierNode),
-		Column: toSlice(column),
-	}, nil
+	node := &ast.CreateTableStmtNode{}
+	node.Table = table.(*ast.IdentifierNode)
+	columnSlice := assertSlice(column)
+	node.Column = make([]*ast.ColumnSchemaNode, len(columnSlice))
+	for idx := range columnSlice {
+		node.Column[idx] = columnSlice[idx].(*ast.ColumnSchemaNode)
+	}
+	return node, nil
 }
 
 ColumnSchema
@@ -146,11 +145,30 @@ ColumnSchema
 	_ t:DataType
 	cs:( _ s:ColumnConstraint { return s, nil } )*
 {
-	return ast.ColumnSchemaNode{
-		Column:     i.(ast.IdentifierNode),
-		DataType:   t,
-		Constraint: toSlice(cs),
-	}, nil
+	node := &ast.ColumnSchemaNode{}
+	node.Column = i.(*ast.IdentifierNode)
+	node.DataType = t.(ast.TypeNode)
+	constraintSlice := assertSlice(cs)
+	node.Constraint = make([]ast.Node, len(constraintSlice))
+	for idx, constraint := range constraintSlice {
+		switch c := constraint.(type) {
+		case *ast.PrimaryOptionNode:
+			node.Constraint[idx] = c
+		case *ast.NotNullOptionNode:
+			node.Constraint[idx] = c
+		case *ast.UniqueOptionNode:
+			node.Constraint[idx] = c
+		case *ast.DefaultOptionNode:
+			node.Constraint[idx] = c
+		case *ast.ForeignOptionNode:
+			node.Constraint[idx] = c
+		case *ast.AutoIncrementOptionNode:
+			node.Constraint[idx] = c
+		default:
+			panic(fmt.Sprintf("unknown constraint type %T", c))
+		}
+	}
+	return node, nil
 }
 
 ColumnConstraint
@@ -170,109 +188,160 @@ CreateIndexStmt
 	_ table:Identifier
 	_ '(' _ i:Identifier is:( _ SeparatorToken _ x:Identifier { return x, nil } )* _ ')'
 {
-	var (
-		uniqueNode *ast.UniqueOptionNode
-	)
-	if unique != nil {
-		u := unique.(ast.UniqueOptionNode)
-		uniqueNode = &u
+	node := &ast.CreateIndexStmtNode{}
+	node.Index = index.(*ast.IdentifierNode)
+	node.Table = table.(*ast.IdentifierNode)
+	columnSlice := assertSlice(prepend(i, assertSlice(is)))
+	node.Column = make([]*ast.IdentifierNode, len(columnSlice))
+	for idx := range columnSlice {
+		node.Column[idx] = columnSlice[idx].(*ast.IdentifierNode)
 	}
-	return ast.CreateIndexStmtNode{
-		Index:  index.(ast.IdentifierNode),
-		Table:  table.(ast.IdentifierNode),
-		Column: prepend(i, is),
-		Unique: uniqueNode,
-	}, nil
+	if unique != nil {
+		node.Unique = unique.(*ast.UniqueOptionNode)
+	}
+	return node, nil
 }
 
 /* Clauses */
 WhereClause
 	= WhereToken _ e:Expr
-{ return ast.WhereOptionNode{Condition: e}, nil }
+{
+	node := &ast.WhereOptionNode{}
+	node.Condition = e.(ast.ExprNode)
+	return node, nil
+}
 
 OrderByClause
 	= OrderToken
 	_ ByToken
 	_ f:OrderColumn
 	fs:( _ SeparatorToken _ s:OrderColumn { return s, nil } )*
-{ return prepend(f, fs), nil }
+{
+	return prepend(f, assertSlice(fs)), nil
+}
 
 OrderColumn
 	= i:Expr
 	s:( _ t:( AscToken / DescToken ) { return t, nil } )?
 	n:( _ NullsToken _ l:( LastToken / FirstToken ) { return l, nil } )?
 {
-	return ast.OrderOptionNode{
-		Expr:       i,
-		Desc:       s != nil && string(s.([]byte)) == "desc",
-		NullsFirst: n != nil && string(n.([]byte)) == "first",
-	}, nil
+	node := &ast.OrderOptionNode{}
+	node.Expr = i.(ast.ExprNode)
+	node.Desc = s != nil && string(s.([]byte)) == "desc"
+	node.NullsFirst = n != nil && string(n.([]byte)) == "first"
+	return node, nil
 }
 
 GroupByClause
 	= GroupToken
 	_ ByToken
-	_ i:Expr
-	is:( _ SeparatorToken _ s:Expr { return ast.GroupOptionNode{Expr: s}, nil } )*
-{ return prepend(ast.GroupOptionNode{Expr: i}, is), nil }
+	_ f:GroupColumn
+	fs:( _ SeparatorToken _ s:GroupColumn { return s, nil } )*
+{
+	return prepend(f, assertSlice(fs)), nil
+}
+
+GroupColumn
+	= i:Expr
+{
+	node := &ast.GroupOptionNode{}
+	node.Expr = i.(ast.ExprNode)
+	return node, nil
+}
 
 OffsetClause
 	= OffsetToken _ i:Integer
-{ return ast.OffsetOptionNode{Value: i.(ast.IntegerValueNode)}, nil }
+{
+	node := &ast.OffsetOptionNode{}
+	node.Value = i.(*ast.IntegerValueNode)
+	return node, nil
+}
 
 LimitClause
 	= LimitToken _ i:Integer
-{ return ast.LimitOptionNode{Value: i.(ast.IntegerValueNode)}, nil }
+{
+	node := &ast.LimitOptionNode{}
+	node.Value = i.(*ast.IntegerValueNode)
+	return node, nil
+}
 
 InsertWithColumnClause
 	= cs:( '('
 			_ f:Identifier
 			fs:( _ SeparatorToken _ x:Identifier { return x, nil } )*
 			_ ')'
-			_ { return prepend(f, fs), nil }
+			_ { return prepend(f, assertSlice(fs)), nil }
 		)?
 		ValuesToken
 	_ v:InsertValue
 	vs:( _ SeparatorToken _ y:InsertValue { return y, nil } )*
 {
-	return ast.InsertWithColumnOptionNode{
-		Column: toSlice(cs),
-		Value:  prepend(v, vs),
-	}, nil
+	node := &ast.InsertWithColumnOptionNode{}
+	columnSlice := assertSlice(cs)
+	node.Column = make([]*ast.IdentifierNode, len(columnSlice))
+	for idx := range columnSlice {
+		node.Column[idx] = columnSlice[idx].(*ast.IdentifierNode)
+	}
+	valueSlice := assertSlice(vs)
+	node.Value = make([][]ast.ExprNode, len(valueSlice)+1)
+	node.Value[0] = v.([]ast.ExprNode)
+	for idx := range valueSlice {
+		node.Value[idx+1] = valueSlice[idx].([]ast.ExprNode)
+	}
+	return node, nil
 }
 
 InsertWithDefaultClause
 	= DefaultToken _ ValuesToken
-{ return ast.InsertWithDefaultOptionNode{}, nil }
+{
+	node := &ast.InsertWithDefaultOptionNode{}
+	return node, nil
+}
 
 PrimaryKeyClause
 	= PrimaryToken _ KeyToken
-{ return ast.PrimaryOptionNode{}, nil }
+{
+	node := &ast.PrimaryOptionNode{}
+	return node, nil
+}
 
 NotNullClause
 	= NotToken _ NullToken
-{ return ast.NotNullOptionNode{}, nil }
+{
+	node := &ast.NotNullOptionNode{}
+	return node, nil
+}
 
 UniqueClause
 	= UniqueToken
-{ return ast.UniqueOptionNode{}, nil }
+{
+	node := &ast.UniqueOptionNode{}
+	return node, nil
+}
 
 DefaultClause
 	= DefaultToken _ e:Expr
-{ return ast.DefaultOptionNode{Value: e}, nil }
+{
+	node := &ast.DefaultOptionNode{}
+	node.Value = e.(ast.ExprNode)
+	return node, nil
+}
 
 ForeignClause
 	= ReferencesToken _ t:Identifier _ '(' _ f:Identifier _ ')'
 {
-	return ast.ForeignOptionNode{
-		Table:  t.(ast.IdentifierNode),
-		Column: f.(ast.IdentifierNode),
-	}, nil
+	node := &ast.ForeignOptionNode{}
+	node.Table = t.(*ast.IdentifierNode)
+	node.Column = f.(*ast.IdentifierNode)
+	return node, nil
 }
 
 AutoincrementClause
 	= AutoincrementToken
-{ return ast.AutoIncrementOptionNode{}, nil }
+{
+	node := &ast.AutoIncrementOptionNode{}
+	return node, nil
+}
 
 /* Expressions */
 Expr
@@ -287,88 +356,101 @@ LogicExpr
 
 LogicExpr4
 	= o:LogicExpr3
-		os:( _ op:OrOperator _ s:LogicExpr3 { return opSetSubject(op, s), nil } )*
-{ return rightJoinOperators(o, os), nil }
+		os:( _ op:OrOperator _ s:LogicExpr3
+		{ return opSetSubject(op.(ast.BinaryOperator), s.(ast.ExprNode)), nil } )*
+{ return rightJoinOperators(o.(ast.ExprNode), assertExprSlice(os)), nil }
 
 LogicExpr3
 	= o:LogicExpr2
-		os:( _ op:AndOperator _ s:LogicExpr2 { return opSetSubject(op, s), nil } )*
-{ return rightJoinOperators(o, os), nil }
+		os:( _ op:AndOperator _ s:LogicExpr2
+		{ return opSetSubject(op.(ast.BinaryOperator), s.(ast.ExprNode)), nil } )*
+{ return rightJoinOperators(o.(ast.ExprNode), assertExprSlice(os)), nil }
 
 LogicExpr2
 	= op:NotOperator _ s:LogicExpr2
-	{ return opSetTarget(op, s), nil }
+	{ return opSetTarget(op.(ast.UnaryOperator), s.(ast.ExprNode)), nil }
 	/ LogicExpr1
 
 LogicExpr1
 	= o:ArithmeticExpr os:( _ l:LogicExpr1Op { return l, nil } )*
-{ return rightJoinOperators(o, os), nil }
+{ return rightJoinOperators(o.(ast.ExprNode), assertExprSlice(os)), nil }
 
 LogicExpr1Op
 	= LogicExpr1In
-	/ LogicExpr1Null
+	/ LogicExpr1Is
 	/ LogicExpr1Like
 	/ LogicExpr1Cmp
 
 LogicExpr1In
 	= n:( t:NotOperator _ { return t, nil } )? InToken _ '(' _ s:MultiExpr _ ')'
 {
-	op := opSetSubject(&ast.InOperatorNode{}, s)
+	node := &ast.InOperatorNode{}
+	node.Right = s.([]ast.ExprNode)
 	if n != nil {
-		return opSetTarget(n, op), nil
+		return opSetTarget(n.(ast.UnaryOperator), node), nil
 	}
-	return op, nil
+	return node, nil
 }
 
-LogicExpr1Null
+LogicExpr1Is
 	= IsToken n:( _ t:NotOperator { return t, nil } )? _ NullToken
 {
-	op := opSetSubject(&ast.IsOperatorNode{}, ast.NullValueNode{})
+	node := &ast.IsOperatorNode{}
+	null := &ast.NullValueNode{}
+	opSetSubject(node, null)
 	if n != nil {
-		return opSetTarget(n, op), nil
+		return opSetTarget(n.(ast.UnaryOperator), node), nil
 	}
-	return op, nil
+	return node, nil
 }
 
 LogicExpr1Like
 	= n:( t:NotOperator _ { return t, nil } )? LikeToken _ s:Expr
 {
-	op := opSetSubject(&ast.LikeOperatorNode{}, s)
+	node := &ast.LikeOperatorNode{}
+	opSetSubject(node, s.(ast.ExprNode))
 	if n != nil {
-		return opSetTarget(n, op), nil
+		return opSetTarget(n.(ast.UnaryOperator), node), nil
 	}
-	return op, nil
+	return node, nil
 }
 
 LogicExpr1Cmp
 	= op:CmpOperator _ s:ArithmeticExpr
-{ return opSetSubject(op, s), nil }
+{ return opSetSubject(op.(ast.BinaryOperator), s.(ast.ExprNode)), nil }
 
 ArithmeticExpr
 	= ArithmeticExpr3
 
 ArithmeticExpr3
-	= o:ArithmeticExpr2 os:( _ op:ConcatOperator _ s:ArithmeticExpr2 { return opSetSubject(op, s), nil } )*
-{ return rightJoinOperators(o, os), nil }
+	= o:ArithmeticExpr2
+		os:( _ op:ConcatOperator _ s:ArithmeticExpr2
+		{ return opSetSubject(op.(ast.BinaryOperator), s.(ast.ExprNode)), nil } )*
+{ return rightJoinOperators(o.(ast.ExprNode), assertExprSlice(os)), nil }
 
 ArithmeticExpr2
-	= o:ArithmeticExpr1 os:( _ op:AddSubOperator _ s:ArithmeticExpr1 { return opSetSubject(op, s), nil } )*
-{ return rightJoinOperators(o, os), nil }
+	= o:ArithmeticExpr1
+		os:( _ op:AddSubOperator _ s:ArithmeticExpr1
+		{ return opSetSubject(op.(ast.BinaryOperator), s.(ast.ExprNode)), nil } )*
+{ return rightJoinOperators(o.(ast.ExprNode), assertExprSlice(os)), nil }
 
 ArithmeticExpr1
-	= o:Operand os:( _ op:MulDivModOperator _ s:Operand { return opSetSubject(op, s), nil } )*
-{ return rightJoinOperators(o, os), nil }
+	= o:Operand
+		os:( _ op:MulDivModOperator _ s:Operand
+		{ return opSetSubject(op.(ast.BinaryOperator), s.(ast.ExprNode)), nil } )*
+{ return rightJoinOperators(o.(ast.ExprNode), assertExprSlice(os)), nil }
 
 MultiExpr
 	= x:Expr xs:( _ SeparatorToken _ e:Expr { return e, nil } )*
-{ return prepend(x, xs), nil }
+{ return assertExprSlice(prepend(x, assertSlice(xs))), nil }
 
 MultiExprWithDefault
 	= x:ExprWithDefault xs:( _ SeparatorToken _ e:ExprWithDefault { return e, nil } )*
-{ return prepend(x, xs), nil }
+{ return assertExprSlice(prepend(x, assertSlice(xs))), nil }
 
 Operand
-	= op:UnaryOperator _ s:Operand { return opSetTarget(op, s), nil }
+	= op:UnaryOperator _ s:Operand
+		{ return opSetTarget(op.(ast.UnaryOperator), s.(ast.ExprNode)), nil }
 	/ '(' _ e:Expr _ ')' { return e, nil }
 	/ &(CastToken) t:TypeCast { return t, nil }
 	/ FunctionCall
@@ -377,19 +459,36 @@ Operand
 
 TypeCast
 	= CastToken _ '(' _ o:Expr _ AsToken _ s:DataType _ ')'
-{ return opSetSubject(opSetObject(&ast.CastOperatorNode{}, o), s), nil }
+{
+	node := &ast.CastOperatorNode{}
+	node.SourceExpr = o.(ast.ExprNode)
+	node.TargetType = s.(ast.TypeNode)
+	return node, nil
+}
 
 FunctionCall
 	= i:Identifier _ '(' _ r:FunctionArgs? _ ')'
-{ return opSetSubject(opSetObject(&ast.FunctionOperatorNode{}, i), r), nil }
+{
+	node := &ast.FunctionOperatorNode{}
+	node.Name = i.(*ast.IdentifierNode)
+	if r != nil {
+		node.Args = r.([]ast.ExprNode)
+	}
+	return node, nil
+}
 
 FunctionArgs
-	= a:AnyLiteral { return []interface{}{a}, nil }
+	= a:AnyLiteral { return []ast.ExprNode{a.(*ast.AnyValueNode)}, nil }
 	/ MultiExpr
 
 Assignment
 	= i:Identifier _ '=' _ e:ExprWithDefault
-{ return opSetSubject(opSetObject(&ast.AssignOperatorNode{}, i), e), nil }
+{
+	node := &ast.AssignOperatorNode{}
+	node.Column = i.(*ast.IdentifierNode)
+	node.Expr = e.(ast.ExprNode)
+	return node, nil
+}
 
 /* Operators */
 UnaryOperator
@@ -398,77 +497,101 @@ UnaryOperator
 SignOperator
 	= Sign
 {
+	var node ast.UnaryOperator
 	switch string(c.text) {
 	case "+":
-		return &ast.PosOperatorNode{}, nil
+		node = &ast.PosOperatorNode{}
 	case "-":
-		return &ast.NegOperatorNode{}, nil
+		node = &ast.NegOperatorNode{}
+	default:
+		panic(fmt.Sprintf("unknown sign %s", c.text))
 	}
-	panic(fmt.Sprintf("unknown sign %s", c.text))
+	return node, nil
 }
 
 NotOperator
 	= NotToken
-{ return &ast.NotOperatorNode{}, nil }
+{
+	node := &ast.NotOperatorNode{}
+	return node, nil
+}
 
 AndOperator
 	= AndToken
-{ return &ast.AndOperatorNode{}, nil }
+{
+	node := &ast.AndOperatorNode{}
+	return node, nil
+}
 
 OrOperator
 	= OrToken
-{ return &ast.OrOperatorNode{}, nil }
+{
+	node := &ast.OrOperatorNode{}
+	return node, nil
+}
 
 CmpOperator
 	= ( "<=" / ">=" / "<>" / "!=" / [<>=] )
 {
+	var node ast.BinaryOperator
 	switch string(c.text) {
 	case "<=":
-		return &ast.LessOrEqualOperatorNode{}, nil
+		node = &ast.LessOrEqualOperatorNode{}
 	case ">=":
-		return &ast.GreaterOrEqualOperatorNode{}, nil
+		node = &ast.GreaterOrEqualOperatorNode{}
 	case "<>":
-		return &ast.NotEqualOperatorNode{}, nil
+		node = &ast.NotEqualOperatorNode{}
 	case "!=":
-		return &ast.NotEqualOperatorNode{}, nil
+		node = &ast.NotEqualOperatorNode{}
 	case "<":
-		return &ast.LessOperatorNode{}, nil
+		node = &ast.LessOperatorNode{}
 	case ">":
-		return &ast.GreaterOperatorNode{}, nil
+		node = &ast.GreaterOperatorNode{}
 	case "=":
-		return &ast.EqualOperatorNode{}, nil
+		node = &ast.EqualOperatorNode{}
+	default:
+		panic(fmt.Sprintf("unknown comparison operator %s", c.text))
 	}
-	panic(fmt.Sprintf("unknown comparison operator %s", c.text))
+	return node, nil
 }
 
 ConcatOperator
 	= "||"
-{ return &ast.ConcatOperatorNode{}, nil }
+{
+	node := &ast.ConcatOperatorNode{}
+	return node, nil
+}
 
 AddSubOperator
 	= [+-]
 {
+	var node ast.BinaryOperator
 	switch string(c.text) {
 	case "+":
-		return &ast.AddOperatorNode{}, nil
+		node = &ast.AddOperatorNode{}
 	case "-":
-		return &ast.SubOperatorNode{}, nil
+		node = &ast.SubOperatorNode{}
+	default:
+		panic(fmt.Sprintf("unknown addition or subtraction operator %s", c.text))
 	}
-	panic(fmt.Sprintf("unknown addition or subtraction operator %s", c.text))
+	return node, nil
 }
 
 MulDivModOperator
 	= [*/%]
 {
+	var node ast.BinaryOperator
 	switch string(c.text) {
 	case "*":
-		return &ast.MulOperatorNode{}, nil
+		node = &ast.MulOperatorNode{}
 	case "/":
-		return &ast.DivOperatorNode{}, nil
+		node = &ast.DivOperatorNode{}
 	case "%":
-		return &ast.ModOperatorNode{}, nil
+		node = &ast.ModOperatorNode{}
+	default:
+		panic(fmt.Sprintf("unknown multiplication, division, modulo operator: %s", c.text))
 	}
-	panic(fmt.Sprintf("unknown multiplication, division, modulo operator: %s", c.text))
+	return node, nil
 }
 
 /* Types */
@@ -485,7 +608,8 @@ DataType
 UIntType
 	= "UINT"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	node := ast.IntTypeNode{Unsigned: true}
+	node := &ast.IntTypeNode{}
+	node.Unsigned = true
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -505,7 +629,8 @@ UIntType
 IntType
 	= "INT"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	node := ast.IntTypeNode{Unsigned: false}
+	node := &ast.IntTypeNode{}
+	node.Unsigned = false
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -525,7 +650,8 @@ IntType
 UFixedType
 	= "UFIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	node := ast.FixedTypeNode{Unsigned: true}
+	node := &ast.FixedTypeNode{}
+	node.Unsigned = true
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -558,7 +684,8 @@ UFixedType
 FixedType
 	= "FIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	node := ast.FixedTypeNode{Unsigned: false}
+	node := &ast.FixedTypeNode{}
+	node.Unsigned = false
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -591,7 +718,7 @@ FixedType
 FixedBytesType
 	= "BYTES"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
-	node := ast.FixedBytesTypeNode{}
+	node := &ast.FixedBytesTypeNode{}
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -609,7 +736,9 @@ FixedBytesType
 }
 	/ "BYTE"i !NormalIdentifierRest
 {
-	return ast.FixedBytesTypeNode{Size: 1}, nil
+	node := &ast.FixedBytesTypeNode{}
+	node.Size = 1
+	return node, nil
 }
 
 DynamicBytesType
@@ -617,17 +746,26 @@ DynamicBytesType
 		/ "STRING"i !NormalIdentifierRest
 		/ "TEXT"i !NormalIdentifierRest
 	)
-{ return ast.DynamicBytesTypeNode{}, nil }
+{
+	node := &ast.DynamicBytesTypeNode{}
+	return node, nil
+}
 
 AddressType
 	= "ADDRESS"i !NormalIdentifierRest
-{ return ast.AddressTypeNode{}, nil }
+{
+	node := &ast.AddressTypeNode{}
+	return node, nil
+}
 
 BoolType
 	= ( "BOOL"i !NormalIdentifierRest
 		/ "BOOLEAN"i !NormalIdentifierRest
 	)
-{ return ast.BoolTypeNode{}, nil }
+{
+	node := &ast.BoolTypeNode{}
+	return node, nil
+}
 
 /* Values */
 Value
@@ -638,19 +776,32 @@ Value
 
 AnyLiteral
 	= AnyToken
-{ return ast.AnyValueNode{}, nil }
+{
+	node := &ast.AnyValueNode{}
+	return node, nil
+}
 
 DefaultLiteral
 	= DefaultToken
-{ return ast.DefaultValueNode{}, nil }
+{
+	node := &ast.DefaultValueNode{}
+	return node, nil
+}
 
 BoolLiteral
 	= b:( TrueToken / FalseToken )
-{ return ast.BoolValueNode{V: string(b.([]byte)) == "true"}, nil }
+{
+	node := &ast.BoolValueNode{}
+	node.V = string(b.([]byte)) == "true"
+	return node, nil
+}
 
 NullLiteral
 	= NullToken
-{ return ast.NullValueNode{}, nil }
+{
+	node := &ast.NullValueNode{}
+	return node, nil
+}
 
 NumberLiteral
 	= &("0" "X"i) h:Hex { return h, nil }
@@ -662,7 +813,8 @@ Sign
 Integer
 	= [0-9]+
 {
-	node := ast.IntegerValueNode{IsAddress: false, V: decimal.Zero}
+	node := &ast.IntegerValueNode{}
+	node.IsAddress = false
 	v, code := toDecimal(c.text)
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -691,7 +843,7 @@ Fixnum
 Decimal
 	= Fixnum ( "E"i Sign? Integer )?
 {
-	node := ast.DecimalValueNode{V: decimal.Zero}
+	node := &ast.DecimalValueNode{}
 	v, code := toDecimal(c.text)
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -710,7 +862,7 @@ Decimal
 
 Hex
 	= "0" "X"i s:( [0-9A-Fa-f] )+ !NormalIdentifierRest
-{ return hexToInteger(joinBytes(s)), nil }
+{ return hexToInteger(joinBytes(assertSlice(s))), nil }
 
 StringLiteral
 	= HexString
@@ -718,13 +870,17 @@ StringLiteral
 
 HexString
 	= ( "HEX"i / "X"i ) "'" s:([0-9a-fA-F][0-9a-fA-F] { return c.text, nil } )* "'"
-{ return ast.BytesValueNode{V: hexToBytes(joinBytes(s))}, nil }
+{
+	node := &ast.BytesValueNode{}
+	node.V = hexToBytes(joinBytes(assertSlice(s)))
+	return node, nil
+}
 
 NormalString
 	= "'" s:( ( [^'\r\n\\] / "\\" . ) { return c.text, nil } )* "'"
 {
-	node := ast.BytesValueNode{}
-	bs := joinBytes(s)
+	node := &ast.BytesValueNode{}
+	bs := joinBytes(assertSlice(s))
 	v, bad, code := resolveString(bs)
 	if code != errors.ErrorCodeNil {
 		msg := fmt.Sprintf("cannot resolve escape sequence '%s': %v",
@@ -884,7 +1040,9 @@ Identifier
 NormalIdentifier
 	= NormalIdentifierStart NormalIdentifierRest*
 {
-	return ast.IdentifierNode{Name: decodeString(c.text)}, nil
+	node := &ast.IdentifierNode{}
+	node.Name = decodeString(c.text)
+	return node, nil
 }
 
 NormalIdentifierStart
@@ -896,8 +1054,8 @@ NormalIdentifierRest
 StringIdentifier
 	= "\"" s:( ( [^"\r\n\\] / "\\" . ) { return c.text, nil } )* "\""
 {
-	node := ast.IdentifierNode{}
-	bs := joinBytes(s)
+	node := &ast.IdentifierNode{}
+	bs := joinBytes(assertSlice(s))
 	name, bad, code := resolveString(bs)
 	if code != errors.ErrorCodeNil {
 		msg := fmt.Sprintf("cannot resolve escape sequence '%s': %v",
