@@ -89,6 +89,13 @@ const (
 	ErrorCodeEscapeSequenceTooShort
 	ErrorCodeInvalidUnicodeCodePoint
 	ErrorCodeUnknownEscapeSequence
+	// Runtime Error
+	ErrorCodeInvalidDataType
+	ErrorCodeOverflow
+	ErrorCodeUnderflow
+	ErrorCodeIndexOutOfRange
+	ErrorCodeInvalidCastType
+	ErrorCodeDividedByZero
 )
 
 var errorCodeMap = [...]string{
@@ -101,6 +108,13 @@ var errorCodeMap = [...]string{
 	ErrorCodeEscapeSequenceTooShort:  "escape sequence too short",
 	ErrorCodeInvalidUnicodeCodePoint: "invalid unicode code point",
 	ErrorCodeUnknownEscapeSequence:   "unknown escape sequence",
+	// Runtime Error
+	ErrorCodeInvalidDataType: "invalid data type",
+	ErrorCodeOverflow:        "overflow",
+	ErrorCodeUnderflow:       "underflow",
+	ErrorCodeIndexOutOfRange: "index out of range",
+	ErrorCodeInvalidCastType: "invalid cast type",
+	ErrorCodeDividedByZero:   "divide by zero",
 }
 
 func (c ErrorCode) Error() string {
