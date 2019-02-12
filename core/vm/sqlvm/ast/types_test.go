@@ -41,28 +41,28 @@ func (s *TypesTestSuite) requireDecodeError(input DataType) {
 
 func (s *TypesTestSuite) TestEncodeAndDecode() {
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorBool, 0),
+		ComposeDataType(DataTypeMajorBool, 0),
 		BoolTypeNode{})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorAddress, 0),
+		ComposeDataType(DataTypeMajorAddress, 0),
 		AddressTypeNode{})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorInt, 1),
+		ComposeDataType(DataTypeMajorInt, 1),
 		IntTypeNode{Size: 16})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorUint, 2),
+		ComposeDataType(DataTypeMajorUint, 2),
 		IntTypeNode{Unsigned: true, Size: 24})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorFixedBytes, 3),
+		ComposeDataType(DataTypeMajorFixedBytes, 3),
 		FixedBytesTypeNode{Size: 32})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorDynamicBytes, 0),
+		ComposeDataType(DataTypeMajorDynamicBytes, 0),
 		DynamicBytesTypeNode{})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorFixed, 1),
+		ComposeDataType(DataTypeMajorFixed, 1),
 		FixedTypeNode{Size: 8, FractionalDigits: 1})
 	s.requireEncodeAndDecodeNoError(
-		composeDataType(DataTypeMajorUfixed+1, 2),
+		ComposeDataType(DataTypeMajorUfixed+1, 2),
 		FixedTypeNode{Unsigned: true, Size: 16, FractionalDigits: 2})
 }
 
@@ -79,15 +79,15 @@ func (s *TypesTestSuite) TestEncodeError() {
 
 func (s *TypesTestSuite) TestDecodeError() {
 	s.requireDecodeError(DataTypeUnknown)
-	s.requireDecodeError(composeDataType(DataTypeMajorBool, 1))
-	s.requireDecodeError(composeDataType(DataTypeMajorAddress, 1))
-	s.requireDecodeError(composeDataType(DataTypeMajorInt, 0x20))
-	s.requireDecodeError(composeDataType(DataTypeMajorUint, 0x20))
-	s.requireDecodeError(composeDataType(DataTypeMajorFixedBytes, 0x20))
-	s.requireDecodeError(composeDataType(DataTypeMajorDynamicBytes, 1))
-	s.requireDecodeError(composeDataType(DataTypeMajorFixed, 81))
-	s.requireDecodeError(composeDataType(DataTypeMajorUfixed, 81))
-	s.requireDecodeError(composeDataType(DataTypeMajorUfixed+0x20, 80))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorBool, 1))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorAddress, 1))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorInt, 0x20))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorUint, 0x20))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorFixedBytes, 0x20))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorDynamicBytes, 1))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorFixed, 81))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorUfixed, 81))
+	s.requireDecodeError(ComposeDataType(DataTypeMajorUfixed+0x20, 80))
 }
 
 func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
@@ -96,33 +96,33 @@ func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
 	neg := decimal.New(-15, 0)
 
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorInt, 2),
+		ComposeDataType(DataTypeMajorInt, 2),
 		pos,
 		3)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorInt, 2),
+		ComposeDataType(DataTypeMajorInt, 2),
 		zero,
 		3)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorInt, 2),
+		ComposeDataType(DataTypeMajorInt, 2),
 		neg,
 		3)
 
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorUint, 2),
+		ComposeDataType(DataTypeMajorUint, 2),
 		pos,
 		3)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorUint, 2),
+		ComposeDataType(DataTypeMajorUint, 2),
 		zero,
 		3)
 
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorAddress, 0),
+		ComposeDataType(DataTypeMajorAddress, 0),
 		pos,
 		20)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorAddress, 0),
+		ComposeDataType(DataTypeMajorAddress, 0),
 		zero,
 		20)
 
@@ -130,24 +130,24 @@ func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
 	neg = decimal.New(-15, -2)
 
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorFixed+2, 2),
+		ComposeDataType(DataTypeMajorFixed+2, 2),
 		pos,
 		3)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorFixed+2, 2),
+		ComposeDataType(DataTypeMajorFixed+2, 2),
 		zero,
 		3)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorFixed+2, 2),
+		ComposeDataType(DataTypeMajorFixed+2, 2),
 		neg,
 		3)
 
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorUfixed+2, 2),
+		ComposeDataType(DataTypeMajorUfixed+2, 2),
 		pos,
 		3)
 	s.requireEncodeAndDecodeDecimalNoError(
-		composeDataType(DataTypeMajorUfixed+2, 2),
+		ComposeDataType(DataTypeMajorUfixed+2, 2),
 		zero,
 		3)
 }

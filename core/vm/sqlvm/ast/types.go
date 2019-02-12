@@ -49,11 +49,13 @@ const (
 // DataTypeUnknown for unknown data type.
 const DataTypeUnknown DataType = 0
 
-func decomposeDataType(t DataType) (DataTypeMajor, DataTypeMinor) {
+// DecomposeDataType to major and minor part with given data type.
+func DecomposeDataType(t DataType) (DataTypeMajor, DataTypeMinor) {
 	return DataTypeMajor(t >> 8), DataTypeMinor(t & 0xff)
 }
 
-func composeDataType(major DataTypeMajor, minor DataTypeMinor) DataType {
+// ComposeDataType to concrete type with major and minor part.
+func ComposeDataType(major DataTypeMajor, minor DataTypeMinor) DataType {
 	return (DataType(major) << 8) | DataType(minor)
 }
 
@@ -78,10 +80,10 @@ func DataTypeEncode(n interface{}) (DataType, error) {
 
 	switch t := n.(type) {
 	case BoolTypeNode:
-		return composeDataType(DataTypeMajorBool, 0), nil
+		return ComposeDataType(DataTypeMajorBool, 0), nil
 
 	case AddressTypeNode:
-		return composeDataType(DataTypeMajorAddress, 0), nil
+		return ComposeDataType(DataTypeMajorAddress, 0), nil
 
 	case IntTypeNode:
 		if t.Size%8 != 0 || t.Size > 256 {
@@ -90,9 +92,9 @@ func DataTypeEncode(n interface{}) (DataType, error) {
 
 		minor := DataTypeMinor((t.Size / 8) - 1)
 		if t.Unsigned {
-			return composeDataType(DataTypeMajorUint, minor), nil
+			return ComposeDataType(DataTypeMajorUint, minor), nil
 		}
-		return composeDataType(DataTypeMajorInt, minor), nil
+		return ComposeDataType(DataTypeMajorInt, minor), nil
 
 	case FixedBytesTypeNode:
 		if t.Size%8 != 0 || t.Size > 256 {
@@ -100,10 +102,10 @@ func DataTypeEncode(n interface{}) (DataType, error) {
 		}
 
 		minor := DataTypeMinor((t.Size / 8) - 1)
-		return composeDataType(DataTypeMajorFixedBytes, minor), nil
+		return ComposeDataType(DataTypeMajorFixedBytes, minor), nil
 
 	case DynamicBytesTypeNode:
-		return composeDataType(DataTypeMajorDynamicBytes, 0), nil
+		return ComposeDataType(DataTypeMajorDynamicBytes, 0), nil
 
 	case FixedTypeNode:
 		if t.Size%8 != 0 || t.Size > 256 {
@@ -117,9 +119,9 @@ func DataTypeEncode(n interface{}) (DataType, error) {
 		major := DataTypeMajor((t.Size / 8) - 1)
 		minor := DataTypeMinor(t.FractionalDigits)
 		if t.Unsigned {
-			return composeDataType(DataTypeMajorUfixed+major, minor), nil
+			return ComposeDataType(DataTypeMajorUfixed+major, minor), nil
 		}
-		return composeDataType(DataTypeMajorFixed+major, minor), nil
+		return ComposeDataType(DataTypeMajorFixed+major, minor), nil
 	}
 
 	return DataTypeUnknown, ErrDataTypeEncode
@@ -127,7 +129,7 @@ func DataTypeEncode(n interface{}) (DataType, error) {
 
 // DataTypeDecode decodes DataType into data type node.
 func DataTypeDecode(t DataType) (interface{}, error) {
-	major, minor := decomposeDataType(t)
+	major, minor := DecomposeDataType(t)
 	switch major {
 	// TODO(wmin0): define unsupported error for special type.
 	case DataTypeMajorBool:
@@ -229,7 +231,7 @@ func decimalDecode(signed bool, bs []byte) decimal.Decimal {
 
 // DecimalEncode encodes decimal to bytes depend on data type.
 func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
-	major, minor := decomposeDataType(dt)
+	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorInt,
 		DataTypeMajorUint:
@@ -253,7 +255,7 @@ func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
 
 // DecimalDecode decodes decimal from bytes.
 func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
-	major, minor := decomposeDataType(dt)
+	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorInt:
 		return decimalDecode(true, b), nil
