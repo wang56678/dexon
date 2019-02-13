@@ -15,12 +15,26 @@ var (
 	bigIntTen = big.NewInt(10)
 )
 
+type decPair struct {
+	Min, Max decimal.Decimal
+}
+
+var (
+	decOne = decimal.New(1, 0)
+
+	decFalse = decimal.Zero
+	decTrue  = decimal.New(1, 0)
+
+	decPairMap = make(map[DataType]decPair)
+)
+
 // Error defines.
 var (
 	ErrDataTypeEncode = errors.New("data type encode failed")
 	ErrDataTypeDecode = errors.New("data type decode failed")
 	ErrDecimalEncode  = errors.New("decimal encode failed")
 	ErrDecimalDecode  = errors.New("decimal decode failed")
+	ErrGetMinMax      = errors.New("get (min, max) failed")
 )
 
 // DataTypeMajor defines type for high byte of DataType.
@@ -271,4 +285,36 @@ func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
 	}
 
 	return decimal.Zero, ErrDecimalDecode
+}
+
+// GetMinMax returns min, max pair according to given data type.
+func GetMinMax(dt DataType) (min, max decimal.Decimal, err error) {
+	cached, ok := decPairMap[dt]
+	if ok {
+		min, max = cached.Min, cached.Max
+		return
+	}
+
+	major, minor := DecomposeDataType(dt)
+	switch major {
+	case DataTypeMajorBool:
+		min, max = decFalse, decTrue
+	case DataTypeMajorAddress:
+		bigUMax := new(big.Int).Lsh(bigIntOne, common.AddressLength*8)
+		max = decimal.NewFromBigInt(bigUMax, 0).Sub(decOne)
+	case DataTypeMajorInt:
+		bigMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8-1)
+		decMax := decimal.NewFromBigInt(bigMax, 0)
+		min, max = decMax.Neg(), decMax.Sub(decOne)
+	case DataTypeMajorUint,
+		DataTypeMajorFixedBytes:
+		bigUMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8)
+		max = decimal.NewFromBigInt(bigUMax, 0).Sub(decOne)
+	default:
+		err = ErrGetMinMax
+		return
+	}
+
+	decPairMap[dt] = decPair{Max: max, Min: min}
+	return
 }
