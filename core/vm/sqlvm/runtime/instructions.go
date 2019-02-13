@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
@@ -28,14 +29,14 @@ type Raw struct {
 	MajorType ast.DataTypeMajor
 	MinorType ast.DataTypeMinor
 
-	// for not bytes
-	Value interface{}
+	Value *big.Int
+	Bytes []byte
 }
 
 func (r *Raw) String() string {
 	return fmt.Sprintf(
-		"MajorType: %v, MinorType: %v, Value: %v",
-		r.MajorType, r.MinorType, r.Value)
+		"MajorType: %v, MinorType: %v, Value: %v, Bytes :%v",
+		r.MajorType, r.MinorType, r.Value, r.Bytes)
 }
 
 // Tuple is collection of Raw.
