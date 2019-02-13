@@ -71,6 +71,7 @@ const (
 	ErrorCategoryLimit
 	ErrorCategoryGrammar
 	ErrorCategorySemantic
+	ErrorCategoryPlanner
 	ErrorCategoryRuntime
 )
 
@@ -78,6 +79,7 @@ var errorCategoryMap = [...]string{
 	ErrorCategoryLimit:    "limit",
 	ErrorCategoryGrammar:  "grammar",
 	ErrorCategorySemantic: "semantic",
+	ErrorCategoryPlanner:  "planner",
 	ErrorCategoryRuntime:  "runtime",
 }
 
@@ -111,6 +113,8 @@ const (
 	ErrorCodeDecimalEncode
 	ErrorCodeDecimalDecode
 
+	// Planner Error
+	ErrorCodePlanner
 	// Runtime Error
 	ErrorCodeInvalidDataType
 	ErrorCodeOverflow
@@ -141,6 +145,9 @@ var errorCodeMap = [...]string{
 	ErrorCodeInvalidUfixedFractionalDigits: "invalid ufixed fractional digits",
 	ErrorCodeDecimalEncode:                 "decimal encode failed",
 	ErrorCodeDecimalDecode:                 "decimal decode failed",
+
+	// Planner Error
+	ErrorCodePlanner: "planner failure", // TODO: fix the message.
 	// Runtime Error
 	ErrorCodeInvalidDataType:    "invalid data type",
 	ErrorCodeOverflow:           "overflow",
