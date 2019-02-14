@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/big"
 	"regexp"
 	"sort"
 	"strings"
@@ -96,6 +97,14 @@ func (op *Operand) toUint64() (result []uint64, err error) {
 		}
 	}
 	return
+}
+
+func (op *Operand) toTableRef() (schema.TableRef, error) {
+	t, err := op.toUint8()
+	if err != nil {
+		return 0, err
+	}
+	return schema.TableRef(t[0]), nil
 }
 
 func (op *Operand) toUint8() ([]uint8, error) {
@@ -1880,5 +1889,32 @@ func opFunc(ctx *common.Context, ops, registers []*Operand, output uint) (err er
 	}
 
 	registers[output] = result
+	return
+}
+
+func uint64ToOperands(numbers []uint64) (*Operand, error) {
+	result := &Operand{
+		Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 7)},
+		Data: []Tuple{},
+	}
+	result.Data = make([]Tuple, len(numbers))
+	for i, n := range numbers {
+		result.Data[i] = []*Raw{
+			{
+				Value: decimal.NewFromBigInt(new(big.Int).SetUint64(n), 0),
+				Bytes: nil,
+			},
+		}
+	}
+	return result, nil
+}
+
+func opRepeatPK(ctx *common.Context, input []*Operand, registers []*Operand, output int) (err error) {
+	tableRef, err := input[0].toTableRef()
+	if err != nil {
+		return err
+	}
+	IDs := ctx.Storage.RepeatPK(ctx.Contract.Address(), tableRef)
+	registers[output], err = uint64ToOperands(IDs)
 	return
 }

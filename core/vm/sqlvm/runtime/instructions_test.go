@@ -189,15 +189,6 @@ func hexToBytes(s string) []byte {
 	return b
 }
 
-type decodeTestCase struct {
-	dt             ast.DataType
-	expectData     *Raw
-	expectSlotHash dexCommon.Hash
-	shift          uint64
-	inputBytes     []byte
-	dBytes         []byte
-}
-
 type opLoadTestCase struct {
 	title          string
 	outputIdx      uint
@@ -205,7 +196,7 @@ type opLoadTestCase struct {
 	expectedErr    error
 	ids            []uint64
 	fields         []uint8
-	tableIdx       int8
+	tableRef       schema.TableRef
 }
 
 func (s *opLoadSuite) SetupTest() {
@@ -236,7 +227,7 @@ func (s *opLoadSuite) getOpLoadTestCases(raws []*raw) []opLoadTestCase {
 			expectedErr:    nil,
 			ids:            nil,
 			fields:         nil,
-			tableIdx:       0,
+			tableRef:       0,
 		},
 		{
 			title:          "NOT_EXIST_TABLE",
@@ -245,7 +236,7 @@ func (s *opLoadSuite) getOpLoadTestCases(raws []*raw) []opLoadTestCase {
 			expectedErr:    errors.ErrorCodeIndexOutOfRange,
 			ids:            nil,
 			fields:         nil,
-			tableIdx:       13,
+			tableRef:       13,
 		},
 		{
 			title:          "OK_CASE",
@@ -254,7 +245,7 @@ func (s *opLoadSuite) getOpLoadTestCases(raws []*raw) []opLoadTestCase {
 			expectedErr:    nil,
 			ids:            []uint64{123456, 654321},
 			fields:         s.getOKCaseFields(raws),
-			tableIdx:       1,
+			tableRef:       1,
 		},
 	}
 	return testCases
@@ -283,6 +274,15 @@ func (s *opLoadSuite) getOKCaseFields(raws []*raw) []uint8 {
 	return rValue
 }
 
+type decodeTestCase struct {
+	dt             ast.DataType
+	expectData     *Raw
+	expectSlotHash dexCommon.Hash
+	shift          uint64
+	inputBytes     []byte
+	dBytes         []byte
+}
+
 func (s *opLoadSuite) getDecodeTestCases(headHash dexCommon.Hash,
 	address dexCommon.Address, storage *common.Storage) []decodeTestCase {
 
@@ -304,9 +304,9 @@ func (s *opLoadSuite) getDecodeTestCases(headHash dexCommon.Hash,
 	return testCases
 }
 
-func (s *opLoadSuite) newRegisters(tableIdx int8, ids []uint64, fields []uint8) []*Operand {
+func (s *opLoadSuite) newRegisters(tableRef schema.TableRef, ids []uint64, fields []uint8) []*Operand {
 	o := make([]*Operand, 4)
-	o[1] = newTableNameOperand(tableIdx)
+	o[1] = newTableRefOperand(tableRef)
 	o[2] = newIDsOperand(ids)
 	o[3] = newFieldsOperand(fields)
 	return o
@@ -323,8 +323,8 @@ func newInput(nums []int) []*Operand {
 	return o
 }
 
-func newTableNameOperand(tableIdx int8) *Operand {
-	if tableIdx < 0 {
+func newTableRefOperand(tableRef schema.TableRef) *Operand {
+	if tableRef < 0 {
 		return nil
 	}
 	o := &Operand{
@@ -334,7 +334,7 @@ func newTableNameOperand(tableIdx int8) *Operand {
 		Data: []Tuple{
 			[]*Raw{
 				{
-					Value: decimal.New(int64(tableIdx), 0),
+					Value: decimal.New(int64(tableRef), 0),
 				},
 			},
 		},
@@ -404,7 +404,7 @@ func (s *opLoadSuite) TestOpLoad() {
 	testCases := s.getOpLoadTestCases(s.raws)
 	for _, t := range testCases {
 		input := newInput([]int{1, 2, 3})
-		reg := s.newRegisters(t.tableIdx, t.ids, t.fields)
+		reg := s.newRegisters(t.tableRef, t.ids, t.fields)
 
 		loadRegister(input, reg)
 		err := opLoad(s.ctx, input, reg, t.outputIdx)
@@ -417,11 +417,72 @@ func (s *opLoadSuite) TestOpLoad() {
 	}
 }
 
-func TestOpLoad(t *testing.T) {
-	suite.Run(t, new(opLoadSuite))
+type opRepeatPKSuite struct{ suite.Suite }
+
+type repeatPKTestCase struct {
+	tableRef    schema.TableRef
+	address     dexCommon.Address
+	title       string
+	expectedErr error
+	expectedIDs []uint64
+}
+
+func (s opRepeatPKSuite) newInput(tableRef schema.TableRef) []*Operand {
+	o := make([]*Operand, 1)
+	o[0] = newTableRefOperand(tableRef)
+	return o
+}
+
+func (s opRepeatPKSuite) newRegisters(tableRef schema.TableRef) []*Operand {
+	o := make([]*Operand, 2)
+	o[1] = newTableRefOperand(tableRef)
+	return o
+}
+
+func (s opRepeatPKSuite) getTestCases(storage *common.Storage) []repeatPKTestCase {
+	testCases := []repeatPKTestCase{
+		{
+			tableRef:    0,
+			address:     dexCommon.BytesToAddress([]byte("0")),
+			title:       "no IDs",
+			expectedErr: nil,
+			expectedIDs: []uint64{},
+		},
+		{
+			tableRef:    1,
+			address:     dexCommon.BytesToAddress([]byte("1")),
+			title:       "ok case",
+			expectedErr: nil,
+			expectedIDs: []uint64{1, 2, 3, 4},
+		},
+	}
+	for _, t := range testCases {
+		storage.SetPK(t.address, t.tableRef, t.expectedIDs)
+	}
+	return testCases
+}
+
+func (s opRepeatPKSuite) TestRepeatPK() {
+	ctx := &common.Context{}
+	ctx.Storage = newStorage()
+	testCases := s.getTestCases(ctx.Storage)
+	for _, t := range testCases {
+		address := t.address
+		ctx.Contract = vm.NewContract(vm.AccountRef(address),
+			vm.AccountRef(address), new(big.Int), uint64(0))
+		reg := s.newRegisters(t.tableRef)
+		input := newInput([]int{1})
+		loadRegister(input, reg)
+		err := opRepeatPK(ctx, input, reg, 0)
+		s.Require().Equalf(t.expectedErr, err, "testcase: [%v]", t.title)
+		result, _ := reg[0].toUint64()
+		s.Require().Equalf(t.expectedIDs, result, "testcase: [%v]", t.title)
+	}
 }
 
 func TestInstructions(t *testing.T) {
+	suite.Run(t, new(opLoadSuite))
+	suite.Run(t, new(opRepeatPKSuite))
 	suite.Run(t, new(instructionSuite))
 }
 

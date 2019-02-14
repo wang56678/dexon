@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/binary"
 	"math/big"
 
 	"github.com/dexon-foundation/decimal"
@@ -142,6 +143,17 @@ func (s *Storage) GetReverseIndexPathHash(
 		tableRefToBytes(tableRef),
 		pathCompReverseIndices,
 		uint64ToBytes(rowID),
+	}
+	return s.hashPathKey(key)
+}
+
+// GetPrimaryPathHash returns primary rlp encoded hash.
+func (s *Storage) GetPrimaryPathHash(tableRef schema.TableRef) (h common.Hash) {
+	// PathKey(["tables", "{table_name}", "primary"])
+	key := [][]byte{
+		pathCompTables,
+		tableRefToBytes(tableRef),
+		pathCompPrimary,
 	}
 	return s.hashPathKey(key)
 }
@@ -520,4 +532,95 @@ func (s *Storage) IncSequence(
 	// TODO(yenlin): Check overflow?
 	s.SetState(contract, seqPath, common.BytesToHash(uint64ToBytes(val+inc)))
 	return val
+}
+
+// DecodePKHeader decodes primary key hash header to lastRowID and rowCount.
+func (s *Storage) DecodePKHeader(header common.Hash) (lastRowID, rowCount uint64) {
+	lastRowID = binary.BigEndian.Uint64(header[:8])
+	rowCount = binary.BigEndian.Uint64(header[8:16])
+	return
+}
+
+// EncodePKHeader encodes lastRowID and rowCount to primary key hash header.
+func (s *Storage) EncodePKHeader(lastRowID, rowCount uint64) (header common.Hash) {
+	binary.BigEndian.PutUint64(header[:8], lastRowID)
+	binary.BigEndian.PutUint64(header[8:16], rowCount)
+	return
+}
+
+// UpdateHash updates hash to stateDB.
+func (s *Storage) UpdateHash(m map[common.Hash]common.Hash, address common.Address) {
+	for key, val := range m {
+		s.SetState(address, key, val)
+	}
+}
+
+func setBit(n byte, pos uint) byte {
+	n |= (1 << pos)
+	return n
+}
+
+func hasBit(n byte, pos uint) bool {
+	val := n & (1 << pos)
+	return (val > 0)
+}
+
+// SetPK sets IDs to primary bit map.
+func (s *Storage) SetPK(address common.Address, tableRef schema.TableRef, IDs []uint64) {
+	hash := s.GetPrimaryPathHash(tableRef)
+	header := s.GetState(address, hash)
+	lastRowID, rowCount := s.DecodePKHeader(header)
+	slotHashToData := make(map[common.Hash]common.Hash)
+	for _, id := range IDs {
+		if lastRowID < id {
+			lastRowID = id
+		}
+		slotNum := id/256 + 1
+		byteLoc := (id & 255) / 8
+		bitLoc := uint(id & 7)
+		slotHash := s.ShiftHashUint64(hash, slotNum)
+		data, exist := slotHashToData[slotHash]
+		if !exist {
+			data = s.GetState(address, slotHash)
+		}
+		if !hasBit(data[byteLoc], bitLoc) {
+			rowCount++
+			data[byteLoc] = setBit(data[byteLoc], bitLoc)
+		}
+		slotHashToData[slotHash] = data
+	}
+	s.UpdateHash(slotHashToData, address)
+	header = s.EncodePKHeader(lastRowID, rowCount)
+	s.SetState(address, hash, header)
+}
+
+func getCountAndOffset(d common.Hash) (offset []uint64) {
+	for j, b := range d {
+		for i := 0; i < 8; i++ {
+			if hasBit(b, uint(i)) {
+				offset = append(offset, uint64(j*8+i))
+			}
+		}
+	}
+	return
+}
+
+// RepeatPK returns primary IDs by table reference.
+func (s *Storage) RepeatPK(address common.Address, tableRef schema.TableRef) []uint64 {
+	hash := s.GetPrimaryPathHash(tableRef)
+	header := s.GetState(address, hash)
+	lastRowID, rowCount := s.DecodePKHeader(header)
+	maxSlotNum := lastRowID/256 + 1
+	result := make([]uint64, rowCount)
+	ptr := 0
+	for slotNum := uint64(0); slotNum < maxSlotNum; slotNum++ {
+		slotHash := s.ShiftHashUint64(hash, slotNum+1)
+		slotData := s.GetState(address, slotHash)
+		offsets := getCountAndOffset(slotData)
+		for i, o := range offsets {
+			result[i+ptr] = o + slotNum*256
+		}
+		ptr += len(offsets)
+	}
+	return result
 }
