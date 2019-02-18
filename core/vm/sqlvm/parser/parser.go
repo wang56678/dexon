@@ -95,6 +95,9 @@ func toUint(b []byte) (uint32, errors.ErrorCode) {
 }
 
 func toDecimal(b []byte) (decimal.Decimal, errors.ErrorCode) {
+	if len(b) > 0 && b[0] == byte('.') {
+		b = append([]byte{'0'}, b...)
+	}
 	d, err := decimal.NewFromString(string(b))
 	return d, convertDecimalError(err)
 }
