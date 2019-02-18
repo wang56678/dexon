@@ -22,6 +22,7 @@ func (s *ParserTestSuite) TestParse() {
 
 	// Test expr.
 	s.requireParseNoError(`select 1 + 2 * 3`)
+	s.requireParseNoError(`select .0`)
 	s.requireParseNoError(`select a(1 + 1)`)
 	s.requireParseNoError(`select hEx'12'`)
 	s.requireParseNoError(`select x'12'`)
