@@ -15,7 +15,7 @@
 // along with the dexon-consensus library. If not, see
 // <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 import (
 	"bytes"
@@ -26,6 +26,7 @@ import (
 	"github.com/dexon-foundation/dexon/accounts/abi"
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/params"
 	"github.com/dexon-foundation/dexon/rlp"
@@ -99,7 +100,7 @@ func publicKeyToNodeID(pkBytes []byte) (Bytes32, error) {
 
 // State manipulation helper fro the governance contract.
 type GovernanceStateHelper struct {
-	StateDB StateDB
+	StateDB vm.StateDB
 }
 
 func (s *GovernanceStateHelper) getState(loc common.Hash) common.Hash {
@@ -1188,7 +1189,7 @@ type tsigVerifierIntf interface {
 type GovernanceContract struct {
 	evm          *EVM
 	state        GovernanceStateHelper
-	contract     *Contract
+	contract     *vm.Contract
 	coreDKGUtils coreDKGUtils
 }
 
@@ -1234,7 +1235,7 @@ func (g *GovernanceContract) transfer(from, to common.Address, amount *big.Int) 
 
 func (g *GovernanceContract) useGas(gas uint64) ([]byte, error) {
 	if !g.contract.UseGas(gas) {
-		return nil, ErrOutOfGas
+		return nil, vm.ErrOutOfGas
 	}
 	return nil, nil
 }
@@ -1459,7 +1460,7 @@ func (g *GovernanceContract) delegate(nodeAddr common.Address) ([]byte, error) {
 	}
 
 	caller := g.contract.Caller()
-	value := g.contract.Value()
+	value := g.contract.Value
 
 	// Can not delegate if no fund was sent.
 	if value.Cmp(big.NewInt(0)) == 0 {
@@ -1474,11 +1475,11 @@ func (g *GovernanceContract) delegate(nodeAddr common.Address) ([]byte, error) {
 
 	// Add to the total staked of node.
 	node := g.state.Node(offset)
-	node.Staked = new(big.Int).Add(node.Staked, g.contract.Value())
+	node.Staked = new(big.Int).Add(node.Staked, g.contract.Value)
 	g.state.UpdateNode(offset, node)
 
 	// Add to network total staked.
-	g.state.IncTotalStaked(g.contract.Value())
+	g.state.IncTotalStaked(g.contract.Value)
 
 	// Push delegator record.
 	offset = g.state.LenDelegators(nodeAddr)
@@ -1537,7 +1538,7 @@ func (g *GovernanceContract) stake(
 	}
 
 	// Delegate fund to itself.
-	if g.contract.Value().Cmp(big.NewInt(0)) > 0 {
+	if g.contract.Value.Cmp(big.NewInt(0)) > 0 {
 		if ret, err := g.delegate(caller); err != nil {
 			return ret, err
 		}
@@ -1696,16 +1697,16 @@ func (g *GovernanceContract) payFine(nodeAddr common.Address) ([]byte, error) {
 	}
 
 	node := g.state.Node(nodeOffset)
-	if node.Fined.Cmp(big.NewInt(0)) <= 0 || node.Fined.Cmp(g.contract.Value()) < 0 {
+	if node.Fined.Cmp(big.NewInt(0)) <= 0 || node.Fined.Cmp(g.contract.Value) < 0 {
 		return nil, errExecutionReverted
 	}
 
-	node.Fined = new(big.Int).Sub(node.Fined, g.contract.Value())
+	node.Fined = new(big.Int).Sub(node.Fined, g.contract.Value)
 	g.state.UpdateNode(nodeOffset, node)
 
 	// TODO: paid fine should be added to award pool.
 
-	g.state.emitFinePaid(nodeAddr, g.contract.Value())
+	g.state.emitFinePaid(nodeAddr, g.contract.Value)
 
 	return g.useGas(100000)
 }
@@ -1929,7 +1930,7 @@ func (g *GovernanceContract) resetDKG(newSignedCRS []byte) ([]byte, error) {
 }
 
 // Run executes governance contract.
-func (g *GovernanceContract) Run(evm *EVM, input []byte, contract *Contract) (ret []byte, err error) {
+func (g *GovernanceContract) Run(evm *EVM, input []byte, contract *vm.Contract) (ret []byte, err error) {
 	if len(input) < 4 {
 		return nil, errExecutionReverted
 	}
@@ -2508,7 +2509,7 @@ func PackReportForkBlock(block1, block2 *coreTypes.Block) ([]byte, error) {
 type NodeInfoOracleContract struct {
 }
 
-func (g *NodeInfoOracleContract) Run(evm *EVM, input []byte, contract *Contract) (ret []byte, err error) {
+func (g *NodeInfoOracleContract) Run(evm *EVM, input []byte, contract *vm.Contract) (ret []byte, err error) {
 	if len(input) < 4 {
 		return nil, errExecutionReverted
 	}

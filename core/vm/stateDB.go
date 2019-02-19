@@ -42,12 +42,13 @@ type Context struct {
 	GasPrice *big.Int       // Provides information for GASPRICE
 
 	// Block information
-	Coinbase    common.Address // Provides information for COINBASE
-	GasLimit    uint64         // Provides information for GASLIMIT
-	BlockNumber *big.Int       // Provides information for NUMBER
-	Time        *big.Int       // Provides information for TIME
-	Randomness  []byte         // Provides information for RAND
-	Difficulty  *big.Int       // Provides information for DIFFICULTY
+	Coinbase      common.Address // Provides information for COINBASE
+	GasLimit      uint64         // Provides information for GASLIMIT
+	BlockNumber   *big.Int       // Provides information for NUMBER
+	Time          *big.Int       // Provides information for TIME
+	Randomness    []byte         // Provides information for RAND
+	Difficulty    *big.Int       // Provides information for DIFFICULTY
+	RandCallIndex uint64         // Number of times opRand is called
 }
 
 // StateDB is an EVM database for full state querying.
