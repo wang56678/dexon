@@ -3,6 +3,7 @@ go_import_path: github.com/dexon-foundation/dexon
 sudo: false
 branches:
   only:
+  - vm
   - dev
   - master
 matrix:
