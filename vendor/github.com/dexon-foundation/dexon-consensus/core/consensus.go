@@ -57,14 +57,13 @@ var (
 
 // consensusBAReceiver implements agreementReceiver.
 type consensusBAReceiver struct {
-	// TODO(mission): consensus would be replaced by lattice and network.
-	consensus        *Consensus
-	agreementModule  *agreement
-	chainID          uint32
-	changeNotaryTime time.Time
-	roundValue       *atomic.Value
-	isNotary         bool
-	restartNotary    chan types.Position
+	// TODO(mission): consensus would be replaced by blockChain and network.
+	consensus          *Consensus
+	agreementModule    *agreement
+	changeNotaryHeight uint64
+	roundValue         *atomic.Value
+	isNotary           bool
+	restartNotary      chan types.Position
 }
 
 func (recv *consensusBAReceiver) round() uint64 {
@@ -96,9 +95,9 @@ func (recv *consensusBAReceiver) ProposeBlock() common.Hash {
 	if !recv.isNotary {
 		return common.Hash{}
 	}
-	block := recv.consensus.proposeBlock(recv.chainID, recv.round())
-	if block == nil {
-		recv.consensus.logger.Error("unable to propose block")
+	block, err := recv.consensus.proposeBlock(recv.agreementModule.agreementID())
+	if err != nil || block == nil {
+		recv.consensus.logger.Error("unable to propose block", "error", err)
 		return types.NullBlockHash
 	}
 	go func() {
@@ -115,25 +114,29 @@ func (recv *consensusBAReceiver) ProposeBlock() common.Hash {
 
 func (recv *consensusBAReceiver) ConfirmBlock(
 	hash common.Hash, votes map[types.NodeID]*types.Vote) {
-	var block *types.Block
+	var (
+		block *types.Block
+		aID   = recv.agreementModule.agreementID()
+	)
 	isEmptyBlockConfirmed := hash == common.Hash{}
 	if isEmptyBlockConfirmed {
-		aID := recv.agreementModule.agreementID()
-		recv.consensus.logger.Info("Empty block is confirmed",
-			"position", &aID)
+		recv.consensus.logger.Info("Empty block is confirmed", "position", aID)
 		var err error
-		block, err = recv.consensus.proposeEmptyBlock(recv.round(), recv.chainID)
+		block, err = recv.consensus.bcModule.addEmptyBlock(aID)
 		if err != nil {
-			recv.consensus.logger.Error("Propose empty block failed", "error", err)
+			recv.consensus.logger.Error("Add position for empty failed",
+				"error", err)
 			return
+		}
+		if block == nil {
+			panic(fmt.Errorf("empty block should be proposed directly: %s", aID))
 		}
 	} else {
 		var exist bool
 		block, exist = recv.agreementModule.findBlockNoLock(hash)
 		if !exist {
 			recv.consensus.logger.Error("Unknown block confirmed",
-				"hash", hash.String()[:6],
-				"chainID", recv.chainID)
+				"hash", hash.String()[:6])
 			ch := make(chan *types.Block)
 			func() {
 				recv.consensus.lock.Lock()
@@ -155,8 +158,7 @@ func (recv *consensusBAReceiver) ConfirmBlock(
 				}
 				recv.consensus.logger.Info("Receive unknown block",
 					"hash", hash.String()[:6],
-					"position", &block.Position,
-					"chainID", recv.chainID)
+					"position", block.Position)
 				recv.agreementModule.addCandidateBlock(block)
 				recv.agreementModule.lock.Lock()
 				defer recv.agreementModule.lock.Unlock()
@@ -165,15 +167,14 @@ func (recv *consensusBAReceiver) ConfirmBlock(
 			return
 		}
 	}
-	recv.consensus.ccModule.registerBlock(block)
 	if block.Position.Height != 0 &&
-		!recv.consensus.lattice.Exist(block.ParentHash) {
+		!recv.consensus.bcModule.confirmed(block.Position.Height-1) {
 		go func(hash common.Hash) {
 			parentHash := hash
 			for {
 				recv.consensus.logger.Warn("Parent block not confirmed",
 					"parent-hash", parentHash.String()[:6],
-					"cur-position", &block.Position)
+					"cur-position", block.Position)
 				ch := make(chan *types.Block)
 				if !func() bool {
 					recv.consensus.lock.Lock()
@@ -200,13 +201,12 @@ func (recv *consensusBAReceiver) ConfirmBlock(
 				}
 				recv.consensus.logger.Info("Receive parent block",
 					"parent-hash", block.ParentHash.String()[:6],
-					"cur-position", &block.Position,
-					"chainID", recv.chainID)
-				recv.consensus.ccModule.registerBlock(block)
+					"cur-position", block.Position)
 				recv.consensus.processBlockChan <- block
 				parentHash = block.ParentHash
 				if block.Position.Height == 0 ||
-					recv.consensus.lattice.Exist(parentHash) {
+					recv.consensus.bcModule.confirmed(
+						block.Position.Height-1) {
 					return
 				}
 			}
@@ -241,9 +241,16 @@ CleanChannelLoop:
 		}
 	}
 	newPos := block.Position
-	if block.Timestamp.After(recv.changeNotaryTime) {
+	if block.Position.Height+1 == recv.changeNotaryHeight {
 		newPos.Round++
 		recv.roundValue.Store(newPos.Round)
+	}
+	currentRound := recv.round()
+	if block.Position.Height > recv.changeNotaryHeight &&
+		block.Position.Round <= currentRound {
+		panic(fmt.Errorf(
+			"round not switch when confirmig: %s, %d, should switch at %d",
+			block, currentRound, recv.changeNotaryHeight))
 	}
 	recv.restartNotary <- newPos
 }
@@ -372,11 +379,6 @@ type Consensus struct {
 	dkgReady   *sync.Cond
 	cfgModule  *configurationChain
 
-	// Dexon consensus v1's modules.
-	lattice  *Lattice
-	ccModule *compactionChain
-	toSyncer *totalOrderingSyncer
-
 	// Interfaces.
 	db       db.Database
 	app      Application
@@ -385,21 +387,20 @@ type Consensus struct {
 	network  Network
 
 	// Misc.
-	dMoment                    time.Time
-	nodeSetCache               *utils.NodeSetCache
-	round                      uint64
-	roundForNewConfig          uint64
-	lock                       sync.RWMutex
-	ctx                        context.Context
-	ctxCancel                  context.CancelFunc
-	event                      *common.Event
-	logger                     common.Logger
-	nonFinalizedBlockDelivered bool
-	resetRandomnessTicker      chan struct{}
-	resetDeliveryGuardTicker   chan struct{}
-	msgChan                    chan interface{}
-	waitGroup                  sync.WaitGroup
-	processBlockChan           chan *types.Block
+	bcModule                 *blockChain
+	dMoment                  time.Time
+	nodeSetCache             *utils.NodeSetCache
+	roundForNewConfig        uint64
+	lock                     sync.RWMutex
+	ctx                      context.Context
+	ctxCancel                context.CancelFunc
+	event                    *common.Event
+	logger                   common.Logger
+	resetRandomnessTicker    chan struct{}
+	resetDeliveryGuardTicker chan struct{}
+	msgChan                  chan interface{}
+	waitGroup                sync.WaitGroup
+	processBlockChan         chan *types.Block
 
 	// Context of Dummy receiver during switching from syncer.
 	dummyCancel    context.CancelFunc
@@ -417,7 +418,7 @@ func NewConsensus(
 	prv crypto.PrivateKey,
 	logger common.Logger) *Consensus {
 	return newConsensusForRound(
-		&types.Block{}, dMoment, app, gov, db, network, prv, logger, nil, true)
+		nil, 0, dMoment, app, gov, db, network, prv, logger, true)
 }
 
 // NewConsensusForSimulation creates an instance of Consensus for simulation,
@@ -431,7 +432,7 @@ func NewConsensusForSimulation(
 	prv crypto.PrivateKey,
 	logger common.Logger) *Consensus {
 	return newConsensusForRound(
-		&types.Block{}, dMoment, app, gov, db, network, prv, logger, nil, false)
+		nil, 0, dMoment, app, gov, db, network, prv, logger, false)
 }
 
 // NewConsensusFromSyncer constructs an Consensus instance from information
@@ -445,20 +446,20 @@ func NewConsensusForSimulation(
 //       their positions, in ascending order.
 func NewConsensusFromSyncer(
 	initBlock *types.Block,
-	initRoundBeginTime time.Time,
+	initRoundBeginHeight uint64,
+	dMoment time.Time,
 	app Application,
 	gov Governance,
 	db db.Database,
 	networkModule Network,
 	prv crypto.PrivateKey,
-	latticeModule *Lattice,
-	confirmedBlocks [][]*types.Block,
+	confirmedBlocks []*types.Block,
 	randomnessResults []*types.BlockRandomnessResult,
 	cachedMessages []interface{},
 	logger common.Logger) (*Consensus, error) {
 	// Setup Consensus instance.
-	con := newConsensusForRound(initBlock, initRoundBeginTime, app, gov, db,
-		networkModule, prv, logger, latticeModule, true)
+	con := newConsensusForRound(initBlock, initRoundBeginHeight, dMoment, app,
+		gov, db, networkModule, prv, logger, true)
 	// Launch a dummy receiver before we start receiving from network module.
 	con.dummyMsgBuffer = cachedMessages
 	con.dummyCancel, con.dummyFinished = utils.LaunchDummyReceiver(
@@ -467,29 +468,18 @@ func NewConsensusFromSyncer(
 		})
 	// Dump all BA-confirmed blocks to the consensus instance, make sure these
 	// added blocks forming a DAG.
-	for {
-		updated := false
-		for idx, bs := range confirmedBlocks {
-			for bIdx, b := range bs {
-				// Only when its parent block is already added to lattice, we can
-				// then add this block. If not, our pulling mechanism would stop at
-				// the block we added, and lost its parent block forever.
-				if !latticeModule.Exist(b.ParentHash) {
-					logger.Debug("Skip discontinuous confirmed block",
-						"from", b,
-						"until", bs[len(bs)-1])
-					confirmedBlocks[idx] = bs[bIdx:]
-					break
-				}
-				con.ccModule.registerBlock(b)
-				if err := con.processBlock(b); err != nil {
-					return nil, err
-				}
-			}
-		}
-		if !updated {
+	refBlock := initBlock
+	for _, b := range confirmedBlocks {
+		// Only when its parent block is already added to lattice, we can
+		// then add this block. If not, our pulling mechanism would stop at
+		// the block we added, and lost its parent block forever.
+		if b.Position.Height != refBlock.Position.Height+1 {
 			break
 		}
+		if err := con.processBlock(b); err != nil {
+			return nil, err
+		}
+		refBlock = b
 	}
 	// Dump all randomness result to the consensus instance.
 	for _, r := range randomnessResults {
@@ -502,19 +492,19 @@ func NewConsensusFromSyncer(
 	return con, nil
 }
 
-// newConsensus creates a Consensus instance.
+// newConsensusForRound creates a Consensus instance.
+// TODO(mission): remove dMoment, it's no longer one part of consensus.
 func newConsensusForRound(
 	initBlock *types.Block,
-	initRoundBeginTime time.Time,
+	initRoundBeginHeight uint64,
+	dMoment time.Time,
 	app Application,
 	gov Governance,
 	db db.Database,
 	network Network,
 	prv crypto.PrivateKey,
 	logger common.Logger,
-	latticeModule *Lattice,
 	usingNonBlocking bool) *Consensus {
-
 	// TODO(w): load latest blockHeight from DB, and use config at that height.
 	nodeSetCache := utils.NewNodeSetCache(gov)
 	// Setup signer module.
@@ -525,13 +515,12 @@ func newConsensusForRound(
 		debugApp = a
 	}
 	// Get configuration for bootstrap round.
-	initRound := initBlock.Position.Round
-	initConfig := utils.GetConfigWithPanic(gov, initRound, logger)
-	// Init lattice.
-	if latticeModule == nil {
-		latticeModule = NewLattice(initRoundBeginTime, initRound, initConfig,
-			signer, app, debugApp, db, logger)
+	initRound := uint64(0)
+	if initBlock != nil {
+		initRound = initBlock.Position.Round
 	}
+	initConfig := utils.GetConfigWithPanic(gov, initRound, logger)
+	initCRS := utils.GetCRSWithPanic(gov, initRound, logger)
 	// Init configuration chain.
 	ID := types.NewNodeID(prv.PublicKey())
 	recv := &consensusDKGReceiver{
@@ -548,11 +537,14 @@ func newConsensusForRound(
 	if usingNonBlocking {
 		appModule = newNonBlocking(app, debugApp)
 	}
+	bcConfig := blockChainConfig{}
+	bcConfig.fromConfig(initRound, initConfig)
+	bcConfig.setRoundBeginHeight(initRoundBeginHeight)
+	bcModule := newBlockChain(ID, dMoment, initBlock, bcConfig, appModule,
+		NewTSigVerifierCache(gov, 7), signer, logger)
 	// Construct Consensus instance.
 	con := &Consensus{
 		ID:                       ID,
-		ccModule:                 newCompactionChain(gov),
-		lattice:                  latticeModule,
 		app:                      appModule,
 		debugApp:                 debugApp,
 		gov:                      gov,
@@ -561,7 +553,8 @@ func newConsensusForRound(
 		baConfirmedBlock:         make(map[common.Hash]chan<- *types.Block),
 		dkgReady:                 sync.NewCond(&sync.Mutex{}),
 		cfgModule:                cfgModule,
-		dMoment:                  initRoundBeginTime,
+		bcModule:                 bcModule,
+		dMoment:                  dMoment,
 		nodeSetCache:             nodeSetCache,
 		signer:                   signer,
 		event:                    common.NewEvent(),
@@ -572,8 +565,15 @@ func newConsensusForRound(
 		processBlockChan:         make(chan *types.Block, 1024),
 	}
 	con.ctx, con.ctxCancel = context.WithCancel(context.Background())
-	con.baMgr = newAgreementMgr(con, initRound, initRoundBeginTime)
-	if err := con.prepare(initBlock); err != nil {
+	baConfig := agreementMgrConfig{}
+	baConfig.from(initRound, initConfig, initCRS)
+	baConfig.setRoundBeginHeight(initRoundBeginHeight)
+	var err error
+	con.baMgr, err = newAgreementMgr(con, initRound, baConfig)
+	if err != nil {
+		panic(err)
+	}
+	if err = con.prepare(initRoundBeginHeight, initBlock); err != nil {
 		panic(err)
 	}
 	return con
@@ -581,52 +581,48 @@ func newConsensusForRound(
 
 // prepare the Consensus instance to be ready for blocks after 'initBlock'.
 // 'initBlock' could be either:
-//  - an empty block
+//  - nil
 //  - the last finalized block
-func (con *Consensus) prepare(initBlock *types.Block) error {
+func (con *Consensus) prepare(
+	initRoundBeginHeight uint64, initBlock *types.Block) (err error) {
 	// The block past from full node should be delivered already or known by
 	// full node. We don't have to notify it.
-	con.roundForNewConfig = initBlock.Position.Round + 1
-	initRound := initBlock.Position.Round
+	initRound := uint64(0)
+	if initBlock != nil {
+		initRound = initBlock.Position.Round
+	}
+	// Setup blockChain module.
+	con.roundForNewConfig = initRound + 1
 	initConfig := utils.GetConfigWithPanic(con.gov, initRound, con.logger)
-	// Setup context.
-	con.ccModule.init(initBlock)
-	con.logger.Debug("Calling Governance.CRS", "round", initRound)
-	initCRS := con.gov.CRS(initRound)
-	if (initCRS == common.Hash{}) {
-		return ErrCRSNotReady
-	}
-	if err := con.baMgr.appendConfig(initRound, initConfig, initCRS); err != nil {
-		return err
-	}
-	// Setup lattice module.
 	initPlusOneCfg := utils.GetConfigWithPanic(con.gov, initRound+1, con.logger)
-	if err := con.lattice.AppendConfig(initRound+1, initPlusOneCfg); err != nil {
-		if err == ErrRoundNotIncreasing {
-			err = nil
-		} else {
+	if err = con.bcModule.appendConfig(initRound+1, initPlusOneCfg); err != nil {
+		return
+	}
+	if initRound == 0 {
+		dkgSet, err := con.nodeSetCache.GetDKGSet(initRound)
+		if err != nil {
 			return err
+		}
+		if _, exist := dkgSet[con.ID]; exist {
+			con.logger.Info("Selected as DKG set", "round", initRound)
+			go func() {
+				// Sleep until dMoment come.
+				time.Sleep(con.dMoment.Sub(time.Now().UTC()))
+				// Network is not stable upon starting. Wait some time to ensure first
+				// DKG would success. Three is a magic number.
+				time.Sleep(initConfig.MinBlockInterval * 3)
+				con.cfgModule.registerDKG(initRound, getDKGThreshold(initConfig))
+				con.event.RegisterHeight(
+					initConfig.RoundInterval/4,
+					func(uint64) {
+						con.runDKG(initRound, initConfig)
+					})
+			}()
 		}
 	}
 	// Register events.
-	dkgSet, err := con.nodeSetCache.GetDKGSet(initRound)
-	if err != nil {
-		return err
-	}
-	if _, exist := dkgSet[con.ID]; exist {
-		con.logger.Info("Selected as DKG set", "round", initRound)
-		go func() {
-			// Sleep until dMoment come.
-			time.Sleep(con.dMoment.Sub(time.Now().UTC()))
-			con.cfgModule.registerDKG(initRound, getDKGThreshold(initConfig))
-			con.event.RegisterTime(con.dMoment.Add(initConfig.RoundInterval/4),
-				func(time.Time) {
-					con.runDKG(initRound, initConfig)
-				})
-		}()
-	}
-	con.initialRound(con.dMoment, initRound, initConfig)
-	return nil
+	con.initialRound(initRoundBeginHeight, initRound, initConfig)
+	return
 }
 
 // Run starts running DEXON Consensus.
@@ -685,18 +681,11 @@ func (con *Consensus) runDKG(round uint64, config *types.Config) {
 	}
 	con.dkgRunning = 1
 	go func() {
-		startTime := time.Now().UTC()
 		defer func() {
 			con.dkgReady.L.Lock()
 			defer con.dkgReady.L.Unlock()
 			con.dkgReady.Broadcast()
 			con.dkgRunning = 2
-			DKGTime := time.Now().Sub(startTime)
-			if DKGTime.Nanoseconds() >=
-				config.RoundInterval.Nanoseconds()/2 {
-				con.logger.Warn("Your computer cannot finish DKG on time!",
-					"nodeID", con.ID.String())
-			}
 		}()
 		if err := con.cfgModule.runDKG(round); err != nil {
 			con.logger.Error("Failed to runDKG", "error", err)
@@ -752,7 +741,7 @@ func (con *Consensus) runCRS(round uint64) {
 }
 
 func (con *Consensus) initialRound(
-	startTime time.Time, round uint64, config *types.Config) {
+	startHeight uint64, round uint64, config *types.Config) {
 	select {
 	case <-con.ctx.Done():
 		return
@@ -765,8 +754,9 @@ func (con *Consensus) initialRound(
 	}
 	// Initiate CRS routine.
 	if _, exist := curDkgSet[con.ID]; exist {
-		con.event.RegisterTime(startTime.Add(config.RoundInterval/2),
-			func(time.Time) {
+		con.event.RegisterHeight(
+			startHeight+config.RoundInterval/2,
+			func(uint64) {
 				go func() {
 					con.runCRS(round)
 				}()
@@ -787,76 +777,71 @@ func (con *Consensus) initialRound(
 		}
 	}
 	// Initiate BA modules.
-	con.event.RegisterTime(
-		startTime.Add(config.RoundInterval/2+config.LambdaDKG),
-		func(time.Time) {
-			go func(nextRound uint64) {
-				if !checkWithCancel(
-					con.ctx, 500*time.Millisecond, checkCRS(nextRound)) {
-					con.logger.Debug("unable to prepare CRS for baMgr",
-						"round", nextRound)
-					return
-				}
-				// Notify BA for new round.
-				nextConfig := utils.GetConfigWithPanic(
-					con.gov, nextRound, con.logger)
-				nextCRS := utils.GetCRSWithPanic(
-					con.gov, nextRound, con.logger)
-				con.logger.Info("appendConfig for baMgr", "round", nextRound)
-				if err := con.baMgr.appendConfig(
-					nextRound, nextConfig, nextCRS); err != nil {
-					panic(err)
-				}
-			}(round + 1)
-		})
+	con.event.RegisterHeight(startHeight+config.RoundInterval/2, func(uint64) {
+		go func(nextRound uint64) {
+			if !checkWithCancel(
+				con.ctx, 500*time.Millisecond, checkCRS(nextRound)) {
+				con.logger.Debug("unable to prepare CRS for baMgr",
+					"round", nextRound)
+				return
+			}
+			// Notify BA for new round.
+			nextConfig := utils.GetConfigWithPanic(
+				con.gov, nextRound, con.logger)
+			nextCRS := utils.GetCRSWithPanic(
+				con.gov, nextRound, con.logger)
+			con.logger.Info("appendConfig for baMgr", "round", nextRound)
+			if err := con.baMgr.appendConfig(
+				nextRound, nextConfig, nextCRS); err != nil {
+				panic(err)
+			}
+		}(round + 1)
+	})
 	// Initiate DKG for this round.
-	con.event.RegisterTime(startTime.Add(config.RoundInterval/2+config.LambdaDKG),
-		func(time.Time) {
-			go func(nextRound uint64) {
-				// Normally, gov.CRS would return non-nil. Use this for in case of
-				// unexpected network fluctuation and ensure the robustness.
-				if !checkWithCancel(
-					con.ctx, 500*time.Millisecond, checkCRS(nextRound)) {
-					con.logger.Debug("unable to prepare CRS for DKG set",
-						"round", nextRound)
-					return
-				}
-				nextDkgSet, err := con.nodeSetCache.GetDKGSet(nextRound)
-				if err != nil {
-					con.logger.Error("Error getting DKG set",
-						"round", nextRound,
-						"error", err)
-					return
-				}
-				if _, exist := nextDkgSet[con.ID]; !exist {
-					return
-				}
-				con.logger.Info("Selected as DKG set", "round", nextRound)
-				con.cfgModule.registerDKG(nextRound, getDKGThreshold(config))
-				con.event.RegisterTime(
-					startTime.Add(config.RoundInterval*2/3),
-					func(time.Time) {
-						func() {
-							con.dkgReady.L.Lock()
-							defer con.dkgReady.L.Unlock()
-							con.dkgRunning = 0
-						}()
-						nextConfig := utils.GetConfigWithPanic(
-							con.gov, nextRound, con.logger)
-						con.runDKG(nextRound, nextConfig)
-					})
-			}(round + 1)
-		})
-	// Prepare lattice module for next round and next "initialRound" routine.
-	con.event.RegisterTime(startTime.Add(config.RoundInterval),
-		func(time.Time) {
-			// Change round.
-			// Get configuration for next round.
-			nextRound := round + 1
-			nextConfig := utils.GetConfigWithPanic(con.gov, nextRound, con.logger)
-			con.initialRound(
-				startTime.Add(config.RoundInterval), nextRound, nextConfig)
-		})
+	con.event.RegisterHeight(startHeight+config.RoundInterval/2, func(uint64) {
+		go func(nextRound uint64) {
+			// Normally, gov.CRS would return non-nil. Use this for in case of
+			// unexpected network fluctuation and ensure the robustness.
+			if !checkWithCancel(
+				con.ctx, 500*time.Millisecond, checkCRS(nextRound)) {
+				con.logger.Debug("unable to prepare CRS for DKG set",
+					"round", nextRound)
+				return
+			}
+			nextDkgSet, err := con.nodeSetCache.GetDKGSet(nextRound)
+			if err != nil {
+				con.logger.Error("Error getting DKG set",
+					"round", nextRound,
+					"error", err)
+				return
+			}
+			if _, exist := nextDkgSet[con.ID]; !exist {
+				return
+			}
+			con.logger.Info("Selected as DKG set", "round", nextRound)
+			con.cfgModule.registerDKG(nextRound, getDKGThreshold(config))
+			con.event.RegisterHeight(startHeight+config.RoundInterval*2/3,
+				func(uint64) {
+					func() {
+						con.dkgReady.L.Lock()
+						defer con.dkgReady.L.Unlock()
+						con.dkgRunning = 0
+					}()
+					nextConfig := utils.GetConfigWithPanic(
+						con.gov, nextRound, con.logger)
+					con.runDKG(nextRound, nextConfig)
+				})
+		}(round + 1)
+	})
+	// Prepare blockChain module for next round and next "initialRound" routine.
+	con.event.RegisterHeight(startHeight+config.RoundInterval, func(uint64) {
+		// Change round.
+		// Get configuration for next round.
+		nextRound := round + 1
+		nextConfig := utils.GetConfigWithPanic(con.gov, nextRound, con.logger)
+		con.initialRound(
+			startHeight+config.RoundInterval, nextRound, nextConfig)
+	})
 }
 
 // Stop the Consensus core.
@@ -917,7 +902,7 @@ MessageLoop:
 				ch, e := con.baConfirmedBlock[val.Hash]
 				return ch, e
 			}(); exist {
-				if err := con.lattice.SanityCheck(val, false); err != nil {
+				if err := con.bcModule.sanityCheck(val); err != nil {
 					if err == ErrRetrySanityCheckLater {
 						err = nil
 					} else {
@@ -965,7 +950,7 @@ MessageLoop:
 			if err := con.ProcessBlockRandomnessResult(val, true); err != nil {
 				con.logger.Error("Failed to process block randomness result",
 					"hash", val.BlockHash.String()[:6],
-					"position", &val.Position,
+					"position", val.Position,
 					"error", err)
 			}
 		case *typesDKG.PrivateShare:
@@ -983,34 +968,6 @@ MessageLoop:
 	}
 }
 
-func (con *Consensus) proposeBlock(chainID uint32, round uint64) *types.Block {
-	block := &types.Block{
-		Position: types.Position{
-			ChainID: chainID,
-			Round:   round,
-		},
-	}
-	if err := con.prepareBlock(block, time.Now().UTC()); err != nil {
-		con.logger.Error("Failed to prepare block", "error", err)
-		return nil
-	}
-	return block
-}
-
-func (con *Consensus) proposeEmptyBlock(
-	round uint64, chainID uint32) (*types.Block, error) {
-	block := &types.Block{
-		Position: types.Position{
-			Round:   round,
-			ChainID: chainID,
-		},
-	}
-	if err := con.lattice.PrepareEmptyBlock(block); err != nil {
-		return nil, err
-	}
-	return block, nil
-}
-
 // ProcessVote is the entry point to submit ont vote to a Consensus instance.
 func (con *Consensus) ProcessVote(vote *types.Vote) (err error) {
 	v := vote.Clone()
@@ -1024,14 +981,11 @@ func (con *Consensus) ProcessAgreementResult(
 	if !con.baMgr.touchAgreementResult(rand) {
 		return nil
 	}
-
 	// Sanity Check.
 	if err := VerifyAgreementResult(rand, con.nodeSetCache); err != nil {
 		con.baMgr.untouchAgreementResult(rand)
 		return err
 	}
-	con.lattice.AddShallowBlock(rand.BlockHash, rand.Position)
-
 	// Syncing BA Module.
 	if err := con.baMgr.processAgreementResult(rand); err != nil {
 		return err
@@ -1089,7 +1043,7 @@ func (con *Consensus) ProcessAgreementResult(
 		if err != nil {
 			if err != ErrTSigAlreadyRunning {
 				con.logger.Error("Failed to run TSIG",
-					"position", &rand.Position,
+					"position", rand.Position,
 					"hash", rand.BlockHash.String()[:6],
 					"error", err)
 			}
@@ -1113,15 +1067,8 @@ func (con *Consensus) ProcessBlockRandomnessResult(
 	if rand.Position.Round == 0 {
 		return nil
 	}
-	if !con.ccModule.touchBlockRandomnessResult(rand) {
-		return nil
-	}
-	if err := con.ccModule.processBlockRandomnessResult(rand); err != nil {
-		if err == ErrBlockNotRegistered {
-			err = nil
-		} else {
-			return err
-		}
+	if err := con.bcModule.addRandomness(rand); err != nil {
+		return err
 	}
 	if needBroadcast {
 		con.logger.Debug("Calling Network.BroadcastRandomnessResult",
@@ -1154,7 +1101,7 @@ func (con *Consensus) pullRandomness() {
 		case <-con.resetRandomnessTicker:
 		case <-time.After(1500 * time.Millisecond):
 			// TODO(jimmy): pulling period should be related to lambdaBA.
-			hashes := con.ccModule.pendingBlocksWithoutRandomness()
+			hashes := con.bcModule.pendingBlocksWithoutRandomness()
 			if len(hashes) > 0 {
 				con.logger.Debug(
 					"Calling Network.PullRandomness", "blocks", hashes)
@@ -1196,7 +1143,8 @@ func (con *Consensus) deliverBlock(b *types.Block) {
 	case con.resetDeliveryGuardTicker <- struct{}{}:
 	default:
 	}
-	if err := con.db.UpdateBlock(*b); err != nil {
+	// TODO(mission): do we need to put block when confirmed now?
+	if err := con.db.PutBlock(*b); err != nil {
 		panic(err)
 	}
 	if err := con.db.PutCompactionChainTipInfo(
@@ -1209,13 +1157,13 @@ func (con *Consensus) deliverBlock(b *types.Block) {
 	if b.Position.Round == con.roundForNewConfig {
 		// Get configuration for the round next to next round. Configuration
 		// for that round should be ready at this moment and is required for
-		// lattice module. This logic is related to:
+		// blockChain module. This logic is related to:
 		//  - roundShift
 		//  - notifyGenesisRound
 		futureRound := con.roundForNewConfig + 1
 		futureConfig := utils.GetConfigWithPanic(con.gov, futureRound, con.logger)
 		con.logger.Debug("Append Config", "round", futureRound)
-		if err := con.lattice.AppendConfig(
+		if err := con.bcModule.appendConfig(
 			futureRound, futureConfig); err != nil {
 			con.logger.Debug("Unable to append config",
 				"round", futureRound,
@@ -1238,14 +1186,14 @@ func (con *Consensus) deliverFinalizedBlocks() error {
 }
 
 func (con *Consensus) deliverFinalizedBlocksWithoutLock() (err error) {
-	deliveredBlocks := con.ccModule.extractBlocks()
+	deliveredBlocks := con.bcModule.extractBlocks()
 	con.logger.Debug("Last blocks in compaction chain",
-		"delivered", con.ccModule.lastDeliveredBlock(),
-		"pending", con.ccModule.lastPendingBlock())
+		"delivered", con.bcModule.lastDeliveredBlock(),
+		"pending", con.bcModule.lastPendingBlock())
 	for _, b := range deliveredBlocks {
 		con.deliverBlock(b)
+		go con.event.NotifyHeight(b.Finalization.Height)
 	}
-	err = con.lattice.PurgeBlocks(deliveredBlocks)
 	return
 }
 
@@ -1271,33 +1219,13 @@ func (con *Consensus) processBlockLoop() {
 
 // processBlock is the entry point to submit one block to a Consensus instance.
 func (con *Consensus) processBlock(block *types.Block) (err error) {
+	// Block processed by blockChain can be out-of-order. But the output from
+	// blockChain (deliveredBlocks) cannot, thus we need to protect the part
+	// below with writer lock.
 	con.lock.Lock()
 	defer con.lock.Unlock()
-	// Block processed by lattice can be out-of-order. But the output of lattice
-	// (deliveredBlocks) cannot.
-	deliveredBlocks, err := con.lattice.ProcessBlock(block)
-	if err != nil {
+	if err = con.bcModule.addBlock(block); err != nil {
 		return
-	}
-	// Pass delivered blocks to compaction chain.
-	for _, b := range deliveredBlocks {
-		if b.IsFinalized() {
-			if con.nonFinalizedBlockDelivered {
-				panic(fmt.Errorf("attempting to skip finalized block: %s", b))
-			}
-			con.logger.Debug("skip delivery of finalized block",
-				"block", b,
-				"finalization-height", b.Finalization.Height)
-			continue
-		} else {
-			// Mark that some non-finalized block delivered. After this flag
-			// turned on, it's not allowed to deliver finalized blocks anymore.
-			con.nonFinalizedBlockDelivered = true
-		}
-		if err = con.ccModule.processBlock(b); err != nil {
-			return
-		}
-		go con.event.NotifyTime(b.Finalization.Timestamp)
 	}
 	if err = con.deliverFinalizedBlocksWithoutLock(); err != nil {
 		return
@@ -1307,36 +1235,28 @@ func (con *Consensus) processBlock(block *types.Block) (err error) {
 
 // processFinalizedBlock is the entry point for handling finalized blocks.
 func (con *Consensus) processFinalizedBlock(block *types.Block) error {
-	return con.ccModule.processFinalizedBlock(block)
+	return con.bcModule.processFinalizedBlock(block)
 }
 
 // PrepareBlock would setup header fields of block based on its ProposerID.
-func (con *Consensus) prepareBlock(b *types.Block,
-	proposeTime time.Time) (err error) {
-	if err = con.lattice.PrepareBlock(b, proposeTime); err != nil {
-		return
+func (con *Consensus) proposeBlock(position types.Position) (
+	*types.Block, error) {
+	b, err := con.bcModule.proposeBlock(position, time.Now().UTC())
+	if err != nil {
+		return nil, err
 	}
 	con.logger.Debug("Calling Governance.CRS", "round", b.Position.Round)
 	crs := con.gov.CRS(b.Position.Round)
 	if crs.Equal(common.Hash{}) {
 		con.logger.Error("CRS for round is not ready, unable to prepare block",
 			"position", &b.Position)
-		err = ErrCRSNotReady
-		return
+		return nil, ErrCRSNotReady
 	}
-	err = con.signer.SignCRS(b, crs)
-	return
-}
-
-// PrepareGenesisBlock would setup header fields for genesis block.
-func (con *Consensus) PrepareGenesisBlock(b *types.Block,
-	proposeTime time.Time) (err error) {
-	if err = con.prepareBlock(b, proposeTime); err != nil {
-		return
+	if err = con.signer.SignCRS(b, crs); err != nil {
+		return nil, err
 	}
-	if len(b.Payload) != 0 {
-		err = ErrGenesisBlockNotEmpty
-		return
+	if b.IsGenesis() && len(b.Payload) != 0 {
+		return nil, ErrGenesisBlockNotEmpty
 	}
-	return
+	return b, nil
 }

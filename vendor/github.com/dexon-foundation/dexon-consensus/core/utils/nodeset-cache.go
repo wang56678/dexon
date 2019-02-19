@@ -33,16 +33,14 @@ var (
 	ErrCRSNotReady = errors.New("crs is not ready")
 	// ErrConfigurationNotReady means we go nil configuration.
 	ErrConfigurationNotReady = errors.New("configuration is not ready")
-	// ErrInvalidChainID means the chain ID is unexpected.
-	ErrInvalidChainID = errors.New("invalid chain id")
 )
 
 type sets struct {
 	crs        common.Hash
 	nodeSet    *types.NodeSet
-	notarySet  []map[types.NodeID]struct{}
+	notarySet  map[types.NodeID]struct{}
 	dkgSet     map[types.NodeID]struct{}
-	leaderNode []map[uint64]types.NodeID
+	leaderNode map[uint64]types.NodeID
 }
 
 // NodeSetCacheInterface interface specifies interface used by NodeSetCache.
@@ -112,30 +110,25 @@ func (cache *NodeSetCache) GetPublicKey(
 }
 
 // GetNodeSet returns IDs of nodes set of this round as map.
-func (cache *NodeSetCache) GetNodeSet(
-	round uint64) (nIDs *types.NodeSet, err error) {
-
+func (cache *NodeSetCache) GetNodeSet(round uint64) (*types.NodeSet, error) {
 	IDs, exists := cache.get(round)
 	if !exists {
+		var err error
 		if IDs, err = cache.update(round); err != nil {
-			return
+			return nil, err
 		}
 	}
-	nIDs = IDs.nodeSet.Clone()
-	return
+	return IDs.nodeSet.Clone(), nil
 }
 
 // GetNotarySet returns of notary set of this round.
 func (cache *NodeSetCache) GetNotarySet(
-	round uint64, chainID uint32) (map[types.NodeID]struct{}, error) {
+	round uint64) (map[types.NodeID]struct{}, error) {
 	IDs, err := cache.getOrUpdate(round)
 	if err != nil {
 		return nil, err
 	}
-	if chainID >= uint32(len(IDs.notarySet)) {
-		return nil, ErrInvalidChainID
-	}
-	return cache.cloneMap(IDs.notarySet[chainID]), nil
+	return cache.cloneMap(IDs.notarySet), nil
 }
 
 // GetDKGSet returns of DKG set of this round.
@@ -155,24 +148,21 @@ func (cache *NodeSetCache) GetLeaderNode(pos types.Position) (
 	if err != nil {
 		return types.NodeID{}, err
 	}
-	if pos.ChainID >= uint32(len(IDs.leaderNode)) {
-		return types.NodeID{}, ErrInvalidChainID
-	}
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
-	if _, exist := IDs.leaderNode[pos.ChainID][pos.Height]; !exist {
-		notarySet := types.NewNodeSetFromMap(IDs.notarySet[pos.ChainID])
-		leader :=
-			notarySet.GetSubSet(1, types.NewNodeLeaderTarget(IDs.crs, pos))
+	if _, exist := IDs.leaderNode[pos.Height]; !exist {
+		notarySet := types.NewNodeSetFromMap(IDs.notarySet)
+		leader := notarySet.GetSubSet(1, types.NewNodeLeaderTarget(
+			IDs.crs, pos.Height))
 		if len(leader) != 1 {
 			panic(errors.New("length of leader is not one"))
 		}
 		for nID := range leader {
-			IDs.leaderNode[pos.ChainID][pos.Height] = nID
+			IDs.leaderNode[pos.Height] = nID
 			break
 		}
 	}
-	return IDs.leaderNode[pos.ChainID][pos.Height], nil
+	return IDs.leaderNode[pos.Height], nil
 }
 
 func (cache *NodeSetCache) cloneMap(
@@ -199,12 +189,9 @@ func (cache *NodeSetCache) getOrUpdate(round uint64) (nIDs *sets, err error) {
 //
 // This cache would maintain 10 rounds before the updated round and purge
 // rounds not in this range.
-func (cache *NodeSetCache) update(
-	round uint64) (nIDs *sets, err error) {
-
+func (cache *NodeSetCache) update(round uint64) (nIDs *sets, err error) {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
-
 	// Get information for the requested round.
 	keySet := cache.nsIntf.NodeSet(round)
 	if keySet == nil {
@@ -238,20 +225,13 @@ func (cache *NodeSetCache) update(
 	nIDs = &sets{
 		crs:       crs,
 		nodeSet:   nodeSet,
-		notarySet: make([]map[types.NodeID]struct{}, cfg.NumChains),
+		notarySet: make(map[types.NodeID]struct{}),
 		dkgSet: nodeSet.GetSubSet(
 			int(cfg.DKGSetSize), types.NewDKGSetTarget(crs)),
-		leaderNode: make([]map[uint64]types.NodeID, cfg.NumChains),
+		leaderNode: make(map[uint64]types.NodeID, cfg.RoundInterval),
 	}
-	for i := range nIDs.notarySet {
-		nIDs.notarySet[i] = nodeSet.GetSubSet(
-			int(cfg.NotarySetSize), types.NewNotarySetTarget(crs, uint32(i)))
-	}
-	nodesPerChain := cfg.RoundInterval / cfg.MinBlockInterval
-	for i := range nIDs.leaderNode {
-		nIDs.leaderNode[i] = make(map[uint64]types.NodeID, nodesPerChain)
-	}
-
+	nIDs.notarySet = nodeSet.GetSubSet(
+		int(cfg.NotarySetSize), types.NewNotarySetTarget(crs))
 	cache.rounds[round] = nIDs
 	// Purge older rounds.
 	for rID, nIDs := range cache.rounds {
@@ -270,12 +250,9 @@ func (cache *NodeSetCache) update(
 	return
 }
 
-func (cache *NodeSetCache) get(
-	round uint64) (nIDs *sets, exists bool) {
-
+func (cache *NodeSetCache) get(round uint64) (nIDs *sets, exists bool) {
 	cache.lock.RLock()
 	defer cache.lock.RUnlock()
-
 	nIDs, exists = cache.rounds[round]
 	return
 }
