@@ -15,7 +15,7 @@
 // along with the dexon-consensus library. If not, see
 // <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 import (
 	"bytes"
@@ -36,6 +36,7 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -164,7 +165,7 @@ func TestGovernanceState(t *testing.T) {
 type OracleContractsTestSuite struct {
 	suite.Suite
 
-	context Context
+	context vm.Context
 	config  *params.DexconConfig
 	memDB   *ethdb.MemDatabase
 	stateDB *state.StateDB
@@ -208,11 +209,11 @@ func (g *OracleContractsTestSuite) SetupTest() {
 
 	g.stateDB.Commit(true)
 
-	g.context = Context{
-		CanTransfer: func(db StateDB, addr common.Address, amount *big.Int) bool {
+	g.context = vm.Context{
+		CanTransfer: func(db vm.StateDB, addr common.Address, amount *big.Int) bool {
 			return db.GetBalance(addr).Cmp(amount) >= 0
 		},
-		Transfer: func(db StateDB, sender common.Address, recipient common.Address, amount *big.Int) {
+		Transfer: func(db vm.StateDB, sender common.Address, recipient common.Address, amount *big.Int) {
 			db.SubBalance(sender, amount)
 			db.AddBalance(recipient, amount)
 		},
@@ -249,7 +250,7 @@ func (g *OracleContractsTestSuite) call(
 	g.context.Time = big.NewInt(time.Now().UnixNano() / 1000000)
 
 	evm := NewEVM(g.context, g.stateDB, params.TestChainConfig, Config{IsBlockProposer: true})
-	ret, _, err := evm.Call(AccountRef(caller), contractAddr, input, 10000000, value)
+	ret, _, err := evm.Call(vm.AccountRef(caller), contractAddr, input, 10000000, value)
 	return ret, err
 }
 

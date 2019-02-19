@@ -15,13 +15,14 @@
 // along with the dexon-consensus library. If not, see
 // <http://www.gnu.org/licenses/>.
 
-package vm
+package evm
 
 import (
 	"strings"
 
 	"github.com/dexon-foundation/dexon/accounts/abi"
 	"github.com/dexon-foundation/dexon/common"
+	"github.com/dexon-foundation/dexon/core/vm"
 )
 
 var GovernanceContractAddress = common.HexToAddress("63751838d6485578b23e8b051d40861ecc416794")
@@ -34,7 +35,7 @@ func init() {
 
 // OracleContract represent special system contracts written in Go.
 type OracleContract interface {
-	Run(evm *EVM, input []byte, contract *Contract) (ret []byte, err error)
+	Run(evm *EVM, input []byte, contract *vm.Contract) (ret []byte, err error)
 }
 
 // A map representing available system oracle contracts.
@@ -47,7 +48,7 @@ var OracleContracts = map[common.Address]func() OracleContract{
 }
 
 // Run oracle contract.
-func RunOracleContract(oracle OracleContract, evm *EVM, input []byte, contract *Contract) (ret []byte, err error) {
+func RunOracleContract(oracle OracleContract, evm *EVM, input []byte, contract *vm.Contract) (ret []byte, err error) {
 	return oracle.Run(evm, input, contract)
 }
 
