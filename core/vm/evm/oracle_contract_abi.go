@@ -24,58 +24,31 @@ const GovernanceABIJSON = `
 [
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      },
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "delegatorsOffset",
-    "outputs": [
-      {
-        "name": "",
-        "type": "int256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "dkgComplaints",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [],
     "name": "notarySetSize",
     "outputs": [
       {
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "dkgMasterPublicKeyProposed",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
       }
     ],
     "payable": false,
@@ -151,6 +124,28 @@ const GovernanceABIJSON = `
       {
         "name": "url",
         "type": "string"
+      },
+      {
+        "name": "unstaked",
+        "type": "uint256"
+      },
+      {
+        "name": "unstakedAt",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "notaryParamBeta",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
       }
     ],
     "payable": false,
@@ -201,17 +196,12 @@ const GovernanceABIJSON = `
   },
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "crs",
+    "inputs": [],
+    "name": "crsRound",
     "outputs": [
       {
         "name": "",
-        "type": "bytes32"
+        "type": "uint256"
       }
     ],
     "payable": false,
@@ -221,7 +211,7 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [],
-    "name": "phiRatio",
+    "name": "notaryParamAlpha",
     "outputs": [
       {
         "name": "",
@@ -235,70 +225,16 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "dkgMPKReadysCount",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
       {
         "name": "",
         "type": "address"
       }
     ],
-    "name": "dkgMPKReadys",
+    "name": "dkgFinalizeds",
     "outputs": [
       {
         "name": "",
         "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "name": "delegators",
-    "outputs": [
-      {
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "name": "value",
-        "type": "uint256"
-      },
-      {
-        "name": "undelegated_at",
-        "type": "uint256"
       }
     ],
     "payable": false,
@@ -321,27 +257,8 @@ const GovernanceABIJSON = `
   },
   {
     "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "nodesOffsetByID",
-    "outputs": [
-      {
-        "name": "",
-        "type": "int256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
     "inputs": [],
-    "name": "totalStaked",
+    "name": "dkgRound",
     "outputs": [
       {
         "name": "",
@@ -355,7 +272,7 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [],
-    "name": "roundInterval",
+    "name": "totalStaked",
     "outputs": [
       {
         "name": "",
@@ -388,11 +305,58 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [],
+    "name": "crs",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "roundLength",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
     "name": "nextHalvingSupply",
     "outputs": [
       {
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "dkgComplaints",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes"
       }
     ],
     "payable": false,
@@ -407,6 +371,25 @@ const GovernanceABIJSON = `
       {
         "name": "",
         "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "dkgMPKReadys",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
       }
     ],
     "payable": false,
@@ -501,7 +484,7 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [],
-    "name": "minBlockInterval",
+    "name": "dkgMPKReadysCount",
     "outputs": [
       {
         "name": "",
@@ -515,7 +498,7 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [],
-    "name": "k",
+    "name": "minBlockInterval",
     "outputs": [
       {
         "name": "",
@@ -529,10 +512,6 @@ const GovernanceABIJSON = `
   {
     "constant": true,
     "inputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      },
       {
         "name": "",
         "type": "uint256"
@@ -554,14 +533,57 @@ const GovernanceABIJSON = `
     "inputs": [
       {
         "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
         "type": "address"
       }
     ],
-    "name": "dkgFinalizeds",
+    "name": "lastProposedHeight",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "minGasPrice",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "dkgFinalizedsCount",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "dkgComplaintsProposed",
     "outputs": [
       {
         "name": "",
@@ -574,12 +596,17 @@ const GovernanceABIJSON = `
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "numChains",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "nodesOffsetByNodeKeyAddress",
     "outputs": [
       {
         "name": "",
-        "type": "uint256"
+        "type": "int256"
       }
     ],
     "payable": false,
@@ -608,7 +635,7 @@ const GovernanceABIJSON = `
         "type": "uint256"
       }
     ],
-    "name": "dkgFinalizedsCount",
+    "name": "dkgResetCount",
     "outputs": [
       {
         "name": "",
@@ -649,6 +676,28 @@ const GovernanceABIJSON = `
         "indexed": true,
         "name": "NodeAddress",
         "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "NewOwnerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "NodeOwnershipTransfered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "NodeAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "Amount",
+        "type": "uint256"
       }
     ],
     "name": "Staked",
@@ -661,23 +710,6 @@ const GovernanceABIJSON = `
         "indexed": true,
         "name": "NodeAddress",
         "type": "address"
-      }
-    ],
-    "name": "Unstaked",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "name": "NodeAddress",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "name": "DelegatorAddress",
-        "type": "address"
       },
       {
         "indexed": false,
@@ -685,24 +717,7 @@ const GovernanceABIJSON = `
         "type": "uint256"
       }
     ],
-    "name": "Delegated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "name": "NodeAddress",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "name": "DelegatorAddress",
-        "type": "address"
-      }
-    ],
-    "name": "Undelegated",
+    "name": "Unstaked",
     "type": "event"
   },
   {
@@ -720,6 +735,30 @@ const GovernanceABIJSON = `
       }
     ],
     "name": "Withdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "NodeAddress",
+        "type": "address"
+      }
+    ],
+    "name": "NodeAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "NodeAddress",
+        "type": "address"
+      }
+    ],
+    "name": "NodeRemoved",
     "type": "event"
   },
   {
@@ -784,10 +823,27 @@ const GovernanceABIJSON = `
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "Round",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "BlockHeight",
+        "type": "uint256"
+      }
+    ],
+    "name": "DKGReset",
+    "type": "event"
+  },
+  {
     "constant": false,
     "inputs": [
       {
-        "name": "newOwner",
+        "name": "NewOwner",
         "type": "address"
       }
     ],
@@ -809,23 +865,11 @@ const GovernanceABIJSON = `
         "type": "uint256"
       },
       {
-        "name": "MiningVelocity",
-        "type": "uint256"
-      },
-      {
-        "name": "NextHalvingSupply",
-        "type": "uint256"
-      },
-      {
-        "name": "LastHalvingAmount",
+        "name": "MinGasPrice",
         "type": "uint256"
       },
       {
         "name": "BlockGasLimit",
-        "type": "uint256"
-      },
-      {
-        "name": "NumChains",
         "type": "uint256"
       },
       {
@@ -837,23 +881,15 @@ const GovernanceABIJSON = `
         "type": "uint256"
       },
       {
-        "name": "K",
+        "name": "NotaryParamAlpha",
         "type": "uint256"
       },
       {
-        "name": "PhiRatio",
+        "name": "NotaryParamBeta",
         "type": "uint256"
       },
       {
-        "name": "NotarySetSize",
-        "type": "uint256"
-      },
-      {
-        "name": "DKGSetSize",
-        "type": "uint256"
-      },
-      {
-        "name": "RoundInterval",
+        "name": "RoundLength",
         "type": "uint256"
       },
       {
@@ -872,6 +908,20 @@ const GovernanceABIJSON = `
     "type": "function"
   },
   {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "NewOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferNodeOwnership",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [],
     "name": "nodesLength",
@@ -883,43 +933,6 @@ const GovernanceABIJSON = `
     ],
     "payable": false,
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "NodeAddress",
-        "type": "address"
-      }
-    ],
-    "name": "delegatorsLength",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "Round",
-        "type": "uint256"
-      },
-      {
-        "name": "Height",
-        "type": "uint256"
-      }
-    ],
-    "name": "snapshotRound",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -944,10 +957,6 @@ const GovernanceABIJSON = `
     "constant": false,
     "inputs": [
       {
-        "name": "Round",
-        "type": "uint256"
-      },
-      {
         "name": "Complaint",
         "type": "bytes"
       }
@@ -961,10 +970,6 @@ const GovernanceABIJSON = `
   {
     "constant": false,
     "inputs": [
-      {
-        "name": "Round",
-        "type": "uint256"
-      },
       {
         "name": "PublicKey",
         "type": "bytes"
@@ -980,10 +985,6 @@ const GovernanceABIJSON = `
     "constant": false,
     "inputs": [
       {
-        "name": "Round",
-        "type": "uint256"
-      },
-      {
         "name": "MPKReady",
         "type": "bytes"
       }
@@ -997,10 +998,6 @@ const GovernanceABIJSON = `
   {
     "constant": false,
     "inputs": [
-      {
-        "name": "Round",
-        "type": "uint256"
-      },
       {
         "name": "Finalize",
         "type": "bytes"
@@ -1036,7 +1033,7 @@ const GovernanceABIJSON = `
         "type": "string"
       }
     ],
-    "name": "stake",
+    "name": "register",
     "outputs": [],
     "payable": true,
     "stateMutability": "payable",
@@ -1045,21 +1042,7 @@ const GovernanceABIJSON = `
   {
     "constant": false,
     "inputs": [],
-    "name": "unstake",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "NodeAddress",
-        "type": "address"
-      }
-    ],
-    "name": "delegate",
+    "name": "stake",
     "outputs": [],
     "payable": true,
     "stateMutability": "payable",
@@ -1069,11 +1052,11 @@ const GovernanceABIJSON = `
     "constant": false,
     "inputs": [
       {
-        "name": "NodeAddress",
-        "type": "address"
+        "name": "Amount",
+        "type": "uint256"
       }
     ],
-    "name": "undelegate",
+    "name": "unstake",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
@@ -1081,12 +1064,7 @@ const GovernanceABIJSON = `
   },
   {
     "constant": false,
-    "inputs": [
-      {
-        "name": "NodeAddress",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "withdraw",
     "outputs": [],
     "payable": false,
@@ -1124,6 +1102,20 @@ const GovernanceABIJSON = `
       }
     ],
     "name": "report",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "NewSignedCRS",
+        "type": "bytes"
+      }
+    ],
+    "name": "resetDKG",
     "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
