@@ -16,7 +16,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/consensus"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/rlp"
 )
@@ -140,7 +140,7 @@ func (n *Node) DKGFinalize(round uint64) *coreTypesDKG.Finalize {
 func (n *Node) CreateGovTx(nonce uint64, data []byte) *types.Transaction {
 	tx, err := types.SignTx(types.NewTransaction(
 		nonce,
-		vm.GovernanceContractAddress,
+		evm.GovernanceContractAddress,
 		big.NewInt(0),
 		uint64(2000000),
 		big.NewInt(1e10),

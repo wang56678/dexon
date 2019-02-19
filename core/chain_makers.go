@@ -27,7 +27,7 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/misc"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -103,7 +103,7 @@ func (b *BlockGen) AddTxWithChain(bc *BlockChain, tx *types.Transaction) {
 		b.SetCoinbase(common.Address{})
 	}
 	b.statedb.Prepare(tx.Hash(), common.Hash{}, len(b.txs))
-	receipt, _, err := ApplyTransaction(b.config, bc, &b.header.Coinbase, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, vm.Config{})
+	receipt, _, err := ApplyTransaction(b.config, bc, &b.header.Coinbase, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, evm.Config{})
 	if err != nil {
 		panic(err)
 	}
