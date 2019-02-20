@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 	"github.com/shopspring/decimal"
@@ -52,16 +53,20 @@ func assertExprSlice(x interface{}) []ast.ExprNode {
 	return es
 }
 
-// TODO(wmin0): finish it.
 func isAddress(h []byte) bool {
-	return false
+	ma, err := common.NewMixedcaseAddressFromString(string(h))
+	if err != nil {
+		return false
+	}
+	return ma.ValidChecksum()
 }
 
 func hexToInteger(h []byte) *ast.IntegerValueNode {
 	d := decimal.Zero
-	l := len(h)
+	x := h[2:]
+	l := len(x)
 	base := decimal.New(16, 0)
-	for idx, b := range h {
+	for idx, b := range x {
 		i, err := strconv.ParseInt(string([]byte{b}), 16, 32)
 		if err != nil {
 			panic(fmt.Sprintf("invalid hex digit %s: %v", []byte{b}, err))
