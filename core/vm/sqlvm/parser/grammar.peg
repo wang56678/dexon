@@ -861,8 +861,8 @@ Decimal
 }
 
 Hex
-	= "0" "X"i s:( [0-9A-Fa-f] )+ !NormalIdentifierRest
-{ return hexToInteger(joinBytes(assertSlice(s))), nil }
+	= "0x" ( [0-9A-Fa-f] )+ !NormalIdentifierRest
+{ return hexToInteger(c.text), nil }
 
 StringLiteral
 	= HexString
