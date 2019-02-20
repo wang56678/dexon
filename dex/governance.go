@@ -230,11 +230,11 @@ func (d *DexconGovernance) ReportForkBlock(block1, block2 *coreTypes.Block) {
 }
 
 func (d *DexconGovernance) GetNumChains(round uint64) uint32 {
-	return d.Configuration(round).NumChains
+	return 1
 }
 
-func (d *DexconGovernance) NotarySet(round uint64, chainID uint32) (map[string]struct{}, error) {
-	notarySet, err := d.nodeSetCache.GetNotarySet(round, chainID)
+func (d *DexconGovernance) NotarySet(round uint64, _ uint32) (map[string]struct{}, error) {
+	notarySet, err := d.nodeSetCache.GetNotarySet(round)
 	if err != nil {
 		return nil, err
 	}

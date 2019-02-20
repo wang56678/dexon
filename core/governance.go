@@ -91,14 +91,11 @@ func (g *Governance) Configuration(round uint64) *coreTypes.Config {
 	configHelper := g.GetGovStateHelperAtRound(round)
 	c := configHelper.Configuration()
 	return &coreTypes.Config{
-		NumChains:        c.NumChains,
 		LambdaBA:         time.Duration(c.LambdaBA) * time.Millisecond,
 		LambdaDKG:        time.Duration(c.LambdaDKG) * time.Millisecond,
-		K:                int(c.K),
-		PhiRatio:         c.PhiRatio,
 		NotarySetSize:    c.NotarySetSize,
 		DKGSetSize:       c.DKGSetSize,
-		RoundInterval:    time.Duration(c.RoundInterval) * time.Millisecond,
+		RoundInterval:    c.RoundInterval,
 		MinBlockInterval: time.Duration(c.MinBlockInterval) * time.Millisecond,
 	}
 }

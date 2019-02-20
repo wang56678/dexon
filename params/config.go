@@ -60,7 +60,7 @@ var (
 			PhiRatio:          0.667,
 			NotarySetSize:     4,
 			DKGSetSize:        4,
-			RoundInterval:     600000,
+			RoundInterval:     150,
 			MinBlockInterval:  1000,
 			FineValues: []*big.Int{
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
@@ -107,7 +107,7 @@ var (
 			PhiRatio:          0.667,
 			NotarySetSize:     4,
 			DKGSetSize:        4,
-			RoundInterval:     1200000,
+			RoundInterval:     150,
 			MinBlockInterval:  1000,
 			FineValues: []*big.Int{
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
@@ -120,7 +120,7 @@ var (
 	// TaipeiChainConfig contains the chain parameters to run a node on the Taipei test network.
 	TaipeiChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(239),
-		DMoment:             1548556500,
+		DMoment:             1550645400,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
@@ -145,7 +145,7 @@ var (
 			PhiRatio:          0.667,
 			NotarySetSize:     21,
 			DKGSetSize:        13,
-			RoundInterval:     1800000,
+			RoundInterval:     150,
 			MinBlockInterval:  1000,
 			FineValues: []*big.Int{
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),

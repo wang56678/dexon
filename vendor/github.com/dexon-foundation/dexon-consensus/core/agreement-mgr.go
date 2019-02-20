@@ -201,6 +201,7 @@ func (mgr *agreementMgr) appendConfig(
 }
 
 func (mgr *agreementMgr) processVote(v *types.Vote) (err error) {
+	mgr.logger.Debug("processVote", "ID", mgr.ID.String()[:6], "vote", v)
 	if mgr.voteFilter.Filter(v) {
 		return nil
 	}

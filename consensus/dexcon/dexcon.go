@@ -113,17 +113,6 @@ func (d *Dexcon) calculateBlockReward(round int64, state *state.StateDB) *big.In
 
 	gsCurrent := vm.GovernanceStateHelper{state}
 	configCurrent := gsCurrent.Configuration()
-	heightCurrent := gsCurrent.RoundHeight(big.NewInt(round)).Uint64()
-
-	blocksPerRound := uint64(0)
-
-	// The initial round, calculate an approximate number of round base on config.
-	if round == 0 || heightCurrent == 0 {
-		blocksPerRound = uint64(config.NumChains) * config.RoundInterval / config.MinBlockInterval
-	} else {
-		heightPrev := gsCurrent.RoundHeight(big.NewInt(round - 1)).Uint64()
-		blocksPerRound = heightCurrent - heightPrev
-	}
 
 	// blockReard = miningVelocity * totalStaked * roundInterval / aYear / numBlocksInPrevRound
 	numerator, _ := new(big.Float).Mul(
@@ -135,7 +124,7 @@ func (d *Dexcon) calculateBlockReward(round int64, state *state.StateDB) *big.In
 	reward := new(big.Int).Div(numerator,
 		new(big.Int).Mul(
 			big.NewInt(86400*1000*365),
-			big.NewInt(int64(blocksPerRound))))
+			big.NewInt(int64(config.RoundInterval))))
 
 	return reward
 }
