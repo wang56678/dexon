@@ -73,7 +73,11 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 	}
 	if stringer, ok := n.(fmt.Stringer); ok {
 		s := stringer.String()
-		fmt.Fprintf(w, "%s%s: %s\n", indent, name, formatString(s))
+		fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
+		return
+	}
+	if s, ok := n.(string); ok {
+		fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
 		return
 	}
 	if bs, ok := n.([]byte); ok {
