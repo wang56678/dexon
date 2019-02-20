@@ -1,8 +1,6 @@
 package ast
 
 import (
-	"strconv"
-
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 	"github.com/shopspring/decimal"
 )
@@ -142,11 +140,6 @@ func (n BoolValueNode) Value() interface{} {
 	return n.V
 }
 
-// String is used for printing AST.
-func (n BoolValueNode) String() string {
-	return strconv.FormatBool(n.V)
-}
-
 // IntegerValueNode is an integer constant.
 type IntegerValueNode struct {
 	TaggedExprNodeBase
@@ -169,11 +162,6 @@ func (n IntegerValueNode) IsConstant() bool {
 // Value returns the value of IntegerValueNode.
 func (n IntegerValueNode) Value() interface{} {
 	return n.V
-}
-
-// String is used for printing AST.
-func (n IntegerValueNode) String() string {
-	return n.V.String()
 }
 
 // DecimalValueNode is a number constant.
@@ -199,11 +187,6 @@ func (n DecimalValueNode) Value() interface{} {
 	return n.V
 }
 
-// String is used for printing AST.
-func (n DecimalValueNode) String() string {
-	return n.V.String()
-}
-
 // BytesValueNode is a dynamic or fixed bytes constant.
 type BytesValueNode struct {
 	TaggedExprNodeBase
@@ -225,11 +208,6 @@ func (n BytesValueNode) IsConstant() bool {
 // Value returns the value of BytesValueNode.
 func (n BytesValueNode) Value() interface{} {
 	return n.V
-}
-
-// String is used for printing AST.
-func (n BytesValueNode) String() string {
-	return string(n.V)
 }
 
 // AnyValueNode is '*' used in SELECT and function call.
