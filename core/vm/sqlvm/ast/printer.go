@@ -44,18 +44,17 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 	}
 	typeOf := reflect.TypeOf(n)
 	valueOf := reflect.ValueOf(n)
-	name := ""
-	if typeOf.Kind() == reflect.Ptr {
+	kind := typeOf.Kind()
+	if kind == reflect.Ptr {
 		if valueOf.IsNil() {
 			fmt.Fprintf(w, "%snil\n", indent)
 			return
 		}
-		name = "*"
 		valueOf = valueOf.Elem()
 		typeOf = typeOf.Elem()
+		kind = typeOf.Kind()
 	}
-	kind := typeOf.Kind()
-	name = name + typeOf.Name()
+	name := typeOf.Name()
 
 	if op, ok := n.(UnaryOperator); ok {
 		fmt.Fprintf(w, "%s%s:\n", indent, name)
