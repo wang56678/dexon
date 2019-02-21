@@ -124,6 +124,7 @@ func (b *buffer) skipSection(opening, closing, escape rune,
 
 func pegFormat(src []byte) ([]byte, error) {
 	b := newBuffer(src)
+	indent := 0
 
 	for {
 		r, err := b.nextRune()
@@ -139,6 +140,10 @@ func pegFormat(src []byte) ([]byte, error) {
 		}
 
 		switch r {
+		case '\n':
+			indent = 0
+		case '\t':
+			indent++
 		case '/':
 			r, err = b.nextRune()
 			if err != nil {
@@ -211,7 +216,12 @@ func pegFormat(src []byte) ([]byte, error) {
 					return nil, err
 				}
 			} else {
-				_, err = b.out.Write(formatted[1:])
+				formatted = formatted[1:]
+				pattern := []byte{'\n'}
+				replacement := append([]byte{'\n'},
+					bytes.Repeat([]byte{'\t'}, indent)...)
+				formatted = bytes.Replace(formatted, pattern, replacement, -1)
+				_, err = b.out.Write(formatted)
 				if err != nil {
 					return nil, err
 				}
