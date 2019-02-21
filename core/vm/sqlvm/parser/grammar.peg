@@ -31,6 +31,8 @@ SelectStmt
 	offset:( _ of:OffsetClause { return of, nil } )?
 {
 	node := &ast.SelectStmtNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Column = assertExprSlice(prepend(f, assertSlice(fs)))
 	if table != nil {
 		node.Table = table.(*ast.IdentifierNode)
@@ -69,6 +71,8 @@ UpdateStmt
 	where:( _ w:WhereClause { return w, nil } )?
 {
 	node := &ast.UpdateStmtNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Table = table.(*ast.IdentifierNode)
 	assignSlice := prepend(a, assertSlice(as))
 	node.Assignment = make([]*ast.AssignOperatorNode, len(assignSlice))
@@ -88,6 +92,8 @@ DeleteStmt
 	where:( _ w:WhereClause { return w, nil } )?
 {
 	node := &ast.DeleteStmtNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Table = table.(*ast.IdentifierNode)
 	if where != nil {
 		node.Where = where.(*ast.WhereOptionNode)
@@ -102,6 +108,8 @@ InsertStmt
 	_ insert:( InsertWithColumnClause / InsertWithDefaultClause )
 {
 	node := &ast.InsertStmtNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Table = table.(*ast.IdentifierNode)
 	switch i := insert.(type) {
 	case *ast.InsertWithColumnOptionNode:
@@ -131,6 +139,8 @@ CreateTableStmt
 	_ ')'
 {
 	node := &ast.CreateTableStmtNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Table = table.(*ast.IdentifierNode)
 	columnSlice := assertSlice(column)
 	node.Column = make([]*ast.ColumnSchemaNode, len(columnSlice))
@@ -146,6 +156,8 @@ ColumnSchema
 	cs:( _ s:ColumnConstraint { return s, nil } )*
 {
 	node := &ast.ColumnSchemaNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Column = i.(*ast.IdentifierNode)
 	node.DataType = t.(ast.TypeNode)
 	constraintSlice := assertSlice(cs)
@@ -189,6 +201,8 @@ CreateIndexStmt
 	_ '(' _ i:Identifier is:( _ SeparatorToken _ x:Identifier { return x, nil } )* _ ')'
 {
 	node := &ast.CreateIndexStmtNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Index = index.(*ast.IdentifierNode)
 	node.Table = table.(*ast.IdentifierNode)
 	columnSlice := assertSlice(prepend(i, assertSlice(is)))
@@ -207,6 +221,8 @@ WhereClause
 	= WhereToken _ e:Expr
 {
 	node := &ast.WhereOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Condition = e.(ast.ExprNode)
 	return node, nil
 }
@@ -226,6 +242,8 @@ OrderColumn
 	n:( _ NullsToken _ l:( LastToken / FirstToken ) { return l, nil } )?
 {
 	node := &ast.OrderOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Expr = i.(ast.ExprNode)
 	node.Desc = s != nil && string(s.([]byte)) == "desc"
 	node.NullsFirst = n != nil && string(n.([]byte)) == "first"
@@ -245,6 +263,8 @@ GroupColumn
 	= i:Expr
 {
 	node := &ast.GroupOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Expr = i.(ast.ExprNode)
 	return node, nil
 }
@@ -253,6 +273,8 @@ OffsetClause
 	= OffsetToken _ i:Integer
 {
 	node := &ast.OffsetOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Value = i.(*ast.IntegerValueNode)
 	return node, nil
 }
@@ -261,6 +283,8 @@ LimitClause
 	= LimitToken _ i:Integer
 {
 	node := &ast.LimitOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Value = i.(*ast.IntegerValueNode)
 	return node, nil
 }
@@ -277,6 +301,8 @@ InsertWithColumnClause
 	vs:( _ SeparatorToken _ y:InsertValue { return y, nil } )*
 {
 	node := &ast.InsertWithColumnOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	columnSlice := assertSlice(cs)
 	node.Column = make([]*ast.IdentifierNode, len(columnSlice))
 	for idx := range columnSlice {
@@ -295,6 +321,8 @@ InsertWithDefaultClause
 	= DefaultToken _ ValuesToken
 {
 	node := &ast.InsertWithDefaultOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -302,6 +330,8 @@ PrimaryKeyClause
 	= PrimaryToken _ KeyToken
 {
 	node := &ast.PrimaryOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -309,6 +339,8 @@ NotNullClause
 	= NotToken _ NullToken
 {
 	node := &ast.NotNullOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -316,6 +348,8 @@ UniqueClause
 	= UniqueToken
 {
 	node := &ast.UniqueOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -323,6 +357,8 @@ DefaultClause
 	= DefaultToken _ e:Expr
 {
 	node := &ast.DefaultOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Value = e.(ast.ExprNode)
 	return node, nil
 }
@@ -331,6 +367,8 @@ ForeignClause
 	= ReferencesToken _ t:Identifier _ '(' _ f:Identifier _ ')'
 {
 	node := &ast.ForeignOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Table = t.(*ast.IdentifierNode)
 	node.Column = f.(*ast.IdentifierNode)
 	return node, nil
@@ -340,6 +378,8 @@ AutoincrementClause
 	= AutoincrementToken
 {
 	node := &ast.AutoIncrementOptionNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -385,6 +425,8 @@ LogicExpr1In
 	= n:( t:NotOperator _ { return t, nil } )? InToken _ '(' _ s:MultiExpr _ ')'
 {
 	node := &ast.InOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Right = s.([]ast.ExprNode)
 	if n != nil {
 		return opSetTarget(n.(ast.UnaryOperator), node), nil
@@ -393,11 +435,12 @@ LogicExpr1In
 }
 
 LogicExpr1Is
-	= IsToken n:( _ t:NotOperator { return t, nil } )? _ NullToken
+	= IsToken n:( _ t:NotOperator { return t, nil } )? _ u:NullLiteral
 {
 	node := &ast.IsOperatorNode{}
-	null := &ast.NullValueNode{}
-	opSetSubject(node, null)
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
+	opSetSubject(node, u.(*ast.NullValueNode))
 	if n != nil {
 		return opSetTarget(n.(ast.UnaryOperator), node), nil
 	}
@@ -408,6 +451,8 @@ LogicExpr1Like
 	= n:( t:NotOperator _ { return t, nil } )? LikeToken _ s:Expr
 {
 	node := &ast.LikeOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	opSetSubject(node, s.(ast.ExprNode))
 	if n != nil {
 		return opSetTarget(n.(ast.UnaryOperator), node), nil
@@ -451,7 +496,14 @@ MultiExprWithDefault
 Operand
 	= op:UnaryOperator _ s:Operand
 		{ return opSetTarget(op.(ast.UnaryOperator), s.(ast.ExprNode)), nil }
-	/ '(' _ e:Expr _ ')' { return e, nil }
+	/ '(' _ e:Expr _ ')'
+		{
+			node := &ast.ParenOperatorNode{}
+			node.SetPosition(uint32(c.pos.offset))
+			node.SetLength(uint32(len(c.text)))
+			opSetTarget(node, e.(ast.ExprNode))
+			return node, nil
+		}
 	/ &(CastToken) t:TypeCast { return t, nil }
 	/ FunctionCall
 	/ Value
@@ -461,6 +513,8 @@ TypeCast
 	= CastToken _ '(' _ o:Expr _ AsToken _ s:DataType _ ')'
 {
 	node := &ast.CastOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.SourceExpr = o.(ast.ExprNode)
 	node.TargetType = s.(ast.TypeNode)
 	return node, nil
@@ -470,6 +524,8 @@ FunctionCall
 	= i:Identifier _ '(' _ r:FunctionArgs? _ ')'
 {
 	node := &ast.FunctionOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Name = i.(*ast.IdentifierNode)
 	if r != nil {
 		node.Args = r.([]ast.ExprNode)
@@ -485,6 +541,8 @@ Assignment
 	= i:Identifier _ '=' _ e:ExprWithDefault
 {
 	node := &ast.AssignOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Column = i.(*ast.IdentifierNode)
 	node.Expr = e.(ast.ExprNode)
 	return node, nil
@@ -506,6 +564,8 @@ SignOperator
 	default:
 		panic(fmt.Sprintf("unknown sign %s", c.text))
 	}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -513,6 +573,8 @@ NotOperator
 	= NotToken
 {
 	node := &ast.NotOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -520,6 +582,8 @@ AndOperator
 	= AndToken
 {
 	node := &ast.AndOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -527,6 +591,8 @@ OrOperator
 	= OrToken
 {
 	node := &ast.OrOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -552,6 +618,8 @@ CmpOperator
 	default:
 		panic(fmt.Sprintf("unknown comparison operator %s", c.text))
 	}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -559,6 +627,8 @@ ConcatOperator
 	= "||"
 {
 	node := &ast.ConcatOperatorNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -574,6 +644,8 @@ AddSubOperator
 	default:
 		panic(fmt.Sprintf("unknown addition or subtraction operator %s", c.text))
 	}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -591,6 +663,8 @@ MulDivModOperator
 	default:
 		panic(fmt.Sprintf("unknown multiplication, division, modulo operator: %s", c.text))
 	}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -609,6 +683,8 @@ UIntType
 	= "UINT"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
 	node := &ast.IntTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = true
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
@@ -630,6 +706,8 @@ IntType
 	= "INT"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
 	node := &ast.IntTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = false
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
@@ -651,6 +729,8 @@ UFixedType
 	= "UFIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
 {
 	node := &ast.FixedTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = true
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
@@ -685,6 +765,8 @@ FixedType
 	= "FIXED"i s:NonZeroLeadingInteger "X"i t:NonZeroLeadingInteger !NormalIdentifierRest
 {
 	node := &ast.FixedTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = false
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
@@ -719,6 +801,8 @@ FixedBytesType
 	= "BYTES"i s:NonZeroLeadingInteger !NormalIdentifierRest
 {
 	node := &ast.FixedBytesTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	size, code := toUint(s.([]byte))
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -737,6 +821,8 @@ FixedBytesType
 	/ "BYTE"i !NormalIdentifierRest
 {
 	node := &ast.FixedBytesTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Size = 1
 	return node, nil
 }
@@ -748,6 +834,8 @@ DynamicBytesType
 	)
 {
 	node := &ast.DynamicBytesTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -755,6 +843,8 @@ AddressType
 	= "ADDRESS"i !NormalIdentifierRest
 {
 	node := &ast.AddressTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -764,6 +854,8 @@ BoolType
 	)
 {
 	node := &ast.BoolTypeNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -778,6 +870,8 @@ AnyLiteral
 	= AnyToken
 {
 	node := &ast.AnyValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -785,6 +879,8 @@ DefaultLiteral
 	= DefaultToken
 {
 	node := &ast.DefaultValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -792,6 +888,8 @@ BoolLiteral
 	= b:( TrueToken / FalseToken )
 {
 	node := &ast.BoolValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.V = string(b.([]byte)) == "true"
 	return node, nil
 }
@@ -800,6 +898,8 @@ NullLiteral
 	= NullToken
 {
 	node := &ast.NullValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	return node, nil
 }
 
@@ -814,6 +914,8 @@ Integer
 	= [0-9]+
 {
 	node := &ast.IntegerValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.IsAddress = false
 	v, code := toDecimal(c.text)
 	if code != errors.ErrorCodeNil {
@@ -844,6 +946,8 @@ Decimal
 	= Fixnum ( "E"i Sign? Integer )?
 {
 	node := &ast.DecimalValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	v, code := toDecimal(c.text)
 	if code != errors.ErrorCodeNil {
 		err := errors.Error{
@@ -862,7 +966,12 @@ Decimal
 
 Hex
 	= "0x" ( [0-9A-Fa-f] )+ !NormalIdentifierRest
-{ return hexToInteger(c.text), nil }
+{
+	node := hexToInteger(c.text)
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
+	return node, nil
+}
 
 StringLiteral
 	= HexString
@@ -872,6 +981,8 @@ HexString
 	= ( "HEX"i / "X"i ) "'" s:([0-9a-fA-F][0-9a-fA-F] { return c.text, nil } )* "'"
 {
 	node := &ast.BytesValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.V = hexToBytes(joinBytes(assertSlice(s)))
 	return node, nil
 }
@@ -880,6 +991,8 @@ NormalString
 	= "'" s:( ( [^'\r\n\\] / "\\" . ) { return c.text, nil } )* "'"
 {
 	node := &ast.BytesValueNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	bs := joinBytes(assertSlice(s))
 	v, bad, code := resolveString(bs)
 	if code != errors.ErrorCodeNil {
@@ -1041,6 +1154,8 @@ NormalIdentifier
 	= NormalIdentifierStart NormalIdentifierRest*
 {
 	node := &ast.IdentifierNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	node.Name = decodeString(c.text)
 	return node, nil
 }
@@ -1055,6 +1170,8 @@ StringIdentifier
 	= "\"" s:( ( [^"\r\n\\] / "\\" . ) { return c.text, nil } )* "\""
 {
 	node := &ast.IdentifierNode{}
+	node.SetPosition(uint32(c.pos.offset))
+	node.SetLength(uint32(len(c.text)))
 	bs := joinBytes(assertSlice(s))
 	name, bad, code := resolveString(bs)
 	if code != errors.ErrorCodeNil {

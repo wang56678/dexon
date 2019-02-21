@@ -11,6 +11,7 @@ import (
 
 // Node is an interface which should be satisfied by all nodes in AST.
 type Node interface {
+	HasPosition() bool
 	GetPosition() uint32
 	SetPosition(uint32)
 	GetLength() uint32
@@ -22,6 +23,11 @@ type Node interface {
 type NodeBase struct {
 	Position uint32 `print:"-"`
 	Length   uint32 `print:"-"`
+}
+
+// HasPosition returns whether the position is set.
+func (n *NodeBase) HasPosition() bool {
+	return n.Length > 0
 }
 
 // GetPosition returns the offset in bytes where the corresponding token starts.
@@ -42,6 +48,18 @@ func (n *NodeBase) GetLength() uint32 {
 // SetLength sets the length in bytes of the corresponding token.
 func (n *NodeBase) SetLength(length uint32) {
 	n.Length = length
+}
+
+// UpdatePosition sets the position of the destination node from two source
+// nodes. It is assumed that the destination node consists of multiple tokens
+// which can be mapped to child nodes of the destination node. srcLeft should
+// be the node representing the left-most token of the destination node, and
+// srcRight should represent the right-most token of the destination node.
+func UpdatePosition(dest, srcLeft, srcRight Node) {
+	begin := srcLeft.GetPosition()
+	end := srcRight.GetPosition() + srcRight.GetLength()
+	dest.SetPosition(begin)
+	dest.SetLength(end - begin)
 }
 
 // ---------------------------------------------------------------------------
@@ -555,6 +573,15 @@ func (n *NotOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
+// ParenOperatorNode is a pair of '(' and ')', representing a parenthesized
+// expression.
+type ParenOperatorNode struct {
+	TaggedExprNodeBase
+	UnaryOperatorNode
+}
+
+var _ UnaryOperator = (*ParenOperatorNode)(nil)
+
 // AndOperatorNode is 'AND'.
 type AndOperatorNode struct {
 	UntaggedExprNodeBase
@@ -942,6 +969,7 @@ func (n *InsertWithColumnOptionNode) GetChildren() []Node {
 	for i := 0; i < len(n.Value); i++ {
 		size += len(n.Value[i])
 	}
+
 	nodes := make([]Node, size)
 	idx := 0
 	for i := 0; i < len(n.Column); i, idx = i+1, idx+1 {
@@ -1062,25 +1090,47 @@ var _ Node = (*SelectStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *SelectStmtNode) GetChildren() []Node {
-	nodes := make([]Node, len(n.Column)+2+len(n.Group)+len(n.Order)+2)
+	size := len(n.Column) + len(n.Group) + len(n.Order)
+	if n.Table != nil {
+		size++
+	}
+	if n.Where != nil {
+		size++
+	}
+	if n.Limit != nil {
+		size++
+	}
+	if n.Offset != nil {
+		size++
+	}
+
+	nodes := make([]Node, size)
 	idx := 0
 	for i := 0; i < len(n.Column); i, idx = i+1, idx+1 {
 		nodes[idx] = n.Column[i]
 	}
-	nodes[idx] = n.Table
-	idx++
-	nodes[idx] = n.Where
-	idx++
+	if n.Table != nil {
+		nodes[idx] = n.Table
+		idx++
+	}
+	if n.Where != nil {
+		nodes[idx] = n.Where
+		idx++
+	}
 	for i := 0; i < len(n.Group); i, idx = i+1, idx+1 {
 		nodes[idx] = n.Group[i]
 	}
 	for i := 0; i < len(n.Order); i, idx = i+1, idx+1 {
 		nodes[idx] = n.Order[i]
 	}
-	nodes[idx] = n.Limit
-	idx++
-	nodes[idx] = n.Offset
-	idx++
+	if n.Limit != nil {
+		nodes[idx] = n.Limit
+		idx++
+	}
+	if n.Offset != nil {
+		nodes[idx] = n.Offset
+		idx++
+	}
 	return nodes
 }
 
@@ -1096,14 +1146,22 @@ var _ Node = (*UpdateStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *UpdateStmtNode) GetChildren() []Node {
-	nodes := make([]Node, 1+len(n.Assignment)+1)
+	size := 1 + len(n.Assignment)
+	if n.Where != nil {
+		size++
+	}
+
+	nodes := make([]Node, size)
 	idx := 0
 	nodes[idx] = n.Table
+	idx++
 	for i := 0; i < len(n.Assignment); i, idx = i+1, idx+1 {
 		nodes[idx] = n.Assignment[i]
 	}
-	nodes[idx] = n.Where
-	idx++
+	if n.Where != nil {
+		nodes[idx] = n.Where
+		idx++
+	}
 	return nodes
 }
 
@@ -1118,6 +1176,9 @@ var _ Node = (*DeleteStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *DeleteStmtNode) GetChildren() []Node {
+	if n.Where == nil {
+		return []Node{n.Table}
+	}
 	return []Node{n.Table, n.Where}
 }
 
@@ -1188,7 +1249,12 @@ var _ Node = (*CreateIndexStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *CreateIndexStmtNode) GetChildren() []Node {
-	nodes := make([]Node, 2+len(n.Column)+1)
+	size := 2 + len(n.Column)
+	if n.Unique != nil {
+		size++
+	}
+
+	nodes := make([]Node, size)
 	idx := 0
 	nodes[idx] = n.Index
 	idx++
@@ -1197,7 +1263,9 @@ func (n *CreateIndexStmtNode) GetChildren() []Node {
 	for i := 0; i < len(n.Column); i, idx = i+1, idx+1 {
 		nodes[idx] = n.Column[i]
 	}
-	nodes[idx] = n.Unique
-	idx++
+	if n.Unique != nil {
+		nodes[idx] = n.Unique
+		idx++
+	}
 	return nodes
 }

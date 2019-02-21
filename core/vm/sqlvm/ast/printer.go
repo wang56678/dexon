@@ -35,9 +35,11 @@ func formatString(s string) string {
 	return fmt.Sprintf("%v", []byte(s))
 }
 
-func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
-	indent := strings.Repeat(base, depth)
-	indentLong := strings.Repeat(base, depth+1)
+func printAST(w io.Writer, n interface{}, s []byte, prefix string,
+	detail bool, depth int) {
+
+	indent := strings.Repeat(prefix, depth)
+	indentLong := strings.Repeat(prefix, depth+1)
 	if n == nil {
 		fmt.Fprintf(w, "%snil\n", indent)
 		return
@@ -56,20 +58,6 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 	}
 	name := typeOf.Name()
 
-	if op, ok := n.(UnaryOperator); ok {
-		fmt.Fprintf(w, "%s%s:\n", indent, name)
-		fmt.Fprintf(w, "%sTarget:\n", indentLong)
-		printAST(w, op.GetTarget(), depth+2, base, detail)
-		return
-	}
-	if op, ok := n.(BinaryOperator); ok {
-		fmt.Fprintf(w, "%s%s:\n", indent, name)
-		fmt.Fprintf(w, "%sObject:\n", indentLong)
-		printAST(w, op.GetObject(), depth+2, base, detail)
-		fmt.Fprintf(w, "%sSubject:\n", indentLong)
-		printAST(w, op.GetSubject(), depth+2, base, detail)
-		return
-	}
 	if stringer, ok := n.(fmt.Stringer); ok {
 		s := stringer.String()
 		fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
@@ -92,7 +80,7 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 		fmt.Fprintf(w, "%s[\n", indent)
 		for i := 0; i < l; i++ {
 			v := valueOf.Index(i)
-			printAST(w, v.Interface(), depth+1, base, detail)
+			printAST(w, v.Interface(), s, prefix, detail, depth+1)
 		}
 		fmt.Fprintf(w, "%s]\n", indent)
 		return
@@ -124,15 +112,30 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 			}
 		}
 		collect(typeOf, valueOf)
+
+		var position string
+		if node, ok := n.(Node); ok {
+			begin := node.GetPosition()
+			length := node.GetLength()
+			if node.HasPosition() {
+				end := begin + length - 1
+				token := s[begin : begin+length]
+				position = fmt.Sprintf("%d-%d %s",
+					begin, end, strconv.Quote(string(token)))
+			} else {
+				position = "no position info"
+			}
+		}
+
 		fmt.Fprintf(w, "%s%s", indent, name)
 		if len(fields) == 0 {
-			fmt.Fprintf(w, " {}\n")
+			fmt.Fprintf(w, " {}  // %s\n", position)
 			return
 		}
-		fmt.Fprintf(w, " {\n")
+		fmt.Fprintf(w, " {  // %s\n", position)
 		for i := 0; i < len(fields); i++ {
 			fmt.Fprintf(w, "%s%s:\n", indentLong, fields[i].name)
-			printAST(w, fields[i].value, depth+2, base, detail)
+			printAST(w, fields[i].value, s, prefix, detail, depth+2)
 		}
 		fmt.Fprintf(w, "%s}\n", indent)
 		return
@@ -141,6 +144,8 @@ func printAST(w io.Writer, n interface{}, depth int, base string, detail bool) {
 }
 
 // PrintAST prints AST for debugging.
-func PrintAST(w io.Writer, n interface{}, indent string, detail bool) {
-	printAST(w, n, 0, indent, detail)
+func PrintAST(output io.Writer, node interface{}, source []byte,
+	indent string, detail bool) {
+
+	printAST(output, node, source, indent, detail, 0)
 }
