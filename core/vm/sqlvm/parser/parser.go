@@ -164,9 +164,7 @@ func joinOperator(x ast.ExprNode, o ast.ExprNode) {
 	case ast.UnaryOperator:
 		joinOperator(op.GetTarget(), o)
 	case ast.BinaryOperator:
-		op.SetObject(o)
-	case *ast.CastOperatorNode:
-		op.SourceExpr = o
+		opSetObject(op, o)
 	case *ast.InOperatorNode:
 		op.Left = o
 	default:
@@ -179,10 +177,10 @@ func rightJoinOperators(o ast.ExprNode, x []ast.ExprNode) ast.ExprNode {
 		return o
 	}
 	l := len(x)
+	joinOperator(x[0], o)
 	for idx := 0; idx < l-1; idx++ {
 		joinOperator(x[idx+1], x[idx])
 	}
-	joinOperator(x[0], o)
 	return x[l-1]
 }
 
@@ -300,6 +298,22 @@ func resolveString(s []byte) ([]byte, []byte, errors.ErrorCode) {
 	return o.Bytes(), nil, errors.ErrorCodeNil
 }
 
+func walkSelfFirst(n ast.Node, v func(ast.Node, []ast.Node)) {
+	c := n.GetChildren()
+	v(n, c)
+	for i := range c {
+		walkSelfFirst(c[i], v)
+	}
+}
+
+func walkChildrenFirst(n ast.Node, v func(ast.Node, []ast.Node)) {
+	c := n.GetChildren()
+	for i := range c {
+		walkChildrenFirst(c[i], v)
+	}
+	v(n, c)
+}
+
 // Parse parses SQL commands text and return an AST.
 func Parse(b []byte, o ...Option) ([]ast.Node, error) {
 	// The string sent from the caller is not guaranteed to be valid UTF-8.
@@ -333,6 +347,43 @@ func Parse(b []byte, o ...Option) ([]ast.Node, error) {
 	stmts := assertNodeSlice(root)
 
 	// Process the AST.
+	for i := range stmts {
+		if stmts[i] == nil {
+			continue
+		}
+		walkChildrenFirst(stmts[i], func(n ast.Node, c []ast.Node) {
+			minBegin := uint32(len(eb))
+			maxEnd := uint32(0)
+			for _, cn := range append(c, n) {
+				if cn.HasPosition() {
+					begin := cn.GetPosition()
+					end := begin + cn.GetLength()
+					if begin < minBegin {
+						minBegin = begin
+					}
+					if end > maxEnd {
+						maxEnd = end
+					}
+				}
+			}
+			n.SetPosition(minBegin)
+			n.SetLength(maxEnd - minBegin)
+		})
+		walkSelfFirst(stmts[i], func(n ast.Node, _ []ast.Node) {
+			begin := n.GetPosition()
+			end := begin + n.GetLength()
+			fixedBegin, ok := encMap[begin]
+			if !ok {
+				panic(fmt.Sprintf("cannot fix node begin byte offset %d", begin))
+			}
+			fixedEnd, ok := encMap[end]
+			if !ok {
+				panic(fmt.Sprintf("cannot fix node end byte offset %d", end))
+			}
+			n.SetPosition(fixedBegin)
+			n.SetLength(fixedEnd - fixedBegin)
+		})
+	}
 	if pigeonErr == nil {
 		return stmts, pigeonErr
 	}
@@ -359,8 +410,8 @@ func Parse(b []byte, o ...Option) ([]ast.Node, error) {
 		if offset, ok := encMap[sqlvmErrList[i].Position]; ok {
 			sqlvmErrList[i].Position = offset
 		} else {
-			panic(fmt.Sprintf(
-				"cannot fix byte offset %d", sqlvmErrList[i].Position))
+			panic(fmt.Sprintf("cannot fix error position byte offset %d",
+				sqlvmErrList[i].Position))
 		}
 	}
 	return stmts, sqlvmErrList
