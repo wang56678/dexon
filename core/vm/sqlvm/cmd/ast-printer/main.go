@@ -15,11 +15,12 @@ func main() {
 
 	flag.Parse()
 
-	n, err := parser.Parse([]byte(flag.Arg(0)))
+	s := []byte(flag.Arg(0))
+	n, err := parser.Parse(s)
 	fmt.Printf("detail: %t\n", detail)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "err:\n%+v\n", err)
 		os.Exit(1)
 	}
-	ast.PrintAST(os.Stdout, n, "  ", detail)
+	ast.PrintAST(os.Stdout, n, s, "  ", detail)
 }
