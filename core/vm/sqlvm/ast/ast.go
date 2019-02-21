@@ -25,7 +25,7 @@ type NodeBase struct {
 }
 
 // GetPosition returns the offset in bytes where the corresponding token starts.
-func (n NodeBase) GetPosition() uint32 {
+func (n *NodeBase) GetPosition() uint32 {
 	return n.Position
 }
 
@@ -35,7 +35,7 @@ func (n *NodeBase) SetPosition(position uint32) {
 }
 
 // GetLength returns the length in bytes of the corresponding token.
-func (n NodeBase) GetLength() uint32 {
+func (n *NodeBase) GetLength() uint32 {
 	return n.Length
 }
 
@@ -76,7 +76,7 @@ type TaggedExprNodeBase struct {
 }
 
 // GetType gets the data type of the node.
-func (n TaggedExprNodeBase) GetType() DataType {
+func (n *TaggedExprNodeBase) GetType() DataType {
 	return n.Type
 }
 
@@ -94,12 +94,12 @@ type IdentifierNode struct {
 var _ ExprNode = (*IdentifierNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n IdentifierNode) GetChildren() []Node {
+func (n *IdentifierNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n IdentifierNode) IsConstant() bool {
+func (n *IdentifierNode) IsConstant() bool {
 	return false
 }
 
@@ -121,22 +121,22 @@ type BoolValueNode struct {
 var _ ExprNode = (*BoolValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n BoolValueNode) GetChildren() []Node {
+func (n *BoolValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n BoolValueNode) IsConstant() bool {
+func (n *BoolValueNode) IsConstant() bool {
 	return true
 }
 
 // GetType returns the type of 'bool'.
-func (n BoolValueNode) GetType() DataType {
+func (n *BoolValueNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
 // Value returns the value of BoolValueNode.
-func (n BoolValueNode) Value() interface{} {
+func (n *BoolValueNode) Value() interface{} {
 	return n.V
 }
 
@@ -150,17 +150,17 @@ type IntegerValueNode struct {
 var _ ExprNode = (*IntegerValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n IntegerValueNode) GetChildren() []Node {
+func (n *IntegerValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n IntegerValueNode) IsConstant() bool {
+func (n *IntegerValueNode) IsConstant() bool {
 	return true
 }
 
 // Value returns the value of IntegerValueNode.
-func (n IntegerValueNode) Value() interface{} {
+func (n *IntegerValueNode) Value() interface{} {
 	return n.V
 }
 
@@ -173,17 +173,17 @@ type DecimalValueNode struct {
 var _ ExprNode = (*DecimalValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n DecimalValueNode) GetChildren() []Node {
+func (n *DecimalValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n DecimalValueNode) IsConstant() bool {
+func (n *DecimalValueNode) IsConstant() bool {
 	return true
 }
 
 // Value returns the value of DecimalValueNode.
-func (n DecimalValueNode) Value() interface{} {
+func (n *DecimalValueNode) Value() interface{} {
 	return n.V
 }
 
@@ -196,17 +196,17 @@ type BytesValueNode struct {
 var _ ExprNode = (*BytesValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n BytesValueNode) GetChildren() []Node {
+func (n *BytesValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n BytesValueNode) IsConstant() bool {
+func (n *BytesValueNode) IsConstant() bool {
 	return true
 }
 
 // Value returns the value of BytesValueNode.
-func (n BytesValueNode) Value() interface{} {
+func (n *BytesValueNode) Value() interface{} {
 	return n.V
 }
 
@@ -218,22 +218,22 @@ type AnyValueNode struct {
 var _ ExprNode = (*AnyValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n AnyValueNode) GetChildren() []Node {
+func (n *AnyValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n AnyValueNode) IsConstant() bool {
+func (n *AnyValueNode) IsConstant() bool {
 	return false
 }
 
 // GetType returns the type of '*'.
-func (n AnyValueNode) GetType() DataType {
+func (n *AnyValueNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorSpecial, DataTypeMinorSpecialAny)
 }
 
 // Value returns itself.
-func (n AnyValueNode) Value() interface{} {
+func (n *AnyValueNode) Value() interface{} {
 	return n
 }
 
@@ -245,22 +245,22 @@ type DefaultValueNode struct {
 var _ ExprNode = (*DefaultValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n DefaultValueNode) GetChildren() []Node {
+func (n *DefaultValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n DefaultValueNode) IsConstant() bool {
+func (n *DefaultValueNode) IsConstant() bool {
 	return true
 }
 
 // GetType returns the type of 'DEFAULT'.
-func (n DefaultValueNode) GetType() DataType {
+func (n *DefaultValueNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorSpecial, DataTypeMinorSpecialDefault)
 }
 
 // Value returns itself.
-func (n DefaultValueNode) Value() interface{} {
+func (n *DefaultValueNode) Value() interface{} {
 	return n
 }
 
@@ -272,17 +272,17 @@ type NullValueNode struct {
 var _ ExprNode = (*NullValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n NullValueNode) GetChildren() []Node {
+func (n *NullValueNode) GetChildren() []Node {
 	return nil
 }
 
 // IsConstant returns whether a node is a constant.
-func (n NullValueNode) IsConstant() bool {
+func (n *NullValueNode) IsConstant() bool {
 	return true
 }
 
 // Value returns itself.
-func (n NullValueNode) Value() interface{} { return n }
+func (n *NullValueNode) Value() interface{} { return n }
 
 // ---------------------------------------------------------------------------
 // Types
@@ -304,12 +304,12 @@ type IntTypeNode struct {
 var _ TypeNode = (*IntTypeNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n IntTypeNode) GetChildren() []Node {
+func (n *IntTypeNode) GetChildren() []Node {
 	return nil
 }
 
 // GetType returns the type represented by the node.
-func (n IntTypeNode) GetType() (DataType, errors.ErrorCode) {
+func (n *IntTypeNode) GetType() (DataType, errors.ErrorCode) {
 	if n.Size%8 != 0 || n.Size == 0 || n.Size > 256 {
 		if n.Unsigned {
 			return DataTypeUnknown, errors.ErrorCodeInvalidUintSize
@@ -338,12 +338,12 @@ type FixedTypeNode struct {
 var _ TypeNode = (*FixedTypeNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n FixedTypeNode) GetChildren() []Node {
+func (n *FixedTypeNode) GetChildren() []Node {
 	return nil
 }
 
 // GetType returns the type represented by the node.
-func (n FixedTypeNode) GetType() (DataType, errors.ErrorCode) {
+func (n *FixedTypeNode) GetType() (DataType, errors.ErrorCode) {
 	if n.Size%8 != 0 || n.Size == 0 || n.Size > 256 {
 		if n.Unsigned {
 			return DataTypeUnknown, errors.ErrorCodeInvalidUfixedSize
@@ -376,12 +376,12 @@ type DynamicBytesTypeNode struct {
 var _ TypeNode = (*DynamicBytesTypeNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n DynamicBytesTypeNode) GetChildren() []Node {
+func (n *DynamicBytesTypeNode) GetChildren() []Node {
 	return nil
 }
 
 // GetType returns the type represented by the node.
-func (n DynamicBytesTypeNode) GetType() (DataType, errors.ErrorCode) {
+func (n *DynamicBytesTypeNode) GetType() (DataType, errors.ErrorCode) {
 	return ComposeDataType(DataTypeMajorDynamicBytes, DataTypeMinorDontCare),
 		errors.ErrorCodeNil
 }
@@ -395,12 +395,12 @@ type FixedBytesTypeNode struct {
 var _ TypeNode = (*FixedBytesTypeNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n FixedBytesTypeNode) GetChildren() []Node {
+func (n *FixedBytesTypeNode) GetChildren() []Node {
 	return nil
 }
 
 // GetType returns the type represented by the node.
-func (n FixedBytesTypeNode) GetType() (DataType, errors.ErrorCode) {
+func (n *FixedBytesTypeNode) GetType() (DataType, errors.ErrorCode) {
 	if n.Size == 0 || n.Size > 32 {
 		return DataTypeUnknown, errors.ErrorCodeInvalidBytesSize
 	}
@@ -417,12 +417,12 @@ type AddressTypeNode struct {
 var _ TypeNode = (*AddressTypeNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n AddressTypeNode) GetChildren() []Node {
+func (n *AddressTypeNode) GetChildren() []Node {
 	return nil
 }
 
 // GetType returns the type represented by the node.
-func (n AddressTypeNode) GetType() (DataType, errors.ErrorCode) {
+func (n *AddressTypeNode) GetType() (DataType, errors.ErrorCode) {
 	return ComposeDataType(DataTypeMajorAddress, DataTypeMinorDontCare),
 		errors.ErrorCodeNil
 }
@@ -435,12 +435,12 @@ type BoolTypeNode struct {
 var _ TypeNode = (*BoolTypeNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n BoolTypeNode) GetChildren() []Node {
+func (n *BoolTypeNode) GetChildren() []Node {
 	return nil
 }
 
 // GetType returns the type represented by the node.
-func (n BoolTypeNode) GetType() (DataType, errors.ErrorCode) {
+func (n *BoolTypeNode) GetType() (DataType, errors.ErrorCode) {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare),
 		errors.ErrorCodeNil
 }
@@ -471,17 +471,17 @@ type UnaryOperatorNode struct {
 }
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n UnaryOperatorNode) GetChildren() []Node {
+func (n *UnaryOperatorNode) GetChildren() []Node {
 	return []Node{n.Target}
 }
 
 // IsConstant returns whether a node is a constant.
-func (n UnaryOperatorNode) IsConstant() bool {
+func (n *UnaryOperatorNode) IsConstant() bool {
 	return n.Target.IsConstant()
 }
 
 // GetTarget gets the target of the operation.
-func (n UnaryOperatorNode) GetTarget() ExprNode {
+func (n *UnaryOperatorNode) GetTarget() ExprNode {
 	return n.Target
 }
 
@@ -497,22 +497,22 @@ type BinaryOperatorNode struct {
 }
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n BinaryOperatorNode) GetChildren() []Node {
+func (n *BinaryOperatorNode) GetChildren() []Node {
 	return []Node{n.Object, n.Subject}
 }
 
 // IsConstant returns whether a node is a constant.
-func (n BinaryOperatorNode) IsConstant() bool {
+func (n *BinaryOperatorNode) IsConstant() bool {
 	return n.Object.IsConstant() && n.Subject.IsConstant()
 }
 
 // GetObject gets the node on which the operation is applied.
-func (n BinaryOperatorNode) GetObject() ExprNode {
+func (n *BinaryOperatorNode) GetObject() ExprNode {
 	return n.Object
 }
 
 // GetSubject gets the node whose value is applied on the object.
-func (n BinaryOperatorNode) GetSubject() ExprNode {
+func (n *BinaryOperatorNode) GetSubject() ExprNode {
 	return n.Subject
 }
 
@@ -551,7 +551,7 @@ type NotOperatorNode struct {
 var _ UnaryOperator = (*NotOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n NotOperatorNode) GetType() DataType {
+func (n *NotOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -564,7 +564,7 @@ type AndOperatorNode struct {
 var _ BinaryOperator = (*AndOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n AndOperatorNode) GetType() DataType {
+func (n *AndOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -577,7 +577,7 @@ type OrOperatorNode struct {
 var _ BinaryOperator = (*OrOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n OrOperatorNode) GetType() DataType {
+func (n *OrOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -590,7 +590,7 @@ type GreaterOrEqualOperatorNode struct {
 var _ BinaryOperator = (*GreaterOrEqualOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n GreaterOrEqualOperatorNode) GetType() DataType {
+func (n *GreaterOrEqualOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -603,7 +603,7 @@ type LessOrEqualOperatorNode struct {
 var _ BinaryOperator = (*LessOrEqualOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n LessOrEqualOperatorNode) GetType() DataType {
+func (n *LessOrEqualOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -616,7 +616,7 @@ type NotEqualOperatorNode struct {
 var _ BinaryOperator = (*NotEqualOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n NotEqualOperatorNode) GetType() DataType {
+func (n *NotEqualOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -629,7 +629,7 @@ type EqualOperatorNode struct {
 var _ BinaryOperator = (*EqualOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n EqualOperatorNode) GetType() DataType {
+func (n *EqualOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -642,7 +642,7 @@ type GreaterOperatorNode struct {
 var _ BinaryOperator = (*GreaterOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n GreaterOperatorNode) GetType() DataType {
+func (n *GreaterOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -655,7 +655,7 @@ type LessOperatorNode struct {
 var _ BinaryOperator = (*LessOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n LessOperatorNode) GetType() DataType {
+func (n *LessOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -668,7 +668,7 @@ type ConcatOperatorNode struct {
 var _ BinaryOperator = (*ConcatOperatorNode)(nil)
 
 // GetType returns the type of 'bytes'.
-func (n ConcatOperatorNode) GetType() DataType {
+func (n *ConcatOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorDynamicBytes, DataTypeMinorDontCare)
 }
 
@@ -721,7 +721,7 @@ type IsOperatorNode struct {
 var _ BinaryOperator = (*IsOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n IsOperatorNode) GetType() DataType {
+func (n *IsOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -734,7 +734,7 @@ type LikeOperatorNode struct {
 var _ BinaryOperator = (*LikeOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n LikeOperatorNode) GetType() DataType {
+func (n *LikeOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
@@ -752,17 +752,17 @@ type CastOperatorNode struct {
 var _ ExprNode = (*CastOperatorNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n CastOperatorNode) GetChildren() []Node {
+func (n *CastOperatorNode) GetChildren() []Node {
 	return []Node{n.SourceExpr, n.TargetType}
 }
 
 // IsConstant returns whether a node is a constant.
-func (n CastOperatorNode) IsConstant() bool {
+func (n *CastOperatorNode) IsConstant() bool {
 	return n.SourceExpr.IsConstant()
 }
 
 // GetType returns the type of CAST expression, which is always the target type.
-func (n CastOperatorNode) GetType() DataType {
+func (n *CastOperatorNode) GetType() DataType {
 	if dt, code := n.TargetType.GetType(); code == errors.ErrorCodeNil {
 		return dt
 	}
@@ -783,7 +783,7 @@ type AssignOperatorNode struct {
 var _ Node = (*AssignOperatorNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n AssignOperatorNode) GetChildren() []Node {
+func (n *AssignOperatorNode) GetChildren() []Node {
 	return []Node{n.Column, n.Expr}
 }
 
@@ -801,12 +801,12 @@ type InOperatorNode struct {
 var _ ExprNode = (*InOperatorNode)(nil)
 
 // GetType returns the type of 'bool'.
-func (n InOperatorNode) GetType() DataType {
+func (n *InOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n InOperatorNode) GetChildren() []Node {
+func (n *InOperatorNode) GetChildren() []Node {
 	nodes := make([]Node, 1+len(n.Right))
 	nodes[0] = n.Left
 	for i := 0; i < len(n.Right); i++ {
@@ -816,7 +816,7 @@ func (n InOperatorNode) GetChildren() []Node {
 }
 
 // IsConstant returns whether a node is a constant.
-func (n InOperatorNode) IsConstant() bool {
+func (n *InOperatorNode) IsConstant() bool {
 	if !n.Left.IsConstant() {
 		return false
 	}
@@ -842,7 +842,7 @@ type FunctionOperatorNode struct {
 var _ ExprNode = (*FunctionOperatorNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n FunctionOperatorNode) GetChildren() []Node {
+func (n *FunctionOperatorNode) GetChildren() []Node {
 	nodes := make([]Node, 1+len(n.Args))
 	nodes[0] = n.Name
 	for i := 0; i < len(n.Args); i++ {
@@ -852,7 +852,7 @@ func (n FunctionOperatorNode) GetChildren() []Node {
 }
 
 // IsConstant returns whether a node is a constant.
-func (n FunctionOperatorNode) IsConstant() bool {
+func (n *FunctionOperatorNode) IsConstant() bool {
 	return false
 }
 
@@ -869,7 +869,7 @@ type WhereOptionNode struct {
 var _ Node = (*WhereOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n WhereOptionNode) GetChildren() []Node {
+func (n *WhereOptionNode) GetChildren() []Node {
 	return []Node{n.Condition}
 }
 
@@ -884,7 +884,7 @@ type OrderOptionNode struct {
 var _ Node = (*OrderOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n OrderOptionNode) GetChildren() []Node {
+func (n *OrderOptionNode) GetChildren() []Node {
 	return []Node{n.Expr}
 }
 
@@ -897,7 +897,7 @@ type GroupOptionNode struct {
 var _ Node = (*GroupOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n GroupOptionNode) GetChildren() []Node {
+func (n *GroupOptionNode) GetChildren() []Node {
 	return []Node{n.Expr}
 }
 
@@ -910,7 +910,7 @@ type OffsetOptionNode struct {
 var _ Node = (*OffsetOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n OffsetOptionNode) GetChildren() []Node {
+func (n *OffsetOptionNode) GetChildren() []Node {
 	return []Node{n.Value}
 }
 
@@ -923,7 +923,7 @@ type LimitOptionNode struct {
 var _ Node = (*LimitOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n LimitOptionNode) GetChildren() []Node {
+func (n *LimitOptionNode) GetChildren() []Node {
 	return []Node{n.Value}
 }
 
@@ -937,7 +937,7 @@ type InsertWithColumnOptionNode struct {
 var _ Node = (*InsertWithColumnOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n InsertWithColumnOptionNode) GetChildren() []Node {
+func (n *InsertWithColumnOptionNode) GetChildren() []Node {
 	size := len(n.Column)
 	for i := 0; i < len(n.Value); i++ {
 		size += len(n.Value[i])
@@ -963,7 +963,7 @@ type InsertWithDefaultOptionNode struct {
 var _ Node = (*InsertWithDefaultOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n InsertWithDefaultOptionNode) GetChildren() []Node {
+func (n *InsertWithDefaultOptionNode) GetChildren() []Node {
 	return nil
 }
 
@@ -975,7 +975,7 @@ type PrimaryOptionNode struct {
 var _ Node = (*PrimaryOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n PrimaryOptionNode) GetChildren() []Node {
+func (n *PrimaryOptionNode) GetChildren() []Node {
 	return nil
 }
 
@@ -987,7 +987,7 @@ type NotNullOptionNode struct {
 var _ Node = (*NotNullOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n NotNullOptionNode) GetChildren() []Node {
+func (n *NotNullOptionNode) GetChildren() []Node {
 	return nil
 }
 
@@ -999,7 +999,7 @@ type UniqueOptionNode struct {
 var _ Node = (*UniqueOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n UniqueOptionNode) GetChildren() []Node {
+func (n *UniqueOptionNode) GetChildren() []Node {
 	return nil
 }
 
@@ -1011,7 +1011,7 @@ type AutoIncrementOptionNode struct {
 var _ Node = (*AutoIncrementOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n AutoIncrementOptionNode) GetChildren() []Node {
+func (n *AutoIncrementOptionNode) GetChildren() []Node {
 	return nil
 }
 
@@ -1024,7 +1024,7 @@ type DefaultOptionNode struct {
 var _ Node = (*DefaultValueNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n DefaultOptionNode) GetChildren() []Node {
+func (n *DefaultOptionNode) GetChildren() []Node {
 	return []Node{n.Value}
 }
 
@@ -1038,7 +1038,7 @@ type ForeignOptionNode struct {
 var _ Node = (*ForeignOptionNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n ForeignOptionNode) GetChildren() []Node {
+func (n *ForeignOptionNode) GetChildren() []Node {
 	return []Node{n.Table, n.Column}
 }
 
@@ -1061,7 +1061,7 @@ type SelectStmtNode struct {
 var _ Node = (*SelectStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n SelectStmtNode) GetChildren() []Node {
+func (n *SelectStmtNode) GetChildren() []Node {
 	nodes := make([]Node, len(n.Column)+2+len(n.Group)+len(n.Order)+2)
 	idx := 0
 	for i := 0; i < len(n.Column); i, idx = i+1, idx+1 {
@@ -1095,7 +1095,7 @@ type UpdateStmtNode struct {
 var _ Node = (*UpdateStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n UpdateStmtNode) GetChildren() []Node {
+func (n *UpdateStmtNode) GetChildren() []Node {
 	nodes := make([]Node, 1+len(n.Assignment)+1)
 	idx := 0
 	nodes[idx] = n.Table
@@ -1117,7 +1117,7 @@ type DeleteStmtNode struct {
 var _ Node = (*DeleteStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n DeleteStmtNode) GetChildren() []Node {
+func (n *DeleteStmtNode) GetChildren() []Node {
 	return []Node{n.Table, n.Where}
 }
 
@@ -1131,7 +1131,7 @@ type InsertStmtNode struct {
 var _ Node = (*InsertStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n InsertStmtNode) GetChildren() []Node {
+func (n *InsertStmtNode) GetChildren() []Node {
 	return []Node{n.Table, n.Insert}
 }
 
@@ -1145,7 +1145,7 @@ type CreateTableStmtNode struct {
 var _ Node = (*CreateTableStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n CreateTableStmtNode) GetChildren() []Node {
+func (n *CreateTableStmtNode) GetChildren() []Node {
 	nodes := make([]Node, 1+len(n.Column))
 	nodes[0] = n.Table
 	for i := 0; i < len(n.Column); i++ {
@@ -1165,7 +1165,7 @@ type ColumnSchemaNode struct {
 var _ Node = (*ColumnSchemaNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n ColumnSchemaNode) GetChildren() []Node {
+func (n *ColumnSchemaNode) GetChildren() []Node {
 	nodes := make([]Node, 2+len(n.Constraint))
 	nodes[0] = n.Column
 	nodes[1] = n.DataType
@@ -1187,7 +1187,7 @@ type CreateIndexStmtNode struct {
 var _ Node = (*CreateIndexStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
-func (n CreateIndexStmtNode) GetChildren() []Node {
+func (n *CreateIndexStmtNode) GetChildren() []Node {
 	nodes := make([]Node, 2+len(n.Column)+1)
 	idx := 0
 	nodes[idx] = n.Index
