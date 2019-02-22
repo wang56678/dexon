@@ -54,7 +54,6 @@ func (b *blockProposer) Start() error {
 
 		var err error
 		var c *dexCore.Consensus
-		log.Info("mission qq about to init consensus", "dmoment", b.dMoment, "now", time.Now().UTC())
 		if b.dMoment.After(time.Now()) {
 			c = b.initConsensus()
 		} else {
