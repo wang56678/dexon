@@ -28,6 +28,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0xe972af2797b02f4dab95ffa229714c35d5c55685f20261b9498c8b8a3fe33856")
 	TestnetGenesisHash = common.HexToHash("0x9fab095bee4b3dc7dcde324beb6c791bc21025a33d50793ed995d8ef1739f35b")
+	YilanGenesisHash   = common.HexToHash("0x65d871acd54a1c4210d2a9a34d30e997ff301f9dc54e9c5a04a43cf84a8ae709")
 )
 
 var (
@@ -135,12 +136,12 @@ var (
 			MinStake:          new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e6)),
 			LockupPeriod:      86400 * 3 * 1000,
 			MiningVelocity:    0.1875,
-			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(8e9)),
-			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.6e9)),
+			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2e7)),
+			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(4e6)),
 			BlockGasLimit:     40000000,
-			NumChains:         1,
-			LambdaBA:          500,
-			LambdaDKG:         20000,
+			NumChains:         4,
+			LambdaBA:          250,
+			LambdaDKG:         10000,
 			K:                 0,
 			PhiRatio:          0.667,
 			NotarySetSize:     21,
@@ -162,6 +163,44 @@ var (
 		SectionHead:  common.HexToHash("0x9fad89a5e3b993c8339b9cf2cbbeb72cd08774ea6b71b105b3dd880420c618f4"),
 		CHTRoot:      common.HexToHash("0xc815833881989c5d2035147e1a79a33d22cbc5313e104ff01e6ab405bd28b317"),
 		BloomRoot:    common.HexToHash("0xd94ee9f3c480858f53ec5d059aebdbb2e8d904702f100875ee59ec5f366e841d"),
+	}
+
+	// YilanChainConfig contains the chain parameters to run a node on the Yilan test network.
+	YilanChainConfig = &ChainConfig{
+		ChainID:             big.NewInt(240),
+		DMoment:             1550802900,
+		HomesteadBlock:      big.NewInt(0),
+		DAOForkBlock:        nil,
+		DAOForkSupport:      true,
+		EIP150Block:         big.NewInt(0),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		Dexcon: &DexconConfig{
+			GenesisCRSText:    "In DEXON, we trust, at Yilan",
+			Owner:             common.HexToAddress("BF8C48A620bacc46907f9B89732D25E47A2D7Cf7"),
+			MinStake:          new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e6)),
+			LockupPeriod:      86400 * 3 * 1000,
+			MiningVelocity:    0.1875,
+			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2e7)),
+			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(4e6)),
+			BlockGasLimit:     40000000,
+			NumChains:         1,
+			LambdaBA:          250,
+			LambdaDKG:         10000,
+			K:                 0,
+			PhiRatio:          0.667,
+			NotarySetSize:     4,
+			DKGSetSize:        4,
+			RoundInterval:     200,
+			MinBlockInterval:  1000,
+			FineValues: []*big.Int{
+				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
+				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
+				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
+			},
+		},
 	}
 
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
