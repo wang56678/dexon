@@ -15,12 +15,18 @@ func main() {
 
 	flag.Parse()
 
+	fmt.Fprintf(os.Stderr, "detail: %t\n", detail)
 	s := []byte(flag.Arg(0))
-	n, err := parser.Parse(s)
-	fmt.Printf("detail: %t\n", detail)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "err:\n%+v\n", err)
+	n, parseErr := parser.Parse(s)
+	b, printErr := ast.PrintAST(os.Stdout, n, s, "  ", detail)
+	if parseErr != nil {
+		fmt.Fprintf(os.Stderr, "Parse error:\n%+v\n", parseErr)
+	}
+	if printErr != nil {
+		fmt.Fprintf(os.Stderr, "Print error:\n%+v\n", printErr)
+	}
+	fmt.Fprintf(os.Stderr, "Output size: %d bytes\n", b)
+	if parseErr != nil || printErr != nil {
 		os.Exit(1)
 	}
-	ast.PrintAST(os.Stdout, n, s, "  ", detail)
 }

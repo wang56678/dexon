@@ -36,21 +36,19 @@ func formatString(s string) string {
 }
 
 func printAST(w io.Writer, n interface{}, s []byte, prefix string,
-	detail bool, depth int) {
+	detail bool, depth int) (int, error) {
 
 	indent := strings.Repeat(prefix, depth)
 	indentLong := strings.Repeat(prefix, depth+1)
 	if n == nil {
-		fmt.Fprintf(w, "%snil\n", indent)
-		return
+		return fmt.Fprintf(w, "%snil\n", indent)
 	}
 	typeOf := reflect.TypeOf(n)
 	valueOf := reflect.ValueOf(n)
 	kind := typeOf.Kind()
 	if kind == reflect.Ptr {
 		if valueOf.IsNil() {
-			fmt.Fprintf(w, "%snil\n", indent)
-			return
+			return fmt.Fprintf(w, "%snil\n", indent)
 		}
 		valueOf = valueOf.Elem()
 		typeOf = typeOf.Elem()
@@ -60,30 +58,37 @@ func printAST(w io.Writer, n interface{}, s []byte, prefix string,
 
 	if stringer, ok := n.(fmt.Stringer); ok {
 		s := stringer.String()
-		fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
-		return
+		return fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
 	}
 	if s, ok := n.(string); ok {
-		fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
-		return
+		return fmt.Fprintf(w, "%s%s\n", indent, formatString(s))
 	}
 	if bs, ok := n.([]byte); ok {
-		fmt.Fprintf(w, "%s%s\n", indent, formatBytes(bs))
-		return
+		return fmt.Fprintf(w, "%s%s\n", indent, formatBytes(bs))
 	}
 	if kind == reflect.Slice {
 		l := valueOf.Len()
 		if l == 0 {
-			fmt.Fprintf(w, "%s[]\n", indent)
-			return
+			return fmt.Fprintf(w, "%s[]\n", indent)
 		}
-		fmt.Fprintf(w, "%s[\n", indent)
+
+		var bytesWritten int
+		b, err := fmt.Fprintf(w, "%s[\n", indent)
+		bytesWritten += b
+		if err != nil {
+			return bytesWritten, err
+		}
 		for i := 0; i < l; i++ {
 			v := valueOf.Index(i)
-			printAST(w, v.Interface(), s, prefix, detail, depth+1)
+			b, err = printAST(w, v.Interface(), s, prefix, detail, depth+1)
+			bytesWritten += b
+			if err != nil {
+				return bytesWritten, err
+			}
 		}
-		fmt.Fprintf(w, "%s]\n", indent)
-		return
+		b, err = fmt.Fprintf(w, "%s]\n", indent)
+		bytesWritten += b
+		return bytesWritten, err
 	}
 	if kind == reflect.Struct {
 		type field struct {
@@ -127,25 +132,44 @@ func printAST(w io.Writer, n interface{}, s []byte, prefix string,
 			}
 		}
 
-		fmt.Fprintf(w, "%s%s", indent, name)
+		var bytesWritten int
+		b, err := fmt.Fprintf(w, "%s%s", indent, name)
+		bytesWritten += b
+		if err != nil {
+			return bytesWritten, err
+		}
 		if len(fields) == 0 {
-			fmt.Fprintf(w, " {}  // %s\n", position)
-			return
+			b, err = fmt.Fprintf(w, " {}  // %s\n", position)
+			bytesWritten += b
+			return bytesWritten, err
 		}
-		fmt.Fprintf(w, " {  // %s\n", position)
+		b, err = fmt.Fprintf(w, " {  // %s\n", position)
+		bytesWritten += b
+		if err != nil {
+			return bytesWritten, err
+		}
 		for i := 0; i < len(fields); i++ {
-			fmt.Fprintf(w, "%s%s:\n", indentLong, fields[i].name)
-			printAST(w, fields[i].value, s, prefix, detail, depth+2)
+			b, err = fmt.Fprintf(w, "%s%s:\n", indentLong, fields[i].name)
+			bytesWritten += b
+			if err != nil {
+				return bytesWritten, err
+			}
+			b, err = printAST(w, fields[i].value, s, prefix, detail, depth+2)
+			bytesWritten += b
+			if err != nil {
+				return bytesWritten, err
+			}
 		}
-		fmt.Fprintf(w, "%s}\n", indent)
-		return
+		b, err = fmt.Fprintf(w, "%s}\n", indent)
+		bytesWritten += b
+		return bytesWritten, err
 	}
-	fmt.Fprintf(w, "%s%+v\n", indent, valueOf.Interface())
+	return fmt.Fprintf(w, "%s%+v\n", indent, valueOf.Interface())
 }
 
 // PrintAST prints AST for debugging.
 func PrintAST(output io.Writer, node interface{}, source []byte,
-	indent string, detail bool) {
+	indent string, detail bool) (int, error) {
 
-	printAST(output, node, source, indent, detail, 0)
+	return printAST(output, node, source, indent, detail, 0)
 }
