@@ -29,11 +29,3 @@ func Run(stateDB vm.StateDB, ins []Instruction, registers []*Operand) (ret []byt
 	// TODO: ret = ABIEncode(ins[len(ins)-1].Output)
 	return
 }
-
-func loadRegister(input, registers []*Operand) {
-	for i, operand := range input {
-		if operand != nil && !operand.IsImmediate {
-			input[i] = registers[operand.RegisterIndex]
-		}
-	}
-}
