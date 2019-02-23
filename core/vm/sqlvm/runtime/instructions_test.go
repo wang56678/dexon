@@ -191,7 +191,7 @@ type decodeTestCase struct {
 
 type opLoadTestCase struct {
 	title          string
-	outputIdx      int
+	outputIdx      uint
 	expectedOutput *Operand
 	expectedErr    error
 	ids            []uint64
@@ -409,4 +409,63 @@ func (s *opLoadSuite) TestOpLoad() {
 
 func TestOpLoad(t *testing.T) {
 	suite.Run(t, new(opLoadSuite))
+}
+
+func TestInstructions(t *testing.T) {
+	suite.Run(t, new(instructionSuite))
+}
+
+func makeOperand(im bool, meta []ast.DataType, pTuple []Tuple) (op *Operand) {
+	op = &Operand{IsImmediate: im, Meta: meta, Data: pTuple}
+	return
+}
+
+func loadRegister(input, registers []*Operand) {
+	for i, operand := range input {
+		if operand != nil && !operand.IsImmediate {
+			input[i] = registers[operand.RegisterIndex]
+		}
+	}
+}
+
+type opTestcase struct {
+	Name   string
+	In     Instruction
+	Output *Operand
+	Err    error
+}
+
+type instructionSuite struct {
+	suite.Suite
+}
+
+func (s *instructionSuite) run(testcases []opTestcase, opfunc OpFunction) {
+	for idx, c := range testcases {
+		registers := make([]*Operand, len(c.In.Input))
+
+		for i, j := 0, 0; i < len(c.In.Input); i++ {
+			if !c.In.Input[i].IsImmediate {
+				registers[j] = c.In.Input[i]
+				j++
+			}
+		}
+		err := opfunc(
+			&common.Context{Opt: common.Option{SafeMath: true}},
+			c.In.Input, registers, c.In.Output)
+		s.Require().Equal(
+			c.Err, err,
+			"idx: %v, op: %v, case: %v\nerror not equal: %v != %v",
+			idx, c.In.Op, c.Name, c.Err, err,
+		)
+		if c.Err != nil {
+			continue
+		}
+
+		result := registers[0]
+		s.Require().True(
+			c.Output.Equal(result),
+			"idx: %v, op: %v, case: %v\noutput not equal.\nExpect: %v\nResult: %v\n",
+			idx, c.In.Op, c.Name, c.Output, result,
+		)
+	}
 }
