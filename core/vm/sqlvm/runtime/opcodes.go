@@ -3,6 +3,11 @@ package runtime
 // OpCode type
 type OpCode byte
 
+// 0x00 range - higher order ops.
+const (
+	NOP OpCode = iota
+)
+
 // 0x10 range - arithmetic ops. (array-based)
 const (
 	ADD OpCode = iota + 0x10
@@ -36,6 +41,7 @@ const (
 const (
 	ZIP OpCode = iota + 0x40
 	FIELD
+	PRUNE
 	SORT
 	FILTER
 	CAST
