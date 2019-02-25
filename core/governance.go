@@ -91,12 +91,11 @@ func (g *Governance) Configuration(round uint64) *coreTypes.Config {
 	configHelper := g.GetGovStateHelperAtRound(round)
 	c := configHelper.Configuration()
 	return &coreTypes.Config{
-		LambdaBA:      time.Duration(c.LambdaBA) * time.Millisecond,
-		LambdaDKG:     time.Duration(c.LambdaDKG) * time.Millisecond,
-		NotarySetSize: c.NotarySetSize,
-		DKGSetSize:    c.DKGSetSize,
-		// TODO(jimmyhu): remove MinBlockInterval after coreTypes.Config update.
-		RoundInterval:    time.Duration(c.RoundLength) * time.Duration(c.MinBlockInterval) * time.Millisecond,
+		LambdaBA:         time.Duration(c.LambdaBA) * time.Millisecond,
+		LambdaDKG:        time.Duration(c.LambdaDKG) * time.Millisecond,
+		NotarySetSize:    c.NotarySetSize,
+		DKGSetSize:       c.DKGSetSize,
+		RoundInterval:    c.RoundLength,
 		MinBlockInterval: time.Duration(c.MinBlockInterval) * time.Millisecond,
 	}
 }
