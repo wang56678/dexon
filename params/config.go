@@ -28,7 +28,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0x6c59132f64eae33054c0390e4d8f8ea5f0df1642b3a084c94388c44fe5eff70d")
 	TestnetGenesisHash = common.HexToHash("0x31847855ec3c1ba9a03ac3311f283775a70d7b0422b525c335aa094e5b81c902")
-	YilanGenesisHash   = common.HexToHash("0xc5af6e9169ee453e4ecc705c173e4619700be87833a9290739ddf131a451c134")
+	YilanGenesisHash   = common.HexToHash("0x09319e9412a35a54a990023267202adc13cdb0aae91b0925edbd9eafb64ae13d")
 )
 
 var (
@@ -159,7 +159,7 @@ var (
 	// YilanChainConfig contains the chain parameters to run a node on the Yilan test network.
 	YilanChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(240),
-		DMoment:             1550802900,
+		DMoment:             1551089400,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
@@ -176,7 +176,7 @@ var (
 			MiningVelocity:    0.1875,
 			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2e7)),
 			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(4e6)),
-			BlockGasLimit:     40000000,
+			BlockGasLimit:     80000 * 2000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
 			NotarySetSize:     4,
