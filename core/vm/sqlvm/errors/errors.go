@@ -63,11 +63,13 @@ const (
 	ErrorCategorNil ErrorCategory = iota
 	ErrorCategoryGrammar
 	ErrorCategorySemantic
+	ErrorCategoryRuntime
 )
 
 var errorCategoryMap = [...]string{
 	ErrorCategoryGrammar:  "grammar",
 	ErrorCategorySemantic: "semantic",
+	ErrorCategoryRuntime:  "runtime",
 }
 
 func (c ErrorCategory) Error() string {
