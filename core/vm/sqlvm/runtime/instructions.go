@@ -18,9 +18,10 @@ type OpFunction func(ctx *common.Context, ops []*Operand, registers []*Operand, 
 // Instruction represents single instruction with essential information
 // collection.
 type Instruction struct {
-	Op     OpCode
-	Input  []*Operand
-	Output int
+	Op       OpCode
+	Input    []*Operand
+	Output   int
+	Position uint32 // ast tree position
 }
 
 // Raw with embedded big.Int value or byte slice which represents the real value
