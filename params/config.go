@@ -26,8 +26,8 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash = common.HexToHash("0x6c59132f64eae33054c0390e4d8f8ea5f0df1642b3a084c94388c44fe5eff70d")
-	TestnetGenesisHash = common.HexToHash("0x31847855ec3c1ba9a03ac3311f283775a70d7b0422b525c335aa094e5b81c902")
+	MainnetGenesisHash = common.HexToHash("0xf80aae99a7c44bc54d7b0cc8a16645fa3ea65c01b180339f17b31a698b031271")
+	TestnetGenesisHash = common.HexToHash("0x7f704c8d0a773d0fcca231d40bf39495553886bf8800b4a06920786a802103e1")
 )
 
 var (
@@ -65,6 +65,7 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
+			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -110,6 +111,7 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
+			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -146,6 +148,7 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
+			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -292,6 +295,7 @@ type DexconConfig struct {
 	RoundLength       uint64         `json:"roundLength"`
 	MinBlockInterval  uint64         `json:"minBlockInterval"`
 	FineValues        []*big.Int     `json:"fineValues"`
+	MinGasPrice       *big.Int       `json:"minGasPrice"`
 }
 
 type dexconConfigSpecMarshaling struct {
@@ -299,11 +303,12 @@ type dexconConfigSpecMarshaling struct {
 	NextHalvingSupply *math.HexOrDecimal256
 	LastHalvedAmount  *math.HexOrDecimal256
 	FineValues        []*math.HexOrDecimal256
+	MinGasPrice       *math.HexOrDecimal256
 }
 
 // String implements the stringer interface, returning the consensus engine details.
 func (d *DexconConfig) String() string {
-	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v MinStake: %v LockupPeriod: %v MiningVelocity: %v NextHalvingSupply: %v LastHalvedAmount: %v BlockGasLimit: %v LambdaBA: %v LambdaDKG: %v NotarySetSize: %v DKGSetSize: %v RoundLength: %v MinBlockInterval: %v FineValues: %v}",
+	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v MinStake: %v LockupPeriod: %v MiningVelocity: %v NextHalvingSupply: %v LastHalvedAmount: %v BlockGasLimit: %v LambdaBA: %v LambdaDKG: %v NotarySetSize: %v DKGSetSize: %v RoundLength: %v MinBlockInterval: %v FineValues: %v MinGasPrice: %v}",
 		d.GenesisCRSText,
 		d.Owner,
 		d.MinStake,
@@ -319,6 +324,7 @@ func (d *DexconConfig) String() string {
 		d.RoundLength,
 		d.MinBlockInterval,
 		d.FineValues,
+		d.MinGasPrice,
 	)
 }
 
