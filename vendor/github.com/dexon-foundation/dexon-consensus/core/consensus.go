@@ -92,6 +92,7 @@ func (recv *consensusBAReceiver) ProposeVote(vote *types.Vote) {
 }
 
 func (recv *consensusBAReceiver) ProposeBlock() common.Hash {
+	recv.consensus.logger.Debug("mission qq propose block", "id", recv.consensus.ID.String()[:6], "pos", recv.agreementModule.agreementID())
 	if !recv.isNotary {
 		return common.Hash{}
 	}
