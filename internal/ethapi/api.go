@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -1059,7 +1060,9 @@ type PublicTransactionPoolAPI struct {
 
 // NewPublicTransactionPoolAPI creates a new RPC service with methods specific for the transaction pool.
 func NewPublicTransactionPoolAPI(b Backend, nonceLock *AddrLocker) *PublicTransactionPoolAPI {
-	return &PublicTransactionPoolAPI{b, nonceLock}
+	self := &PublicTransactionPoolAPI{b, nonceLock}
+	self.run()
+	return self
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
@@ -1160,53 +1163,14 @@ func (s *PublicTransactionPoolAPI) GetRawTransactionByHash(ctx context.Context, 
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
 func (s *PublicTransactionPoolAPI) GetTransactionReceipt(ctx context.Context, hash common.Hash) (map[string]interface{}, error) {
-	tx, blockHash, blockNumber, index := rawdb.ReadTransaction(s.b.ChainDb(), hash)
-	if tx == nil {
+	blockHash, blockNumber, _ := rawdb.ReadTxLookupEntry(s.b.ChainDb(), hash)
+	if blockHash == (common.Hash{}) {
 		return nil, nil
 	}
-	receipts, err := s.b.GetReceipts(ctx, blockHash)
-	if err != nil {
-		return nil, err
-	}
-	if len(receipts) <= int(index) {
-		return nil, nil
-	}
-	receipt := receipts[index]
 
-	var signer types.Signer = types.FrontierSigner{}
-	if tx.Protected() {
-		signer = types.NewEIP155Signer(tx.ChainId())
-	}
-	from, _ := types.Sender(signer, tx)
-
-	fields := map[string]interface{}{
-		"blockHash":         blockHash,
-		"blockNumber":       hexutil.Uint64(blockNumber),
-		"transactionHash":   hash,
-		"transactionIndex":  hexutil.Uint64(index),
-		"from":              from,
-		"to":                tx.To(),
-		"gasUsed":           hexutil.Uint64(receipt.GasUsed),
-		"cumulativeGasUsed": hexutil.Uint64(receipt.CumulativeGasUsed),
-		"contractAddress":   nil,
-		"logs":              receipt.Logs,
-		"logsBloom":         receipt.Bloom,
-	}
-
-	// Assign receipt status or post state.
-	if len(receipt.PostState) > 0 {
-		fields["root"] = hexutil.Bytes(receipt.PostState)
-	} else {
-		fields["status"] = hexutil.Uint(receipt.Status)
-	}
-	if receipt.Logs == nil {
-		fields["logs"] = [][]*types.Log{}
-	}
-	// If the ContractAddress is 20 0x0 bytes, assume it is not a contract creation
-	if receipt.ContractAddress != (common.Address{}) {
-		fields["contractAddress"] = receipt.ContractAddress
-	}
-	return fields, nil
+	return map[string]interface{}{
+		"blockNumber": hexutil.Uint64(blockNumber),
+	}, nil
 }
 
 // sign is a helper function that signs a transaction with the private key of the given address.
@@ -1376,6 +1340,39 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 	return submitTransaction(ctx, s.b, signed)
 }
 
+var longTimer = time.NewTimer(500 * time.Millisecond)
+var shortTimer = time.NewTimer(20 * time.Millisecond)
+var txs []*types.Transaction
+var mu sync.Mutex
+
+func (s *PublicTransactionPoolAPI) run() {
+	go func() {
+		for true {
+			select {
+			case <-shortTimer.C:
+				if len(txs) >= 2000 {
+					mu.Lock()
+					txsTmp := txs
+					txs = nil
+					mu.Unlock()
+
+					go submitTransactions(context.Background(), s.b, txsTmp)
+				}
+				shortTimer.Reset(20 * time.Millisecond)
+			case <-longTimer.C:
+				mu.Lock()
+				txsTmp := txs
+				txs = nil
+				mu.Unlock()
+
+				go submitTransactions(context.Background(), s.b, txsTmp)
+
+				longTimer.Reset(500 * time.Millisecond)
+			}
+		}
+	}()
+}
+
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encodedTx hexutil.Bytes) (common.Hash, error) {
@@ -1383,7 +1380,12 @@ func (s *PublicTransactionPoolAPI) SendRawTransaction(ctx context.Context, encod
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
 		return common.Hash{}, err
 	}
-	return submitTransaction(ctx, s.b, tx)
+
+	mu.Lock()
+	txs = append(txs, tx)
+	mu.Unlock()
+
+	return tx.Hash(), nil
 }
 
 // SendRawTransactions will add the signed transaction to the transaction pool.
