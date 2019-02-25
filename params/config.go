@@ -28,6 +28,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0xf80aae99a7c44bc54d7b0cc8a16645fa3ea65c01b180339f17b31a698b031271")
 	TestnetGenesisHash = common.HexToHash("0x7f704c8d0a773d0fcca231d40bf39495553886bf8800b4a06920786a802103e1")
+	YilanGenesisHash   = common.HexToHash("0x394f057bc19b7762eaccd7e250afa213e9b0e60d1204a234fd11ed03eabfb90e")
 )
 
 var (
@@ -159,6 +160,42 @@ var (
 		SectionHead:  common.HexToHash("0x4d3181bedb6aa96a6f3efa866c71f7802400d0fb4a6906946c453630d850efc0"),
 		CHTRoot:      common.HexToHash("0x25df2f9d63a5f84b2852988f0f0f7af5a7877da061c11b85c812780b5a27a5ec"),
 		BloomRoot:    common.HexToHash("0x0584834e5222471a06c669d210e302ca602780eaaddd04634fd65471c2a91419"),
+	}
+
+	// YilanChainConfig contains the chain parameters to run a node on the Yilan test network.
+	YilanChainConfig = &ChainConfig{
+		ChainID:             big.NewInt(240),
+		DMoment:             1550802900,
+		HomesteadBlock:      big.NewInt(0),
+		DAOForkBlock:        nil,
+		DAOForkSupport:      true,
+		EIP150Block:         big.NewInt(0),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		Dexcon: &DexconConfig{
+			GenesisCRSText:    "In DEXON, we trust, at Yilan",
+			Owner:             common.HexToAddress("BF8C48A620bacc46907f9B89732D25E47A2D7Cf7"),
+			MinStake:          new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e6)),
+			LockupPeriod:      86400 * 3 * 1000,
+			MiningVelocity:    0.1875,
+			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2e7)),
+			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(4e6)),
+			BlockGasLimit:     40000000,
+			LambdaBA:          250,
+			LambdaDKG:         10000,
+			NotarySetSize:     4,
+			DKGSetSize:        4,
+			RoundLength:       1200,
+			MinBlockInterval:  1000,
+			FineValues: []*big.Int{
+				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
+				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
+				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
+			},
+			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
+		},
 	}
 
 	// AllEthashProtocolChanges contains every protocol change (EIPs) introduced
