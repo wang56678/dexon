@@ -82,7 +82,7 @@ func (s *SchemaTestSuite) TestEncodeAndDecodeSchema() {
 				{
 					Name:    []byte("idx"),
 					Attr:    IndexAttrUnique,
-					Columns: []uint8{0},
+					Columns: []ColumnRef{0},
 				},
 			},
 		},

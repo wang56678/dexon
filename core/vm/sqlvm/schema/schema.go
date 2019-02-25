@@ -27,6 +27,18 @@ const (
 	ColumnAttrHasForeignKey
 )
 
+// TableRef defines the type for table index in Schema.
+type TableRef uint8
+
+// ColumnRef defines the type for column index in Table.Columns.
+type ColumnRef uint8
+
+// IndexRef defines the type for array index of Column.Indices.
+type IndexRef uint8
+
+// SequenceRef defines the type for sequence index in Table.
+type SequenceRef uint8
+
 // IndexAttr defines bit flags for describing index attribute.
 type IndexAttr uint16
 
@@ -49,16 +61,16 @@ type Table struct {
 type Index struct {
 	Name    []byte
 	Attr    IndexAttr
-	Columns []uint8
+	Columns []ColumnRef
 }
 
 type column struct {
 	Name          []byte
 	Type          ast.DataType
 	Attr          ColumnAttr
-	Sequence      uint8
-	ForeignTable  uint8
-	ForeignColumn uint8
+	Sequence      SequenceRef
+	ForeignTable  TableRef
+	ForeignColumn ColumnRef
 	Rest          interface{}
 }
 
