@@ -28,7 +28,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0xe972af2797b02f4dab95ffa229714c35d5c55685f20261b9498c8b8a3fe33856")
 	TestnetGenesisHash = common.HexToHash("0x9fab095bee4b3dc7dcde324beb6c791bc21025a33d50793ed995d8ef1739f35b")
-	YilanGenesisHash   = common.HexToHash("0x65d871acd54a1c4210d2a9a34d30e997ff301f9dc54e9c5a04a43cf84a8ae709")
+	YilanGenesisHash   = common.HexToHash("0x2ed981252f6ee988608e7c3e2af0b6f8fc8f717d6c84f20e50b96271463d011b")
 )
 
 var (
@@ -168,7 +168,7 @@ var (
 	// YilanChainConfig contains the chain parameters to run a node on the Yilan test network.
 	YilanChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(240),
-		DMoment:             1550802900,
+		DMoment:             1551069000,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
@@ -193,8 +193,8 @@ var (
 			PhiRatio:          0.667,
 			NotarySetSize:     4,
 			DKGSetSize:        4,
-			RoundInterval:     200,
-			MinBlockInterval:  1000,
+			RoundInterval:     700,
+			MinBlockInterval:  500,
 			FineValues: []*big.Int{
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
