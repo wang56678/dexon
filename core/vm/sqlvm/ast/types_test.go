@@ -21,7 +21,7 @@ func (s *TypesTestSuite) requireEncodeAndDecodeDecimalNoError(
 }
 
 func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
-	d DataType, t interface{}) {
+	d DataType, t TypeNode) {
 	encode, err := DataTypeEncode(t)
 	s.Require().NoError(err)
 	s.Require().Equal(d, encode)
@@ -30,7 +30,7 @@ func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
 	s.Require().Equal(t, decode)
 }
 
-func (s *TypesTestSuite) requireEncodeError(input interface{}) {
+func (s *TypesTestSuite) requireEncodeError(input TypeNode) {
 	_, err := DataTypeEncode(input)
 	s.Require().Error(err)
 }
@@ -43,39 +43,39 @@ func (s *TypesTestSuite) requireDecodeError(input DataType) {
 func (s *TypesTestSuite) TestEncodeAndDecode() {
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorBool, 0),
-		BoolTypeNode{})
+		&BoolTypeNode{})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorAddress, 0),
-		AddressTypeNode{})
+		&AddressTypeNode{})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorInt, 1),
-		IntTypeNode{Size: 16})
+		&IntTypeNode{Size: 16})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorUint, 2),
-		IntTypeNode{Unsigned: true, Size: 24})
+		&IntTypeNode{Unsigned: true, Size: 24})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorFixedBytes, 3),
-		FixedBytesTypeNode{Size: 32})
+		&FixedBytesTypeNode{Size: 4})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorDynamicBytes, 0),
-		DynamicBytesTypeNode{})
+		&DynamicBytesTypeNode{})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorFixed, 1),
-		FixedTypeNode{Size: 8, FractionalDigits: 1})
+		&FixedTypeNode{Size: 8, FractionalDigits: 1})
 	s.requireEncodeAndDecodeNoError(
 		ComposeDataType(DataTypeMajorUfixed+1, 2),
-		FixedTypeNode{Unsigned: true, Size: 16, FractionalDigits: 2})
+		&FixedTypeNode{Unsigned: true, Size: 16, FractionalDigits: 2})
 }
 
 func (s *TypesTestSuite) TestEncodeError() {
-	s.requireEncodeError(struct{}{})
-	s.requireEncodeError(IntTypeNode{Size: 1})
-	s.requireEncodeError(IntTypeNode{Size: 257})
-	s.requireEncodeError(FixedBytesTypeNode{Size: 1})
-	s.requireEncodeError(FixedBytesTypeNode{Size: 257})
-	s.requireEncodeError(FixedTypeNode{Size: 1, FractionalDigits: 0})
-	s.requireEncodeError(FixedTypeNode{Size: 257, FractionalDigits: 0})
-	s.requireEncodeError(FixedTypeNode{Size: 8, FractionalDigits: 81})
+	s.requireEncodeError(nil)
+	s.requireEncodeError(&IntTypeNode{Size: 1})
+	s.requireEncodeError(&IntTypeNode{Size: 257})
+	s.requireEncodeError(&FixedBytesTypeNode{Size: 0})
+	s.requireEncodeError(&FixedBytesTypeNode{Size: 257})
+	s.requireEncodeError(&FixedTypeNode{Size: 1, FractionalDigits: 0})
+	s.requireEncodeError(&FixedTypeNode{Size: 257, FractionalDigits: 0})
+	s.requireEncodeError(&FixedTypeNode{Size: 8, FractionalDigits: 81})
 }
 
 func (s *TypesTestSuite) TestDecodeError() {
