@@ -3,11 +3,11 @@ package ast
 import (
 	"errors"
 	"math/big"
-	"reflect"
 
 	"github.com/shopspring/decimal"
 
 	"github.com/dexon-foundation/dexon/common"
+	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 )
 
 var (
@@ -92,101 +92,55 @@ func (d DataTypeMajor) IsUfixedRange() bool {
 }
 
 // DataTypeEncode encodes data type node into DataType.
-func DataTypeEncode(n interface{}) (DataType, error) {
+func DataTypeEncode(n TypeNode) (DataType, error) {
 	if n == nil {
 		return DataTypeUnknown, ErrDataTypeEncode
 	}
-	if reflect.TypeOf(n).Kind() == reflect.Ptr {
-		return DataTypeEncode(reflect.ValueOf(n).Elem())
+	t, code := n.GetType()
+	if code == se.ErrorCodeNil {
+		return t, nil
 	}
-
-	switch t := n.(type) {
-	case BoolTypeNode:
-		return ComposeDataType(DataTypeMajorBool, 0), nil
-
-	case AddressTypeNode:
-		return ComposeDataType(DataTypeMajorAddress, 0), nil
-
-	case IntTypeNode:
-		if t.Size%8 != 0 || t.Size > 256 {
-			return DataTypeUnknown, ErrDataTypeEncode
-		}
-
-		minor := DataTypeMinor((t.Size / 8) - 1)
-		if t.Unsigned {
-			return ComposeDataType(DataTypeMajorUint, minor), nil
-		}
-		return ComposeDataType(DataTypeMajorInt, minor), nil
-
-	case FixedBytesTypeNode:
-		if t.Size%8 != 0 || t.Size > 256 {
-			return DataTypeUnknown, ErrDataTypeEncode
-		}
-
-		minor := DataTypeMinor((t.Size / 8) - 1)
-		return ComposeDataType(DataTypeMajorFixedBytes, minor), nil
-
-	case DynamicBytesTypeNode:
-		return ComposeDataType(DataTypeMajorDynamicBytes, 0), nil
-
-	case FixedTypeNode:
-		if t.Size%8 != 0 || t.Size > 256 {
-			return DataTypeUnknown, ErrDataTypeEncode
-		}
-
-		if t.FractionalDigits > 80 {
-			return DataTypeUnknown, ErrDataTypeEncode
-		}
-
-		major := DataTypeMajor((t.Size / 8) - 1)
-		minor := DataTypeMinor(t.FractionalDigits)
-		if t.Unsigned {
-			return ComposeDataType(DataTypeMajorUfixed+major, minor), nil
-		}
-		return ComposeDataType(DataTypeMajorFixed+major, minor), nil
-	}
-
-	return DataTypeUnknown, ErrDataTypeEncode
+	return t, code
 }
 
 // DataTypeDecode decodes DataType into data type node.
-func DataTypeDecode(t DataType) (interface{}, error) {
+func DataTypeDecode(t DataType) (TypeNode, error) {
 	major, minor := DecomposeDataType(t)
 	switch major {
 	// TODO(wmin0): define unsupported error for special type.
 	case DataTypeMajorBool:
 		if minor == 0 {
-			return BoolTypeNode{}, nil
+			return &BoolTypeNode{}, nil
 		}
 	case DataTypeMajorAddress:
 		if minor == 0 {
-			return AddressTypeNode{}, nil
+			return &AddressTypeNode{}, nil
 		}
 	case DataTypeMajorInt:
 		if minor <= 0x1f {
 			size := (uint32(minor) + 1) * 8
-			return IntTypeNode{Unsigned: false, Size: size}, nil
+			return &IntTypeNode{Unsigned: false, Size: size}, nil
 		}
 	case DataTypeMajorUint:
 		if minor <= 0x1f {
 			size := (uint32(minor) + 1) * 8
-			return IntTypeNode{Unsigned: true, Size: size}, nil
+			return &IntTypeNode{Unsigned: true, Size: size}, nil
 		}
 	case DataTypeMajorFixedBytes:
 		if minor <= 0x1f {
-			size := (uint32(minor) + 1) * 8
-			return FixedBytesTypeNode{Size: size}, nil
+			size := uint32(minor) + 1
+			return &FixedBytesTypeNode{Size: size}, nil
 		}
 	case DataTypeMajorDynamicBytes:
 		if minor == 0 {
-			return DynamicBytesTypeNode{}, nil
+			return &DynamicBytesTypeNode{}, nil
 		}
 	}
 	switch {
 	case major.IsFixedRange():
 		if minor <= 80 {
 			size := (uint32(major-DataTypeMajorFixed) + 1) * 8
-			return FixedTypeNode{
+			return &FixedTypeNode{
 				Unsigned:         false,
 				Size:             size,
 				FractionalDigits: uint32(minor),
@@ -195,7 +149,7 @@ func DataTypeDecode(t DataType) (interface{}, error) {
 	case major.IsUfixedRange():
 		if minor <= 80 {
 			size := (uint32(major-DataTypeMajorUfixed) + 1) * 8
-			return FixedTypeNode{
+			return &FixedTypeNode{
 				Unsigned:         true,
 				Size:             size,
 				FractionalDigits: uint32(minor),
