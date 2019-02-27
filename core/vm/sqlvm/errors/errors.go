@@ -60,7 +60,7 @@ type ErrorCategory uint16
 
 // Error category starts from 1. Zero value is invalid.
 const (
-	ErrorCategorNil ErrorCategory = iota
+	ErrorCategoryNil ErrorCategory = iota
 	ErrorCategoryGrammar
 	ErrorCategorySemantic
 	ErrorCategoryRuntime
