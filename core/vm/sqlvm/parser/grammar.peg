@@ -1161,10 +1161,10 @@ NormalIdentifier
 }
 
 NormalIdentifierStart
-	= [a-zA-Z@#_\x80-\xff]
+	= [a-zA-Z\x80-\xff]
 
 NormalIdentifierRest
-	= [a-zA-Z0-9@#$_\x80-\xff]
+	= [a-zA-Z0-9_\x80-\xff]
 
 StringIdentifier
 	= "\"" s:( ( [^"\r\n\\] / "\\" . ) { return c.text, nil } )* "\""
