@@ -11,6 +11,7 @@ type Error struct {
 	// These keys are parts of SQL VM ABI. Database contract callers can
 	// obtain values stored in these fields from function return values.
 	Position uint32 // Position is the offset in bytes to the error location.
+	Length   uint32 // Length is the length in bytes of the error token.
 	Category ErrorCategory
 	Code     ErrorCode
 
@@ -24,8 +25,19 @@ type Error struct {
 
 func (e Error) Error() string {
 	b := strings.Builder{}
-	b.WriteString(fmt.Sprintf("offset %d, category %d (%s), code %d (%s)",
-		e.Position, e.Category, e.Category, e.Code, e.Code))
+	// It is possible for an error to have zero length because not all errors
+	// correspond to tokens. The parser can report an error with no length when
+	// it encounters an unexpected token.
+	if e.Position > 0 || e.Length > 0 {
+		b.WriteString(fmt.Sprintf("offset %d", e.Position))
+		if e.Length > 0 {
+			b.WriteString(fmt.Sprintf(", length %d", e.Length))
+		}
+	} else {
+		b.WriteString("unknown location")
+	}
+	b.WriteString(fmt.Sprintf(", category %d (%s), code %d (%s)",
+		e.Category, e.Category, e.Code, e.Code))
 	if e.Token != "" {
 		b.WriteString(", token ")
 		b.WriteString(strconv.Quote(e.Token))

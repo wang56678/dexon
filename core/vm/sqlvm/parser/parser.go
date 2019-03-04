@@ -122,6 +122,7 @@ func Parse(b []byte) ([]ast.Node, error) {
 			return nil, errors.ErrorList{
 				errors.Error{
 					Position: 0,
+					Length:   0,
 					Category: errors.ErrorCategoryLimit,
 					Code:     errors.ErrorCodeDepthLimitReached,
 					Token:    "",
@@ -148,12 +149,18 @@ func Parse(b []byte) ([]ast.Node, error) {
 		}
 		sqlvmErrList[i].Token =
 			string(internal.DecodeString([]byte(sqlvmErrList[i].Token)))
-		if offset, ok := encMap[sqlvmErrList[i].Position]; ok {
-			sqlvmErrList[i].Position = offset
-		} else {
-			panic(fmt.Sprintf("cannot fix error position byte offset %d",
-				sqlvmErrList[i].Position))
+		begin := sqlvmErrList[i].Position
+		end := begin + sqlvmErrList[i].Length
+		fixedBegin, ok := encMap[begin]
+		if !ok {
+			panic(fmt.Sprintf("cannot fix error position byte offset %d", begin))
 		}
+		fixedEnd, ok := encMap[end]
+		if !ok {
+			panic(fmt.Sprintf("cannot fix error position byte offset %d", end))
+		}
+		sqlvmErrList[i].Position = fixedBegin
+		sqlvmErrList[i].Length = fixedEnd - fixedBegin
 	}
 	return stmts, sqlvmErrList
 }
