@@ -1,15 +1,15 @@
 {
-package parser
+package internal
 
 import (
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
-	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
+	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 )
 }
 
 S
 	<- _ x:Stmt? _ xs:( ';' _ s:Stmt? _ { return s, nil } )* EOF
-{ return prepend(x, assertSlice(xs)), nil }
+{ return assertNodeSlice(prepend(x, assertSlice(xs))), nil }
 
 /* Statements */
 Stmt
@@ -687,10 +687,10 @@ UIntType
 	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = true
 	size, code := toUint(s.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "UIntType",
@@ -710,10 +710,10 @@ IntType
 	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = false
 	size, code := toUint(s.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "IntType",
@@ -733,10 +733,10 @@ UFixedType
 	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = true
 	size, code := toUint(s.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "UFixedType",
@@ -745,10 +745,10 @@ UFixedType
 		return node, err
 	}
 	fractionalDigits, code := toUint(t.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "UFixedType",
@@ -769,10 +769,10 @@ FixedType
 	node.SetLength(uint32(len(c.text)))
 	node.Unsigned = false
 	size, code := toUint(s.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "FixedType",
@@ -781,10 +781,10 @@ FixedType
 		return node, err
 	}
 	fractionalDigits, code := toUint(t.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "FixedType",
@@ -804,10 +804,10 @@ FixedBytesType
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	size, code := toUint(s.([]byte))
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "FixedBytesType",
@@ -918,10 +918,10 @@ Integer
 	node.SetLength(uint32(len(c.text)))
 	node.IsAddress = false
 	v, code := toDecimal(c.text)
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "Integer",
@@ -949,10 +949,10 @@ Decimal
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	v, code := toDecimal(c.text)
-	if code != errors.ErrorCodeNil {
-		err := errors.Error{
+	if code != se.ErrorCodeNil {
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "Decimal",
@@ -995,12 +995,12 @@ NormalString
 	node.SetLength(uint32(len(c.text)))
 	bs := joinBytes(assertSlice(s))
 	v, bad, code := resolveString(bs)
-	if code != errors.ErrorCodeNil {
+	if code != se.ErrorCodeNil {
 		msg := fmt.Sprintf("cannot resolve escape sequence '%s': %v",
 			sanitizeBadEscape(bad), code)
-		err := errors.Error{
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "NormalString",
@@ -1174,12 +1174,12 @@ StringIdentifier
 	node.SetLength(uint32(len(c.text)))
 	bs := joinBytes(assertSlice(s))
 	name, bad, code := resolveString(bs)
-	if code != errors.ErrorCodeNil {
+	if code != se.ErrorCodeNil {
 		msg := fmt.Sprintf("cannot resolve escape sequence '%s': %v",
 			sanitizeBadEscape(bad), code)
-		err := errors.Error{
+		err := se.Error{
 			Position: uint32(c.pos.offset),
-			Category: errors.ErrorCategoryGrammar,
+			Category: se.ErrorCategoryGrammar,
 			Code:     code,
 			Token:    string(c.text),
 			Prefix:   "StringIdentifier",
