@@ -308,6 +308,7 @@ var DecodeString = decodeString
 func (p *parserError) SQLVMError() errors.Error {
 	return errors.Error{
 		Position: uint32(p.pos.offset),
+		Length:   0,
 		Category: errors.ErrorCategoryGrammar,
 		Code:     errors.ErrorCodeParser,
 		Token:    "",
