@@ -9,20 +9,40 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/parser/internal"
 )
 
-func walkSelfFirst(n ast.Node, v func(ast.Node, []ast.Node)) {
-	c := n.GetChildren()
-	v(n, c)
-	for i := range c {
-		walkSelfFirst(c[i], v)
-	}
+type visitor func(ast.Node, []ast.Node)
+
+func walkSelfFirst(n ast.Node, v visitor) bool {
+	return walkSelfFirstWithDepth(n, v, 0)
 }
 
-func walkChildrenFirst(n ast.Node, v func(ast.Node, []ast.Node)) {
+func walkSelfFirstWithDepth(n ast.Node, v visitor, d int) bool {
+	if d >= ast.DepthLimit {
+		return false
+	}
 	c := n.GetChildren()
+	r := true
+	v(n, c)
 	for i := range c {
-		walkChildrenFirst(c[i], v)
+		r = r && walkSelfFirstWithDepth(c[i], v, d+1)
+	}
+	return r
+}
+
+func walkChildrenFirst(n ast.Node, v visitor) bool {
+	return walkChildrenFirstWithDepth(n, v, 0)
+}
+
+func walkChildrenFirstWithDepth(n ast.Node, v visitor, d int) bool {
+	if d >= ast.DepthLimit {
+		return false
+	}
+	c := n.GetChildren()
+	r := true
+	for i := range c {
+		r = r && walkChildrenFirstWithDepth(c[i], v, d+1)
 	}
 	v(n, c)
+	return r
 }
 
 // Parse parses SQL commands text and return an AST.
@@ -65,7 +85,8 @@ func Parse(b []byte) ([]ast.Node, error) {
 		if stmts[i] == nil {
 			continue
 		}
-		walkChildrenFirst(stmts[i], func(n ast.Node, c []ast.Node) {
+		r := true
+		r = r && walkChildrenFirst(stmts[i], func(n ast.Node, c []ast.Node) {
 			minBegin := uint32(len(eb))
 			maxEnd := uint32(0)
 			for _, cn := range append(c, n) {
@@ -83,7 +104,7 @@ func Parse(b []byte) ([]ast.Node, error) {
 			n.SetPosition(minBegin)
 			n.SetLength(maxEnd - minBegin)
 		})
-		walkSelfFirst(stmts[i], func(n ast.Node, _ []ast.Node) {
+		r = r && walkSelfFirst(stmts[i], func(n ast.Node, _ []ast.Node) {
 			begin := n.GetPosition()
 			end := begin + n.GetLength()
 			fixedBegin, ok := encMap[begin]
@@ -97,9 +118,22 @@ func Parse(b []byte) ([]ast.Node, error) {
 			n.SetPosition(fixedBegin)
 			n.SetLength(fixedEnd - fixedBegin)
 		})
+		if !r {
+			return nil, errors.ErrorList{
+				errors.Error{
+					Position: 0,
+					Category: errors.ErrorCategoryLimit,
+					Code:     errors.ErrorCodeDepthLimitReached,
+					Token:    "",
+					Prefix:   "",
+					Message: fmt.Sprintf("reach syntax tree depth limit %d",
+						ast.DepthLimit),
+				},
+			}
+		}
 	}
 	if pigeonErr == nil {
-		return stmts, pigeonErr
+		return stmts, nil
 	}
 
 	// Process errors.

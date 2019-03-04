@@ -61,12 +61,14 @@ type ErrorCategory uint16
 // Error category starts from 1. Zero value is invalid.
 const (
 	ErrorCategoryNil ErrorCategory = iota
+	ErrorCategoryLimit
 	ErrorCategoryGrammar
 	ErrorCategorySemantic
 	ErrorCategoryRuntime
 )
 
 var errorCategoryMap = [...]string{
+	ErrorCategoryLimit:    "limit",
 	ErrorCategoryGrammar:  "grammar",
 	ErrorCategorySemantic: "semantic",
 	ErrorCategoryRuntime:  "runtime",
@@ -82,6 +84,7 @@ type ErrorCode uint16
 // Error code starts from 1. Zero value is invalid.
 const (
 	ErrorCodeNil ErrorCode = iota
+	ErrorCodeDepthLimitReached
 	ErrorCodeParser
 	ErrorCodeInvalidIntegerSyntax
 	ErrorCodeInvalidNumberSyntax
@@ -108,6 +111,7 @@ const (
 )
 
 var errorCodeMap = [...]string{
+	ErrorCodeDepthLimitReached:             "depth limit reached",
 	ErrorCodeParser:                        "parser error",
 	ErrorCodeInvalidIntegerSyntax:          "invalid integer syntax",
 	ErrorCodeInvalidNumberSyntax:           "invalid number syntax",
