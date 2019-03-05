@@ -9,7 +9,18 @@ import (
 
 S
 	<- _ x:Stmt? _ xs:( ';' _ s:Stmt? _ { return s, nil } )* EOF
-{ return assertNodeSlice(prepend(x, assertSlice(xs))), nil }
+{
+	nodeSlice := prepend(x, assertSlice(xs))
+	stmtSlice := make([]ast.StmtNode, len(nodeSlice))
+	for idx := range nodeSlice {
+		if nodeSlice[idx] != nil {
+			stmtSlice[idx] = nodeSlice[idx].(ast.StmtNode)
+		} else {
+			stmtSlice[idx] = nil
+		}
+	}
+	return stmtSlice, nil
+}
 
 /* Statements */
 Stmt
@@ -21,7 +32,7 @@ Stmt
 	/ CreateIndexStmt
 
 SelectStmt
-	= SelectToken
+	= v:SelectToken
 	_ f:SelectColumn fs:( _ SeparatorToken _ s:SelectColumn { return s, nil } )*
 	table:( _ FromToken _ i:Identifier { return i, nil } )?
 	where:( _ w:WhereClause { return w, nil } )?
@@ -33,6 +44,7 @@ SelectStmt
 	node := &ast.SelectStmtNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
+	node.SetVerb(v.([]byte))
 	node.Column = assertExprSlice(prepend(f, assertSlice(fs)))
 	if table != nil {
 		node.Table = table.(*ast.IdentifierNode)
@@ -64,7 +76,7 @@ SelectColumn
 	/ Expr
 
 UpdateStmt
-	= UpdateToken
+	= v:UpdateToken
 	_ table:Identifier
 	_ SetToken
 	_ a:Assignment as:( _ SeparatorToken _ s:Assignment { return s, nil } )*
@@ -73,6 +85,7 @@ UpdateStmt
 	node := &ast.UpdateStmtNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
+	node.SetVerb(v.([]byte))
 	node.Table = table.(*ast.IdentifierNode)
 	assignSlice := prepend(a, assertSlice(as))
 	node.Assignment = make([]*ast.AssignOperatorNode, len(assignSlice))
@@ -86,14 +99,15 @@ UpdateStmt
 }
 
 DeleteStmt
-	= DeleteToken
-	_ FromToken
+	= v1:DeleteToken v2:_ v3:FromToken
 	_ table:Identifier
 	where:( _ w:WhereClause { return w, nil } )?
 {
 	node := &ast.DeleteStmtNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
+	node.SetVerb(bytes.Join([][]byte{
+		v1.([]byte), v2.([]byte), v3.([]byte)}, nil))
 	node.Table = table.(*ast.IdentifierNode)
 	if where != nil {
 		node.Where = where.(*ast.WhereOptionNode)
@@ -102,14 +116,15 @@ DeleteStmt
 }
 
 InsertStmt
-	= InsertToken
-	_ IntoToken
+	= v1:InsertToken v2:_ v3:IntoToken
 	_ table:Identifier
 	_ insert:( InsertWithColumnClause / InsertWithDefaultClause )
 {
 	node := &ast.InsertStmtNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
+	node.SetVerb(bytes.Join([][]byte{
+		v1.([]byte), v2.([]byte), v3.([]byte)}, nil))
 	node.Table = table.(*ast.IdentifierNode)
 	switch i := insert.(type) {
 	case *ast.InsertWithColumnOptionNode:
@@ -127,8 +142,7 @@ InsertValue
 { return e, nil }
 
 CreateTableStmt
-	= CreateToken
-	_ TableToken
+	= v1:CreateToken v2:_ v3:TableToken
 	_ table:Identifier
 	_ '('
 	_ column:(
@@ -141,6 +155,8 @@ CreateTableStmt
 	node := &ast.CreateTableStmtNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
+	node.SetVerb(bytes.Join([][]byte{
+		v1.([]byte), v2.([]byte), v3.([]byte)}, nil))
 	node.Table = table.(*ast.IdentifierNode)
 	columnSlice := assertSlice(column)
 	node.Column = make([]*ast.ColumnSchemaNode, len(columnSlice))
@@ -192,9 +208,9 @@ ColumnConstraint
 	/ AutoincrementClause
 
 CreateIndexStmt
-	= CreateToken
+	= v1:CreateToken
 	unique:( _ u:UniqueClause { return u, nil } )?
-	_ IndexToken
+	v2:_ v3:IndexToken
 	_ index:Identifier
 	_ OnToken
 	_ table:Identifier
@@ -203,6 +219,8 @@ CreateIndexStmt
 	node := &ast.CreateIndexStmtNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
+	node.SetVerb(bytes.Join([][]byte{
+		v1.([]byte), v2.([]byte), v3.([]byte)}, nil))
 	node.Index = index.(*ast.IdentifierNode)
 	node.Table = table.(*ast.IdentifierNode)
 	columnSlice := assertSlice(prepend(i, assertSlice(is)))
@@ -245,8 +263,8 @@ OrderColumn
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	node.Expr = i.(ast.ExprNode)
-	node.Desc = s != nil && string(s.([]byte)) == "desc"
-	node.NullsFirst = n != nil && string(n.([]byte)) == "first"
+	node.Desc = s != nil && bytes.EqualFold(s.([]byte), []byte("DESC"))
+	node.NullsFirst = n != nil && bytes.EqualFold(n.([]byte), []byte("FIRST"))
 	return node, nil
 }
 
@@ -894,7 +912,7 @@ BoolLiteral
 	node := &ast.BoolValueNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
-	node.V = string(b.([]byte)) == "true"
+	node.V = bytes.EqualFold(b.([]byte), []byte("TRUE"))
 	return node, nil
 }
 
@@ -1019,132 +1037,167 @@ NormalString
 /* Tokens */
 SelectToken
 	= "SELECT"i !NormalIdentifierRest
+{ return c.text, nil }
 
 FromToken
 	= "FROM"i !NormalIdentifierRest
+{ return c.text, nil }
 
 WhereToken
 	= "WHERE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 OrderToken
 	= "ORDER"i !NormalIdentifierRest
+{ return c.text, nil }
 
 ByToken
 	= "BY"i !NormalIdentifierRest
+{ return c.text, nil }
 
 GroupToken
 	= "GROUP"i !NormalIdentifierRest
+{ return c.text, nil }
 
 LimitToken
 	= "LIMIT"i !NormalIdentifierRest
+{ return c.text, nil }
 
 OffsetToken
 	= "OFFSET"i !NormalIdentifierRest
+{ return c.text, nil }
 
 UpdateToken
 	= "UPDATE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 SetToken
 	= "SET"i !NormalIdentifierRest
+{ return c.text, nil }
 
 DeleteToken
 	= "DELETE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 InsertToken
 	= "INSERT"i !NormalIdentifierRest
+{ return c.text, nil }
 
 IntoToken
 	= "INTO"i !NormalIdentifierRest
+{ return c.text, nil }
 
 ValuesToken
 	= "VALUES"i !NormalIdentifierRest
+{ return c.text, nil }
 
 CreateToken
 	= "CREATE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 TableToken
 	= "TABLE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 IndexToken
 	= "INDEX"i !NormalIdentifierRest
+{ return c.text, nil }
 
 UniqueToken
 	= "UNIQUE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 DefaultToken
 	= "DEFAULT"i !NormalIdentifierRest
+{ return c.text, nil }
 
 PrimaryToken
 	= "PRIMARY"i !NormalIdentifierRest
+{ return c.text, nil }
 
 KeyToken
 	= "KEY"i !NormalIdentifierRest
+{ return c.text, nil }
 
 ReferencesToken
 	= "REFERENCES"i !NormalIdentifierRest
+{ return c.text, nil }
 
 AutoincrementToken
 	= "AUTOINCREMENT"i !NormalIdentifierRest
+{ return c.text, nil }
 
 OnToken
 	= "ON"i !NormalIdentifierRest
+{ return c.text, nil }
 
 TrueToken
 	= "TRUE"i !NormalIdentifierRest
-{ return toLower(c.text), nil }
+{ return c.text, nil }
 
 FalseToken
 	= "FALSE"i !NormalIdentifierRest
-{ return toLower(c.text), nil }
+{ return c.text, nil }
 
 NullToken
 	= "NULL"i !NormalIdentifierRest
+{ return c.text, nil }
 
 IsToken
 	= "IS"i !NormalIdentifierRest
+{ return c.text, nil }
 
 NullsToken
 	= "NULLS"i !NormalIdentifierRest
+{ return c.text, nil }
 
 LastToken
 	= "LAST"i !NormalIdentifierRest
-{ return toLower(c.text), nil }
+{ return c.text, nil }
 
 FirstToken
 	= "FIRST"i !NormalIdentifierRest
-{ return toLower(c.text), nil }
+{ return c.text, nil }
 
 AndToken
 	= "AND"i !NormalIdentifierRest
+{ return c.text, nil }
 
 OrToken
 	= "OR"i !NormalIdentifierRest
+{ return c.text, nil }
 
 NotToken
 	= "NOT"i !NormalIdentifierRest
+{ return c.text, nil }
 
 InToken
 	= "IN"i !NormalIdentifierRest
+{ return c.text, nil }
 
 LikeToken
 	= "LIKE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 EscapeToken
 	= "ESCAPE"i !NormalIdentifierRest
+{ return c.text, nil }
 
 AscToken
 	= "ASC"i !NormalIdentifierRest
-{ return toLower(c.text), nil }
+{ return c.text, nil }
 
 DescToken
 	= "DESC"i !NormalIdentifierRest
-{ return toLower(c.text), nil }
+{ return c.text, nil }
 
 CastToken
 	= "CAST"i !NormalIdentifierRest
+{ return c.text, nil }
 
 AsToken
 	= "AS"i !NormalIdentifierRest
+{ return c.text, nil }
 
 SeparatorToken
 	= ","
@@ -1201,6 +1254,7 @@ StringIdentifier
 /* Skip */
 _
 	= Whitespace*
+{ return c.text, nil }
 
 Whitespace
 	= "\t" // \x09 (HT)

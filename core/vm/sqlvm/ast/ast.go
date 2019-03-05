@@ -1109,9 +1109,32 @@ func (n *ForeignOptionNode) GetChildren() []Node {
 // Statements
 // ---------------------------------------------------------------------------
 
+// StmtNode defines the interface of a statement.
+type StmtNode interface {
+	Node
+	GetVerb() []byte
+	SetVerb([]byte)
+}
+
+// StmtNodeBase is a base struct embedded by statement nodes.
+type StmtNodeBase struct {
+	Verb []byte `print:"-"`
+}
+
+// GetVerb returns the verb used to identify the statement.
+func (n *StmtNodeBase) GetVerb() []byte {
+	return n.Verb
+}
+
+// SetVerb sets the verb used to identify the statement.
+func (n *StmtNodeBase) SetVerb(verb []byte) {
+	n.Verb = verb
+}
+
 // SelectStmtNode is SELECT.
 type SelectStmtNode struct {
 	NodeBase
+	StmtNodeBase
 	Column []ExprNode
 	Table  *IdentifierNode
 	Where  *WhereOptionNode
@@ -1121,7 +1144,7 @@ type SelectStmtNode struct {
 	Offset *OffsetOptionNode
 }
 
-var _ Node = (*SelectStmtNode)(nil)
+var _ StmtNode = (*SelectStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *SelectStmtNode) GetChildren() []Node {
@@ -1172,12 +1195,13 @@ func (n *SelectStmtNode) GetChildren() []Node {
 // UpdateStmtNode is UPDATE.
 type UpdateStmtNode struct {
 	NodeBase
+	StmtNodeBase
 	Table      *IdentifierNode
 	Assignment []*AssignOperatorNode
 	Where      *WhereOptionNode
 }
 
-var _ Node = (*UpdateStmtNode)(nil)
+var _ StmtNode = (*UpdateStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *UpdateStmtNode) GetChildren() []Node {
@@ -1203,11 +1227,12 @@ func (n *UpdateStmtNode) GetChildren() []Node {
 // DeleteStmtNode is DELETE.
 type DeleteStmtNode struct {
 	NodeBase
+	StmtNodeBase
 	Table *IdentifierNode
 	Where *WhereOptionNode
 }
 
-var _ Node = (*DeleteStmtNode)(nil)
+var _ StmtNode = (*DeleteStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *DeleteStmtNode) GetChildren() []Node {
@@ -1220,11 +1245,12 @@ func (n *DeleteStmtNode) GetChildren() []Node {
 // InsertStmtNode is INSERT.
 type InsertStmtNode struct {
 	NodeBase
+	StmtNodeBase
 	Table  *IdentifierNode
 	Insert Node
 }
 
-var _ Node = (*InsertStmtNode)(nil)
+var _ StmtNode = (*InsertStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *InsertStmtNode) GetChildren() []Node {
@@ -1234,11 +1260,12 @@ func (n *InsertStmtNode) GetChildren() []Node {
 // CreateTableStmtNode is CREATE TABLE.
 type CreateTableStmtNode struct {
 	NodeBase
+	StmtNodeBase
 	Table  *IdentifierNode
 	Column []*ColumnSchemaNode
 }
 
-var _ Node = (*CreateTableStmtNode)(nil)
+var _ StmtNode = (*CreateTableStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *CreateTableStmtNode) GetChildren() []Node {
@@ -1274,13 +1301,14 @@ func (n *ColumnSchemaNode) GetChildren() []Node {
 // CreateIndexStmtNode is CREATE INDEX.
 type CreateIndexStmtNode struct {
 	NodeBase
+	StmtNodeBase
 	Index  *IdentifierNode
 	Table  *IdentifierNode
 	Column []*IdentifierNode
 	Unique *UniqueOptionNode
 }
 
-var _ Node = (*CreateIndexStmtNode)(nil)
+var _ StmtNode = (*CreateIndexStmtNode)(nil)
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *CreateIndexStmtNode) GetChildren() []Node {
