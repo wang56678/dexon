@@ -449,11 +449,15 @@ LogicExpr1Is
 
 LogicExpr1Like
 	= n:( t:NotOperator _ { return t, nil } )? LikeToken _ s:Expr
+	escape:( _ EscapeToken _ e:Expr { return e, nil } )?
 {
 	node := &ast.LikeOperatorNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	opSetSubject(node, s.(ast.ExprNode))
+	if escape != nil {
+		node.Escape = escape.(ast.ExprNode)
+	}
 	if n != nil {
 		return opSetTarget(n.(ast.UnaryOperator), node), nil
 	}
@@ -1134,6 +1138,9 @@ InToken
 
 LikeToken
 	= "LIKE"i !NormalIdentifierRest
+
+EscapeToken
+	= "ESCAPE"i !NormalIdentifierRest
 
 AscToken
 	= "ASC"i !NormalIdentifierRest
