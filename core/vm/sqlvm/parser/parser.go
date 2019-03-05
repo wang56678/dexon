@@ -46,7 +46,7 @@ func walkChildrenFirstWithDepth(n ast.Node, v visitor, d int) bool {
 }
 
 // Parse parses SQL commands text and return an AST.
-func Parse(b []byte) ([]ast.Node, error) {
+func Parse(b []byte) ([]ast.StmtNode, error) {
 	// The string sent from the caller is not guaranteed to be valid UTF-8.
 	// We don't really care non-ASCII characters in the string because all
 	// keywords and special symbols are defined in ASCII. Therefore, as long
@@ -77,9 +77,9 @@ func Parse(b []byte) ([]ast.Node, error) {
 	root, pigeonErr := internal.Parse("", eb, options...)
 
 	// Process the AST.
-	var stmts []ast.Node
+	var stmts []ast.StmtNode
 	if root != nil {
-		stmts = root.([]ast.Node)
+		stmts = root.([]ast.StmtNode)
 	}
 	for i := range stmts {
 		if stmts[i] == nil {

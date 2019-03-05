@@ -129,14 +129,12 @@ func toDecimal(b []byte) (decimal.Decimal, errors.ErrorCode) {
 	return d, convertDecimalError(err)
 }
 
-func toLower(b []byte) []byte {
-	return bytes.ToLower(b)
-}
-
 func joinBytes(x []interface{}) []byte {
 	bs := []byte{}
 	for _, b := range x {
-		bs = append(bs, b.([]byte)...)
+		if b != nil {
+			bs = append(bs, b.([]byte)...)
+		}
 	}
 	return bs
 }
