@@ -41,6 +41,8 @@ func (s *ParserTestSuite) TestParse() {
 	s.requireParseNoError(`select * from abc where abc not in (1, 1)`)
 	s.requireParseNoError(`select * from abc where not true`)
 	s.requireParseNoError(`select * from abc where a like a + 1`)
+	s.requireParseNoError(`select * from abc where a like a + 1 escape '*'`)
+	s.requireParseNoError(`select * from abc where a like a + 1 escape a`)
 
 	// Test some logic expr and no from.
 	s.requireParseNoError(`select 1 where a is not null = b`)
@@ -97,18 +99,19 @@ func (s *ParserTestSuite) TestParseRules() {
 			C11 IS NOT NULL,
 			C12 LIKE 'dek_s%n',
 			C13 || C14 NOT LIKE 'cob%h__d%',
-			C15 <= C16 + 45,
-			C17 >= C18 - 54,
-			C19 <> 46 * C20,
-			C21 != 64 / C21,
-			C22 < C23 % C24,
-			C25 > C26 / (C27 + C28),
-			C29 = C30 * (C31 - C32),
-			C33 || C34 || 'vm' || 'sql',
-			C35 + C36 - C37 * C38 / C39 % C40,
-			C41 - - C42 + + (C43) * -C44 ++ C45 / -C46,
-			C47 + CAST(C48 % C49 AS INT88) - TSAC(),
-			F(C50) * "F"(C51, "C52") + "!"('\U0010FFFF', '\x11\x23\xfd'),
+			C15 LIKE 'dek_s\\%n' ESCAPE '\\',
+			C16 <= C17 + 45,
+			C18 >= C19 - 54,
+			C20 <> 46 * C21,
+			C22 != 64 / C22,
+			C23 < C24 % C25,
+			C26 > C27 / (C28 + C29),
+			C30 = C31 * (C32 - C33),
+			C34 || C35 || 'vm' || 'sql',
+			C36 + C37 - C38 * C39 / C40 % C41,
+			C42 - - C43 + + (C44) * -C45 ++ C46 / -C47,
+			C48 + CAST(C49 % C50 AS INT88) - TSAC(),
+			F(C51) * "F"(C52, "C53") + "!"('\U0010FFFF', '\x11\x23\xfd'),
 			0x845 - 0x6ea - 0xbf,
 			00244 - 1.56 + 24. - .34,
 			1.2e1 - 2.04e-5 + -4.53e+10,
@@ -116,7 +119,7 @@ func (s *ParserTestSuite) TestParseRules() {
 			-1e1 + -1.e1 - -.1e1,
 			0.0 + 0e0 - 0.e0 + .0e0 * 0.,
 			-0.0 + -0e0 - -0.e0 + -.0e0 * -0.,
-			'normal' || x'8e7a' || hex'abcdef' || C53
+			'normal' || x'8e7a' || hex'abcdef' || C54
 			FROM T
 			WHERE W
 			GROUP BY

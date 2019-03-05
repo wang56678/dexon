@@ -756,6 +756,7 @@ func (n *IsOperatorNode) GetType() DataType {
 type LikeOperatorNode struct {
 	UntaggedExprNodeBase
 	BinaryOperatorNode
+	Escape ExprNode
 }
 
 var _ BinaryOperator = (*LikeOperatorNode)(nil)
@@ -763,6 +764,40 @@ var _ BinaryOperator = (*LikeOperatorNode)(nil)
 // GetType returns the type of 'bool'.
 func (n *LikeOperatorNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
+}
+
+// GetChildren returns a list of child nodes used for traversing.
+func (n *LikeOperatorNode) GetChildren() []Node {
+	size := 2
+	if n.Escape != nil {
+		size++
+	}
+
+	idx := 0
+	nodes := make([]Node, size)
+	nodes[idx] = n.Object
+	idx++
+	nodes[idx] = n.Subject
+	idx++
+	if n.Escape != nil {
+		nodes[idx] = n.Escape
+		idx++
+	}
+	return nodes
+}
+
+// IsConstant returns whether a node is a constant.
+func (n *LikeOperatorNode) IsConstant() bool {
+	if !n.Object.IsConstant() {
+		return false
+	}
+	if !n.Subject.IsConstant() {
+		return false
+	}
+	if n.Escape != nil && !n.Escape.IsConstant() {
+		return false
+	}
+	return true
 }
 
 // ---------------------------------------------------------------------------
