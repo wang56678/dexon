@@ -97,7 +97,7 @@ func getVMAndCode(code []byte) (byte, []byte) {
 		case EVM, SQLVM:
 			return code[0], code[1:]
 		default:
-			fmt.Printf("Unknow code prefix %x\n", code[0])
+			fmt.Printf("Unknown code prefix %x\n", code[0])
 			return EVM, code[1:]
 		}
 	}
