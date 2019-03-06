@@ -125,7 +125,6 @@ func Parse(b []byte) ([]ast.Node, error) {
 					Length:   0,
 					Category: errors.ErrorCategoryLimit,
 					Code:     errors.ErrorCodeDepthLimitReached,
-					Token:    "",
 					Prefix:   "",
 					Message: fmt.Sprintf("reach syntax tree depth limit %d",
 						ast.DepthLimit),
@@ -147,8 +146,6 @@ func Parse(b []byte) ([]ast.Node, error) {
 		} else {
 			sqlvmErrList[i] = parserErr.SQLVMError()
 		}
-		sqlvmErrList[i].Token =
-			string(internal.DecodeString([]byte(sqlvmErrList[i].Token)))
 		begin := sqlvmErrList[i].Position
 		end := begin + sqlvmErrList[i].Length
 		fixedBegin, ok := encMap[begin]
