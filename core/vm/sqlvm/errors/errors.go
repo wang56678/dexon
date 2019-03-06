@@ -18,7 +18,6 @@ type Error struct {
 	// These keys are only used for debugging purposes and not included in ABI.
 	// Values stored in these fields are not guaranteed to be stable, so they
 	// MUST NOT be returned to the contract caller.
-	Token   string // Token is the source code token where the error occurred.
 	Prefix  string // Prefix identified the cause of the error.
 	Message string // Message provides detailed the error message.
 }
@@ -38,10 +37,6 @@ func (e Error) Error() string {
 	}
 	b.WriteString(fmt.Sprintf(", category %d (%s), code %d (%s)",
 		e.Category, e.Category, e.Code, e.Code))
-	if e.Token != "" {
-		b.WriteString(", token ")
-		b.WriteString(strconv.Quote(e.Token))
-	}
 	if e.Prefix != "" {
 		b.WriteString(", hint ")
 		b.WriteString(strconv.Quote(e.Prefix))

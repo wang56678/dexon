@@ -301,9 +301,6 @@ type ErrList = errList
 // ParserError exports pigeon parserError for parser package.
 type ParserError = parserError
 
-// DecodeString exports helper decodeString for parser package.
-var DecodeString = decodeString
-
 // SQLVMError converts a pigeon parserError to a SQLVM error.
 func (p *parserError) SQLVMError() errors.Error {
 	return errors.Error{
@@ -311,7 +308,6 @@ func (p *parserError) SQLVMError() errors.Error {
 		Length:   0,
 		Category: errors.ErrorCategoryGrammar,
 		Code:     errors.ErrorCodeParser,
-		Token:    "",
 		Prefix:   p.prefix,
 		Message:  p.Inner.Error(),
 	}
