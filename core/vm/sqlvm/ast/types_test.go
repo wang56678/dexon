@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/dexon-foundation/dexon/common"
+	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 )
@@ -154,14 +155,14 @@ func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
 }
 
 func (s *TypesTestSuite) TestGetMinMax() {
-	decAddressMax := decimal.New(2, 0).Pow(decimal.New(common.AddressLength*8, 0)).Sub(decOne)
+	decAddressMax := decimal.New(2, 0).Pow(decimal.New(common.AddressLength*8, 0)).Sub(dec.One)
 	testcases := []struct {
 		Name     string
 		In       DataType
 		Min, Max decimal.Decimal
 		Err      error
 	}{
-		{"Bool", ComposeDataType(DataTypeMajorBool, 0), decFalse, decTrue, nil},
+		{"Bool", ComposeDataType(DataTypeMajorBool, 0), dec.False, dec.True, nil},
 		{"Address", ComposeDataType(DataTypeMajorAddress, 0), decimal.Zero, decAddressMax, nil},
 		{"Int8", ComposeDataType(DataTypeMajorInt, 0), decimal.New(-128, 0), decimal.New(127, 0), nil},
 		{"Int16", ComposeDataType(DataTypeMajorInt, 1), decimal.New(-32768, 0), decimal.New(32767, 0), nil},

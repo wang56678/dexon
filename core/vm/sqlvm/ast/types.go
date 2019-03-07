@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/dexon-foundation/dexon/common"
+	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 )
 
@@ -20,11 +21,6 @@ type decPair struct {
 }
 
 var (
-	decOne = decimal.New(1, 0)
-
-	decFalse = decimal.Zero
-	decTrue  = decimal.New(1, 0)
-
 	decPairMap = make(map[DataType]decPair)
 )
 
@@ -260,18 +256,18 @@ func GetMinMax(dt DataType) (min, max decimal.Decimal, err error) {
 	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorBool:
-		min, max = decFalse, decTrue
+		min, max = dec.False, dec.True
 	case DataTypeMajorAddress:
 		bigUMax := new(big.Int).Lsh(bigIntOne, common.AddressLength*8)
-		max = decimal.NewFromBigInt(bigUMax, 0).Sub(decOne)
+		max = decimal.NewFromBigInt(bigUMax, 0).Sub(dec.One)
 	case DataTypeMajorInt:
 		bigMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8-1)
 		decMax := decimal.NewFromBigInt(bigMax, 0)
-		min, max = decMax.Neg(), decMax.Sub(decOne)
+		min, max = decMax.Neg(), decMax.Sub(dec.One)
 	case DataTypeMajorUint,
 		DataTypeMajorFixedBytes:
 		bigUMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8)
-		max = decimal.NewFromBigInt(bigUMax, 0).Sub(decOne)
+		max = decimal.NewFromBigInt(bigUMax, 0).Sub(dec.One)
 	default:
 		err = ErrGetMinMax
 		return
