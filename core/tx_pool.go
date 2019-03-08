@@ -30,7 +30,7 @@ import (
 	"github.com/dexon-foundation/dexon/common/prque"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/event"
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/metrics"
@@ -397,7 +397,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 		} else {
 			round -= dexCore.ConfigRoundShift
 		}
-		state := &vm.GovernanceState{StateDB: statedb}
+		state := &evm.GovernanceState{StateDB: statedb}
 		height := state.RoundHeight(new(big.Int).SetUint64((round))).Uint64()
 		block := pool.chain.GetBlockByNumber(height)
 		if block == nil {
@@ -409,7 +409,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 			log.Error("Failed to get txpool state for min gas price", "err", err)
 			panic("cannot get state for new round's min gas price")
 		}
-		govState := &vm.GovernanceState{StateDB: configState}
+		govState := &evm.GovernanceState{StateDB: configState}
 		pool.setGovPrice(govState.MinGasPrice())
 	}
 
