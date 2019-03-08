@@ -20,7 +20,7 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/types"
-	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/event"
@@ -2326,7 +2326,7 @@ func newDexon(masterKey *ecdsa.PrivateKey, accountNum int) (*Dexon, []*ecdsa.Pri
 	}
 
 	config := Config{PrivateKey: masterKey}
-	vmConfig := vm.Config{IsBlockProposer: true}
+	vmConfig := evm.Config{IsBlockProposer: true}
 
 	engine := dexcon.New()
 
