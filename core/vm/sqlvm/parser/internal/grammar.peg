@@ -288,7 +288,7 @@ GroupColumn
 }
 
 OffsetClause
-	= OffsetToken _ i:Integer
+	= OffsetToken _ i:IntegerLiteral
 {
 	node := &ast.OffsetOptionNode{}
 	node.SetPosition(uint32(c.pos.offset))
@@ -298,7 +298,7 @@ OffsetClause
 }
 
 LimitClause
-	= LimitToken _ i:Integer
+	= LimitToken _ i:IntegerLiteral
 {
 	node := &ast.LimitOptionNode{}
 	node.SetPosition(uint32(c.pos.offset))
@@ -934,6 +934,9 @@ Sign
 
 Integer
 	= [0-9]+
+
+IntegerLiteral
+	= Integer
 {
 	node := &ast.IntegerValueNode{}
 	node.SetPosition(uint32(c.pos.offset))
@@ -946,7 +949,7 @@ Integer
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
-			Prefix:   "Integer",
+			Prefix:   "IntegerLiteral",
 			Message:  fmt.Sprintf("cannot parse %s as decimal: %v", c.text, code),
 		}
 		return node, err
@@ -960,19 +963,22 @@ NonZeroLeadingInteger
 { return c.text, nil }
 
 Fixnum
-	= Integer "." Integer
-	/ Integer "."?
-	/ "." Integer
+	= ( Integer "." Integer
+		/ Integer "."
+		/ Integer
+		/ "." Integer
+	)
+{ return c.text, nil }
 
 Decimal
-	= Fixnum ( "E"i Sign? Integer )?
+	= m:Fixnum e:( "E"i Sign? Integer )?
 {
-	node := &ast.DecimalValueNode{}
-	node.SetPosition(uint32(c.pos.offset))
-	node.SetLength(uint32(len(c.text)))
+	var node ast.ExprNode
+	var err error
+	integer := bytes.IndexByte(m.([]byte), '.') == -1 && e == nil
 	v, code := toDecimal(c.text)
 	if code != se.ErrorCodeNil {
-		err := se.Error{
+		err = se.Error{
 			Position: uint32(c.pos.offset),
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
@@ -980,10 +986,26 @@ Decimal
 			Prefix:   "Decimal",
 			Message:  fmt.Sprintf("cannot parse %s as decimal: %v", c.text, code),
 		}
-		return node, err
 	}
-	node.V = v
-	return node, nil
+	if integer {
+		realNode := &ast.IntegerValueNode{}
+		realNode.SetPosition(uint32(c.pos.offset))
+		realNode.SetLength(uint32(len(c.text)))
+		realNode.IsAddress = false
+		if err == nil {
+			realNode.V = v
+		}
+		node = realNode
+	} else {
+		realNode := &ast.DecimalValueNode{}
+		realNode.SetPosition(uint32(c.pos.offset))
+		realNode.SetLength(uint32(len(c.text)))
+		if err == nil {
+			realNode.V = v
+		}
+		node = realNode
+	}
+	return node, err
 }
 
 Hex
