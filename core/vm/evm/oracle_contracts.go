@@ -1650,7 +1650,7 @@ func (g *GovernanceContract) register(
 	}
 
 	caller := g.contract.Caller()
-	value := g.contract.Value()
+	value := g.contract.Value
 	offset := g.state.NodesOffsetByAddress(caller)
 
 	// Can not register if already registered.
@@ -1698,7 +1698,7 @@ func (g *GovernanceContract) register(
 
 func (g *GovernanceContract) stake() ([]byte, error) {
 	caller := g.contract.Caller()
-	value := g.contract.Value()
+	value := g.contract.Value
 
 	if big.NewInt(0).Cmp(value) == 0 {
 		return nil, errExecutionReverted
