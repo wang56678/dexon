@@ -48,13 +48,13 @@ const (
 )
 
 // Schema defines sqlvm schema struct.
-type Schema []*Table
+type Schema []Table
 
 // Table defiens sqlvm table struct.
 type Table struct {
 	Name    []byte
-	Columns []*Column
-	Indices []*Index
+	Columns []Column
+	Indices []Index
 }
 
 // Index defines sqlvm index struct.
