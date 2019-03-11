@@ -65,9 +65,9 @@ func (s *SchemaTestSuite) TestEncodeAndDecodeColumn() {
 
 func (s *SchemaTestSuite) TestEncodeAndDecodeSchema() {
 	schema := Schema{
-		&Table{
+		Table{
 			Name: []byte("test"),
-			Columns: []*Column{
+			Columns: []Column{
 				{
 					column: column{
 						Name:     []byte("a"),
@@ -78,7 +78,7 @@ func (s *SchemaTestSuite) TestEncodeAndDecodeSchema() {
 					Default: true,
 				},
 			},
-			Indices: []*Index{
+			Indices: []Index{
 				{
 					Name:    []byte("idx"),
 					Attr:    IndexAttrUnique,
@@ -86,7 +86,7 @@ func (s *SchemaTestSuite) TestEncodeAndDecodeSchema() {
 				},
 			},
 		},
-		&Table{
+		Table{
 			Name: []byte("test2"),
 		},
 	}
@@ -111,13 +111,13 @@ func (s *SchemaTestSuite) TestEncodeAndDecodeSchema() {
 		for j := 0; j < len(table.Columns); j++ {
 			column := table.Columns[j]
 			column2 := table.Columns[j]
-			s.Require().Equal(*column, *column2)
+			s.Require().Equal(column, column2)
 		}
 
 		for j := 0; j < len(table.Indices); j++ {
 			index := table.Indices[j]
 			index2 := table2.Indices[j]
-			s.Require().Equal(*index, *index2)
+			s.Require().Equal(index, index2)
 		}
 	}
 }
