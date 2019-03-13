@@ -71,6 +71,9 @@ type IndexRef uint8
 // SequenceRef defines the type for sequence index in Table.
 type SequenceRef uint8
 
+// SelectColumnRef defines the type for column index in SelectStmtNode.Column.
+type SelectColumnRef uint16
+
 // IndexAttr defines bit flags for describing index attribute.
 type IndexAttr uint16
 
@@ -197,4 +200,27 @@ func (c *Column) DecodeRLP(s *rlp.Stream) error {
 	}
 
 	return nil
+}
+
+// TableDescriptor identifies a table in a schema by an array index.
+type TableDescriptor struct {
+	Table TableRef
+}
+
+// ColumnDescriptor identifies a column in a schema by array indices.
+type ColumnDescriptor struct {
+	Table  TableRef
+	Column ColumnRef
+}
+
+// IndexDescriptor identifies a index in a schema by array indices.
+type IndexDescriptor struct {
+	Table TableRef
+	Index IndexRef
+}
+
+// SelectColumnDescriptor identifies a column specified in a select command by
+// an array index.
+type SelectColumnDescriptor struct {
+	SelectColumn SelectColumnRef
 }
