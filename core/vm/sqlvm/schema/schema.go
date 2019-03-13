@@ -40,6 +40,25 @@ const (
 	ColumnAttrHasSequence
 )
 
+// GetDeclaredFlags returns flags which can be mapped to the source code tokens.
+func (a ColumnAttr) GetDeclaredFlags() ColumnAttr {
+	mask := ColumnAttrPrimaryKey |
+		ColumnAttrNotNull |
+		ColumnAttrUnique |
+		ColumnAttrHasDefault |
+		ColumnAttrHasForeignKey |
+		ColumnAttrHasSequence
+	return a & mask
+
+}
+
+// GetDerivedFlags returns flags which are not declared in the source code but
+// can be derived from it.
+func (a ColumnAttr) GetDerivedFlags() ColumnAttr {
+	mask := ColumnAttr(0)
+	return a & mask
+}
+
 // TableRef defines the type for table index in Schema.
 type TableRef uint8
 
@@ -58,7 +77,24 @@ type IndexAttr uint16
 const (
 	// IndexAttrUnique indicates whether an index is unique.
 	IndexAttrUnique IndexAttr = 1 << iota
+	// IndexAttrReferenced indicates whether an index is referenced by columns
+	// with foreign key constraints. This attribute cannot be specified by
+	// users. It is computed automatically during contract creation.
+	IndexAttrReferenced
 )
+
+// GetDeclaredFlags returns flags which can be mapped to the source code tokens.
+func (a IndexAttr) GetDeclaredFlags() IndexAttr {
+	mask := IndexAttrUnique
+	return a & mask
+}
+
+// GetDerivedFlags returns flags which are not declared in the source code but
+// can be derived from it.
+func (a IndexAttr) GetDerivedFlags() IndexAttr {
+	mask := IndexAttrReferenced
+	return a & mask
+}
 
 // Schema defines sqlvm schema struct.
 type Schema []Table
