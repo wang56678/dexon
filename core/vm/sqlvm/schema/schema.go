@@ -19,12 +19,25 @@ var (
 // ColumnAttr defines bit flags for describing column attribute.
 type ColumnAttr uint16
 
-// ColumnAttr enums.
 const (
-	ColumnAttrHasDefault ColumnAttr = 1 << iota
+	// ColumnAttrPrimaryKey is a no-op. Primary key constraints are converted
+	// to a unique index during contract creation.
+	ColumnAttrPrimaryKey ColumnAttr = 1 << iota
+	// ColumnAttrNotNull is a no-op. We have not supported NULL values so all
+	// columns are implicitly non-null.
 	ColumnAttrNotNull
-	ColumnAttrHasSequence
+	// ColumnAttrUnique is a no-op. Unique constraints are converted to unique
+	// indices during contract creation.
+	ColumnAttrUnique
+	// ColumnAttrHasDefault indicates whether a column has a default value. The
+	// default value does not affect the starting value of AUTOINCREMENT.
+	ColumnAttrHasDefault
+	// ColumnAttrHasForeignKey indicates whether a column references a column
+	// on a different table.
 	ColumnAttrHasForeignKey
+	// ColumnAttrHasSequence indicates whether a column is declared with
+	// AUTOINCREMENT. It is only valid on integer fields.
+	ColumnAttrHasSequence
 )
 
 // TableRef defines the type for table index in Schema.
@@ -42,8 +55,8 @@ type SequenceRef uint8
 // IndexAttr defines bit flags for describing index attribute.
 type IndexAttr uint16
 
-// IndexAttr enums.
 const (
+	// IndexAttrUnique indicates whether an index is unique.
 	IndexAttrUnique IndexAttr = 1 << iota
 )
 
@@ -61,16 +74,16 @@ type Table struct {
 type Index struct {
 	Name    []byte
 	Attr    IndexAttr
-	Columns []ColumnRef
+	Columns []ColumnRef // Columns must be sorted in ascending order.
 }
 
 type column struct {
 	Name          []byte
 	Type          ast.DataType
 	Attr          ColumnAttr
-	Sequence      SequenceRef
 	ForeignTable  TableRef
 	ForeignColumn ColumnRef
+	Sequence      SequenceRef
 	Rest          interface{}
 }
 
