@@ -54,6 +54,7 @@ var (
 			MiningVelocity:    0.1875,
 			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2.5e9)),
 			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.5e9)),
+			MinGasPrice:       new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 			BlockGasLimit:     40000000,
 			LambdaBA:          250,
 			LambdaDKG:         2500,
@@ -66,7 +67,6 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
-			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -100,6 +100,7 @@ var (
 			MiningVelocity:    0.1875,
 			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.8e8)),
 			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.6e7)),
+			MinGasPrice:       new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 			BlockGasLimit:     80000000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
@@ -112,7 +113,6 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
-			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -137,6 +137,7 @@ var (
 			MiningVelocity:    0.1875,
 			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.8e8)),
 			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.6e7)),
+			MinGasPrice:       new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 			BlockGasLimit:     21000 * 5000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
@@ -149,7 +150,6 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
-			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -182,6 +182,7 @@ var (
 			MiningVelocity:    0.1875,
 			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2e7)),
 			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(4e6)),
+			MinGasPrice:       new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 			BlockGasLimit:     21000 * 5000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
@@ -194,7 +195,6 @@ var (
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e4)),
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e5)),
 			},
-			MinGasPrice: new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
 		},
 	}
 
@@ -324,6 +324,7 @@ type DexconConfig struct {
 	MiningVelocity    float32        `json:"miningVelocity"`
 	NextHalvingSupply *big.Int       `json:"nextHalvingSupply"`
 	LastHalvedAmount  *big.Int       `json:"lastHalvedAmount"`
+	MinGasPrice       *big.Int       `json:"minGasPrice"`
 	BlockGasLimit     uint64         `json:"blockGasLimit"`
 	LambdaBA          uint64         `json:"lambdaBA"`
 	LambdaDKG         uint64         `json:"lambdaDKG"`
@@ -332,20 +333,19 @@ type DexconConfig struct {
 	RoundLength       uint64         `json:"roundLength"`
 	MinBlockInterval  uint64         `json:"minBlockInterval"`
 	FineValues        []*big.Int     `json:"fineValues"`
-	MinGasPrice       *big.Int       `json:"minGasPrice"`
 }
 
 type dexconConfigSpecMarshaling struct {
 	MinStake          *math.HexOrDecimal256
 	NextHalvingSupply *math.HexOrDecimal256
 	LastHalvedAmount  *math.HexOrDecimal256
-	FineValues        []*math.HexOrDecimal256
 	MinGasPrice       *math.HexOrDecimal256
+	FineValues        []*math.HexOrDecimal256
 }
 
 // String implements the stringer interface, returning the consensus engine details.
 func (d *DexconConfig) String() string {
-	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v MinStake: %v LockupPeriod: %v MiningVelocity: %v NextHalvingSupply: %v LastHalvedAmount: %v BlockGasLimit: %v LambdaBA: %v LambdaDKG: %v NotarySetSize: %v DKGSetSize: %v RoundLength: %v MinBlockInterval: %v FineValues: %v MinGasPrice: %v}",
+	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v MinStake: %v LockupPeriod: %v MiningVelocity: %v NextHalvingSupply: %v LastHalvedAmount: %v MinGasPrice: %v BlockGasLimit: %v LambdaBA: %v LambdaDKG: %v NotarySetSize: %v DKGSetSize: %v RoundLength: %v MinBlockInterval: %v FineValues: %v}",
 		d.GenesisCRSText,
 		d.Owner,
 		d.MinStake,
@@ -353,6 +353,7 @@ func (d *DexconConfig) String() string {
 		d.MiningVelocity,
 		d.NextHalvingSupply,
 		d.LastHalvedAmount,
+		d.MinGasPrice,
 		d.BlockGasLimit,
 		d.LambdaBA,
 		d.LambdaDKG,
@@ -361,7 +362,6 @@ func (d *DexconConfig) String() string {
 		d.RoundLength,
 		d.MinBlockInterval,
 		d.FineValues,
-		d.MinGasPrice,
 	)
 }
 
