@@ -7,6 +7,7 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
+	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 	"github.com/dexon-foundation/dexon/rlp"
 )
 
@@ -102,11 +103,47 @@ func (a IndexAttr) GetDerivedFlags() IndexAttr {
 // Schema defines sqlvm schema struct.
 type Schema []Table
 
+// SetupColumnOffset set all tables' column offset.
+func (s Schema) SetupColumnOffset() {
+	for i := range s {
+		s[i].SetupColumnOffset()
+	}
+}
+
 // Table defiens sqlvm table struct.
 type Table struct {
 	Name    []byte
 	Columns []Column
 	Indices []Index
+}
+
+// GetFieldType return fields' data type.
+func (t *Table) GetFieldType(fields []uint8) ([]ast.DataType, error) {
+	types := make([]ast.DataType, len(fields))
+	columns := t.Columns
+	for i, f := range fields {
+		if int(f) < 0 || int(f) >= len(columns) {
+			return nil, se.ErrorCodeIndexOutOfRange
+		}
+		types[i] = columns[int(fields[i])].Type
+	}
+	return types, nil
+}
+
+// SetupColumnOffset set columns' slot and byte offset.
+func (t *Table) SetupColumnOffset() {
+	slotOffset := uint8(0)
+	byteOffset := uint8(0)
+	for i, col := range t.Columns {
+		size := col.Type.Size()
+		if size+byteOffset > 32 {
+			slotOffset++
+			byteOffset = 0
+		}
+		t.Columns[i].SlotOffset = slotOffset
+		t.Columns[i].ByteOffset = byteOffset
+		byteOffset += size
+	}
 }
 
 // Index defines sqlvm index struct.
@@ -124,12 +161,31 @@ type column struct {
 	ForeignColumn ColumnRef
 	Sequence      SequenceRef
 	Rest          interface{}
+	SlotOffset    uint8
+	ByteOffset    uint8
 }
 
 // Column defines sqlvm index struct.
 type Column struct {
 	column
 	Default interface{} // decimal.Decimal, bool, []byte
+}
+
+// NewColumn return a Column instance.
+func NewColumn(Name []byte, Type ast.DataType, Attr ColumnAttr, Sequence SequenceRef,
+	FT TableRef, FC ColumnRef) Column {
+	c := column{
+		Name:          Name,
+		Type:          Type,
+		Attr:          Attr,
+		Sequence:      Sequence,
+		ForeignTable:  FT,
+		ForeignColumn: FC,
+	}
+
+	return Column{
+		column: c,
+	}
 }
 
 var _ rlp.Decoder = (*Column)(nil)
