@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/dexon-foundation/dexon/common"
@@ -97,8 +96,7 @@ func getVMAndCode(code []byte) (byte, []byte) {
 		case EVM, SQLVM:
 			return code[0], code[1:]
 		default:
-			fmt.Printf("Unknown code prefix %x\n", code[0])
-			return EVM, code[1:]
+			return EVM, code
 		}
 	}
 	return EVM, code
