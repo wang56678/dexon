@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
-	"github.com/dexon-foundation/dexon/rlp"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
+	"github.com/dexon-foundation/dexon/rlp"
 )
 
 type SchemaTestSuite struct{ suite.Suite }
@@ -118,6 +120,189 @@ func (s *SchemaTestSuite) TestEncodeAndDecodeSchema() {
 			index := table.Indices[j]
 			index2 := table2.Indices[j]
 			s.Require().Equal(index, index2)
+		}
+	}
+}
+
+func (s *SchemaTestSuite) TestGetFieldType() {
+	type testCase struct {
+		fields        []uint8
+		table         *Table
+		expectedTypes []ast.DataType
+		expectedLenth int
+		expectedErr   error
+	}
+	testCases := []testCase{
+		{
+			fields: []uint8{uint8(1), uint8(0)},
+			table: &Table{
+				Name: []byte("Table_A"),
+				Columns: []Column{
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+						},
+						nil,
+					},
+				},
+			},
+			expectedTypes: []ast.DataType{
+				ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+				ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+			},
+			expectedLenth: 2,
+			expectedErr:   nil,
+		},
+		{
+			fields: []uint8{uint8(8)},
+			table: &Table{
+				Name: []byte("Table_B"),
+			},
+			expectedLenth: 0,
+			expectedErr:   errors.ErrorCodeIndexOutOfRange,
+		},
+	}
+	for _, t := range testCases {
+		length := t.expectedLenth
+		expectedErr := t.expectedErr
+		types, err := t.table.GetFieldType(t.fields)
+		s.Require().Equal(length, len(types))
+		s.Require().Equal(expectedErr, err)
+		for i, tt := range types {
+			s.Require().Equal(t.expectedTypes[i], tt)
+		}
+	}
+}
+
+func (s *SchemaTestSuite) TestSetupColumnOffset() {
+	type testCase struct {
+		name               string
+		table              *Table
+		expectedSlotOffest []uint8
+		expectedByteOffset []uint8
+	}
+	testCases := []testCase{
+		{
+			name: "Table_A",
+			table: &Table{
+				Columns: []Column{
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+						},
+						nil,
+					},
+				},
+			},
+			expectedByteOffset: []uint8{0, 1},
+			expectedSlotOffest: []uint8{0, 0},
+		},
+		{
+			name: "Table_B",
+			table: &Table{
+				Columns: []Column{
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						nil,
+					},
+				},
+			},
+			expectedByteOffset: []uint8{0, 0, 0, 0},
+			expectedSlotOffest: []uint8{0, 1, 2, 3},
+		},
+		{
+			name: "Table_C",
+			table: &Table{
+				Columns: []Column{
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorUint, 15),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 30),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						nil,
+					},
+					{
+						column{
+							Type: ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 31),
+						},
+						nil,
+					},
+				},
+			},
+			expectedByteOffset: []uint8{0, 0, 8, 16, 0, 31, 0},
+			expectedSlotOffest: []uint8{0, 1, 1, 1, 2, 2, 3},
+		},
+	}
+	for i, t := range testCases {
+		testCases[i].table.SetupColumnOffset()
+		shift := 0
+		for _, c := range testCases[i].table.Columns {
+			s.Require().Equalf(t.expectedSlotOffest[shift],
+				c.SlotOffset, "slotOffset not match. Name: %v, shift: %v", t.name, shift)
+			s.Require().Equalf(t.expectedByteOffset[shift],
+				c.ByteOffset, "byteOffset not match: Name: %v, shift: %v", t.name, shift)
+			shift++
 		}
 	}
 }
