@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/shopspring/decimal"
@@ -22,15 +22,6 @@ type decPair struct {
 
 var (
 	decPairMap = make(map[DataType]decPair)
-)
-
-// Error defines.
-var (
-	ErrDataTypeEncode = errors.New("data type encode failed")
-	ErrDataTypeDecode = errors.New("data type decode failed")
-	ErrDecimalEncode  = errors.New("decimal encode failed")
-	ErrDecimalDecode  = errors.New("decimal decode failed")
-	ErrGetMinMax      = errors.New("get (min, max) failed")
 )
 
 // DataTypeMajor defines type for high byte of DataType.
@@ -77,6 +68,29 @@ func ComposeDataType(major DataTypeMajor, minor DataTypeMinor) DataType {
 	return (DataType(major) << 8) | DataType(minor)
 }
 
+// Size return the bytes of the data type occupied.
+func (dt DataType) Size() uint8 {
+	major, minor := DecomposeDataType(dt)
+	if major.IsFixedRange() {
+		return uint8(major - DataTypeMajorFixed + 1)
+	}
+	if major.IsUfixedRange() {
+		return uint8(major - DataTypeMajorUfixed + 1)
+	}
+	switch major {
+	case DataTypeMajorBool:
+		return 1
+	case DataTypeMajorDynamicBytes:
+		return common.HashLength
+	case DataTypeMajorAddress:
+		return common.AddressLength
+	case DataTypeMajorInt, DataTypeMajorUint, DataTypeMajorFixedBytes:
+		return uint8(minor + 1)
+	default:
+		panic(fmt.Sprintf("unknown data type %v", dt))
+	}
+}
+
 // IsFixedRange checks if major is in range of DataTypeMajorFixed.
 func (d DataTypeMajor) IsFixedRange() bool {
 	return d >= DataTypeMajorFixed && d-DataTypeMajorFixed <= 0x1f
@@ -90,7 +104,7 @@ func (d DataTypeMajor) IsUfixedRange() bool {
 // DataTypeEncode encodes data type node into DataType.
 func DataTypeEncode(n TypeNode) (DataType, error) {
 	if n == nil {
-		return DataTypeUnknown, ErrDataTypeEncode
+		return DataTypeUnknown, se.ErrorCodeDataTypeEncode
 	}
 	t, code := n.GetType()
 	if code == se.ErrorCodeNil {
@@ -152,7 +166,7 @@ func DataTypeDecode(t DataType) (TypeNode, error) {
 			}, nil
 		}
 	}
-	return nil, ErrDataTypeDecode
+	return nil, se.ErrorCodeDataTypeDecode
 }
 
 // Don't handle overflow here.
@@ -212,7 +226,8 @@ func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
 	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorInt,
-		DataTypeMajorUint:
+		DataTypeMajorUint,
+		DataTypeMajorFixedBytes:
 		return decimalEncode(int(minor)+1, d), nil
 	case DataTypeMajorAddress:
 		return decimalEncode(common.AddressLength, d), nil
@@ -228,7 +243,7 @@ func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
 			d.Shift(int32(minor))), nil
 	}
 
-	return nil, ErrDecimalEncode
+	return nil, se.ErrorCodeDecimalEncode
 }
 
 // DecimalDecode decodes decimal from bytes.
@@ -238,6 +253,7 @@ func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
 	case DataTypeMajorInt:
 		return decimalDecode(true, b), nil
 	case DataTypeMajorUint,
+		DataTypeMajorFixedBytes,
 		DataTypeMajorAddress:
 		return decimalDecode(false, b), nil
 	}
@@ -248,7 +264,7 @@ func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
 		return decimalDecode(false, b).Shift(-int32(minor)), nil
 	}
 
-	return decimal.Zero, ErrDecimalDecode
+	return decimal.Zero, se.ErrorCodeDecimalDecode
 }
 
 // GetMinMax returns min, max pair according to given data type.
@@ -275,7 +291,7 @@ func GetMinMax(dt DataType) (min, max decimal.Decimal, err error) {
 		bigUMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8)
 		max = decimal.NewFromBigInt(bigUMax, 0).Sub(dec.One)
 	default:
-		err = ErrGetMinMax
+		err = se.ErrorCodeGetMinMax
 		return
 	}
 
