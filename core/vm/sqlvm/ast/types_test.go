@@ -3,10 +3,12 @@ package ast
 import (
 	"testing"
 
-	"github.com/dexon-foundation/dexon/common"
-	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/dexon-foundation/dexon/common"
+	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 )
 
 type TypesTestSuite struct{ suite.Suite }
@@ -170,7 +172,7 @@ func (s *TypesTestSuite) TestGetMinMax() {
 		{"UInt16", ComposeDataType(DataTypeMajorUint, 1), decimal.Zero, decimal.New(65535, 0), nil},
 		{"Bytes1", ComposeDataType(DataTypeMajorFixedBytes, 0), decimal.Zero, decimal.New(255, 0), nil},
 		{"Bytes2", ComposeDataType(DataTypeMajorFixedBytes, 1), decimal.Zero, decimal.New(65535, 0), nil},
-		{"Dynamic Bytes", ComposeDataType(DataTypeMajorDynamicBytes, 0), decimal.Zero, decimal.Zero, ErrGetMinMax},
+		{"Dynamic Bytes", ComposeDataType(DataTypeMajorDynamicBytes, 0), decimal.Zero, decimal.Zero, errors.ErrorCodeGetMinMax},
 	}
 
 	var (
@@ -186,6 +188,27 @@ func (s *TypesTestSuite) TestGetMinMax() {
 
 		s.Require().True(t.Min.Equal(min), "Case: %v. Min not equal: %v != %v", t.Name, t.Min, min)
 		s.Require().True(t.Max.Equal(max), "Case: %v. Max not equal: %v != %v", t.Name, t.Max, max)
+	}
+}
+
+func (s *TypesTestSuite) TestSize() {
+	testcases := []struct {
+		Name string
+		Dt   DataType
+		Size uint8
+	}{
+		{"Bool", ComposeDataType(DataTypeMajorBool, 0), 1},
+		{"Address", ComposeDataType(DataTypeMajorAddress, 0), 20},
+		{"Int8", ComposeDataType(DataTypeMajorInt, 0), 1},
+		{"Int16", ComposeDataType(DataTypeMajorInt, 1), 2},
+		{"UInt8", ComposeDataType(DataTypeMajorUint, 0), 1},
+		{"UInt16", ComposeDataType(DataTypeMajorUint, 1), 2},
+		{"Bytes1", ComposeDataType(DataTypeMajorFixedBytes, 0), 1},
+		{"Bytes2", ComposeDataType(DataTypeMajorFixedBytes, 1), 2},
+		{"Dynamic Bytes", ComposeDataType(DataTypeMajorDynamicBytes, 0), 32},
+	}
+	for _, t := range testcases {
+		s.Require().Equalf(t.Size, t.Dt.Size(), "Testcase %v", t.Name)
 	}
 }
 
