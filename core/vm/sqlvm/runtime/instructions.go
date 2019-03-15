@@ -57,5 +57,5 @@ type Operand struct {
 	IsImmediate   bool
 	Meta          []ast.DataType
 	Data          []Tuple
-	RegisterIndex *int
+	RegisterIndex uint
 }
