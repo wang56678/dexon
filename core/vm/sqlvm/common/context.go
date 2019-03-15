@@ -6,6 +6,6 @@ import "github.com/dexon-foundation/dexon/core/vm"
 type Context struct {
 	vm.Context
 
-	StateDB  vm.StateDB
+	Storage  Storage
 	Contract *vm.Contract
 }
