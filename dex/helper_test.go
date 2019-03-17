@@ -135,7 +135,7 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, generator func
 		notarySetFunc: func(uint64) (map[string]struct{}, error) { return nil, nil },
 	}
 
-	pm, err := NewProtocolManager(gspec.Config, mode, DefaultConfig.NetworkId, dMoment, evmux, &testTxPool{added: newtx}, engine, blockchain, db, true, tgov, &testApp{})
+	pm, err := NewProtocolManager(gspec.Config, mode, DefaultConfig.NetworkId, evmux, &testTxPool{added: newtx}, engine, blockchain, db, true, tgov, &testApp{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -286,7 +286,6 @@ func (p *testPeer) handshake(t *testing.T, dMoment uint64, number uint64, head c
 	msg := &statusData{
 		ProtocolVersion: uint32(p.version),
 		NetworkId:       DefaultConfig.NetworkId,
-		DMoment:         uint64(dMoment),
 		Number:          number,
 		CurrentBlock:    head,
 		GenesisBlock:    genesis,
