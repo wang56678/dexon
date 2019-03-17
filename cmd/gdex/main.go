@@ -138,6 +138,7 @@ var (
 		utils.IndexerEnableFlag,
 		utils.IndexerPluginFlag,
 		utils.IndexerPluginFlagsFlag,
+		utils.RecoveryNetworkRPCFlag,
 		configFileFlag,
 	}
 
