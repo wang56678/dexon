@@ -119,4 +119,7 @@ type Config struct {
 
 	// Indexer config
 	Indexer indexer.Config
+
+	// Recovery network RPC
+	RecoveryNetworkRPC string
 }
