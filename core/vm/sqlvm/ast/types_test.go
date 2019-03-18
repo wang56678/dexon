@@ -93,9 +93,9 @@ func (s *TypesTestSuite) TestDecodeError() {
 }
 
 func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
-	pos := decimal.New(15, 0)
+	pos := decimal.New(15, 1)
 	zero := decimal.Zero
-	neg := decimal.New(-15, 0)
+	neg := decimal.New(-150, -1)
 
 	s.requireEncodeAndDecodeDecimalNoError(
 		ComposeDataType(DataTypeMajorInt, 2),
