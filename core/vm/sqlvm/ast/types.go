@@ -163,8 +163,14 @@ func decimalEncode(size int, d decimal.Decimal) []byte {
 		return ret
 	}
 
-	exp := new(big.Int).Exp(bigIntTen, big.NewInt(int64(d.Exponent())), nil)
-	b := new(big.Int).Mul(d.Coefficient(), exp)
+	var b *big.Int
+	if exponent := int64(d.Exponent()); exponent >= 0 {
+		exp := new(big.Int).Exp(bigIntTen, big.NewInt(exponent), nil)
+		b = new(big.Int).Mul(d.Coefficient(), exp)
+	} else {
+		exp := new(big.Int).Exp(bigIntTen, big.NewInt(-exponent), nil)
+		b = new(big.Int).Div(d.Coefficient(), exp)
+	}
 
 	if s > 0 {
 		bs := b.Bytes()
