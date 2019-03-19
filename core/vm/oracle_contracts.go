@@ -1058,6 +1058,16 @@ func (s *GovernanceState) emitCRSProposed(round *big.Int, crs common.Hash) {
 	})
 }
 
+// event NodeOwnershipTransfered(address indexed NodeAddress, address indexed NewOwnerAddress);
+func (s *GovernanceState) emitNodeOwnershipTransfered(nodeAddr, newNodeAddr common.Address) {
+	s.StateDB.AddLog(&types.Log{
+		Address: GovernanceContractAddress,
+		Topics: []common.Hash{GovernanceABI.Events["NodeOwnershipTransfered"].Id(),
+			nodeAddr.Hash(), newNodeAddr.Hash()},
+		Data: []byte{},
+	})
+}
+
 // event Staked(address indexed NodeAddress, uint256 Amount);
 func (s *GovernanceState) emitStaked(nodeAddr common.Address, amount *big.Int) {
 	s.StateDB.AddLog(&types.Log{
@@ -2373,12 +2383,19 @@ func (g *GovernanceContract) transferNodeOwnership(newOwner common.Address) ([]b
 		return nil, errExecutionReverted
 	}
 
+	newOffset := g.state.NodesOffsetByAddress(newOwner)
+	if newOffset.Cmp(big.NewInt(0)) >= 0 {
+		return nil, errExecutionReverted
+	}
+
 	node := g.state.Node(offset)
 	g.state.PutNodeOffsets(node, big.NewInt(0))
 
 	node.Owner = newOwner
 	g.state.PutNodeOffsets(node, offset)
 	g.state.UpdateNode(offset, node)
+
+	g.state.emitNodeOwnershipTransfered(caller, newOwner)
 
 	return nil, nil
 }
