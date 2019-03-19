@@ -27,6 +27,8 @@ func (d DexconConfig) MarshalJSON() ([]byte, error) {
 		LambdaBA          uint64                  `json:"lambdaBA"`
 		LambdaDKG         uint64                  `json:"lambdaDKG"`
 		NotarySetSize     uint32                  `json:"notarySetSize"`
+		NotaryParamAlpha  float32                 `json:"notaryParamAlpha"`
+		NotaryParamBeta   float32                 `json:"notaryParamBeta"`
 		DKGSetSize        uint32                  `json:"dkgSetSize"`
 		RoundLength       uint64                  `json:"roundLength"`
 		MinBlockInterval  uint64                  `json:"minBlockInterval"`
@@ -45,6 +47,8 @@ func (d DexconConfig) MarshalJSON() ([]byte, error) {
 	enc.LambdaBA = d.LambdaBA
 	enc.LambdaDKG = d.LambdaDKG
 	enc.NotarySetSize = d.NotarySetSize
+	enc.NotaryParamAlpha = d.NotaryParamAlpha
+	enc.NotaryParamBeta = d.NotaryParamBeta
 	enc.DKGSetSize = d.DKGSetSize
 	enc.RoundLength = d.RoundLength
 	enc.MinBlockInterval = d.MinBlockInterval
@@ -72,6 +76,8 @@ func (d *DexconConfig) UnmarshalJSON(input []byte) error {
 		LambdaBA          *uint64                 `json:"lambdaBA"`
 		LambdaDKG         *uint64                 `json:"lambdaDKG"`
 		NotarySetSize     *uint32                 `json:"notarySetSize"`
+		NotaryParamAlpha  *float32                `json:"notaryParamAlpha"`
+		NotaryParamBeta   *float32                `json:"notaryParamBeta"`
 		DKGSetSize        *uint32                 `json:"dkgSetSize"`
 		RoundLength       *uint64                 `json:"roundLength"`
 		MinBlockInterval  *uint64                 `json:"minBlockInterval"`
@@ -116,6 +122,12 @@ func (d *DexconConfig) UnmarshalJSON(input []byte) error {
 	}
 	if dec.NotarySetSize != nil {
 		d.NotarySetSize = *dec.NotarySetSize
+	}
+	if dec.NotaryParamAlpha != nil {
+		d.NotaryParamAlpha = *dec.NotaryParamAlpha
+	}
+	if dec.NotaryParamBeta != nil {
+		d.NotaryParamBeta = *dec.NotaryParamBeta
 	}
 	if dec.DKGSetSize != nil {
 		d.DKGSetSize = *dec.DKGSetSize
