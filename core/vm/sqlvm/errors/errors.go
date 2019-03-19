@@ -121,6 +121,7 @@ const (
 	ErrorCodeIndexOutOfRange
 	ErrorCodeInvalidCastType
 	ErrorCodeDividedByZero
+	ErrorCodeNegDecimalToUint64
 )
 
 var errorCodeMap = [...]string{
@@ -147,12 +148,13 @@ var errorCodeMap = [...]string{
 	ErrorCodeDecimalDecode:                 "decimal decode failed",
 	ErrorCodeGetMinMax:                     "get (min, max) failed",
 	// Runtime Error
-	ErrorCodeInvalidDataType: "invalid data type",
-	ErrorCodeOverflow:        "overflow",
-	ErrorCodeUnderflow:       "underflow",
-	ErrorCodeIndexOutOfRange: "index out of range",
-	ErrorCodeInvalidCastType: "invalid cast type",
-	ErrorCodeDividedByZero:   "divide by zero",
+	ErrorCodeInvalidDataType:    "invalid data type",
+	ErrorCodeOverflow:           "overflow",
+	ErrorCodeUnderflow:          "underflow",
+	ErrorCodeIndexOutOfRange:    "index out of range",
+	ErrorCodeInvalidCastType:    "invalid cast type",
+	ErrorCodeDividedByZero:      "divide by zero",
+	ErrorCodeNegDecimalToUint64: "negative deciaml to uint64",
 }
 
 func (c ErrorCode) Error() string {

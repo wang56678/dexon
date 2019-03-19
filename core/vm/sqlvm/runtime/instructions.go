@@ -58,20 +58,27 @@ type Operand struct {
 	RegisterIndex uint
 }
 
-func (o *Operand) toUint64() []uint64 {
-	result := make([]uint64, len(o.Data))
+func (o *Operand) toUint64() (result []uint64, err error) {
+	result = make([]uint64, len(o.Data))
 	for i, tuple := range o.Data {
-		result[i] = uint64(tuple[0].Value.IntPart())
+		result[i], err = ast.DecimalToUint64(tuple[0].Value)
+		if err != nil {
+			return
+		}
 	}
-	return result
+	return
 }
 
-func (o *Operand) toUint8() []uint8 {
+func (o *Operand) toUint8() ([]uint8, error) {
 	result := make([]uint8, len(o.Data))
 	for i, tuple := range o.Data {
-		result[i] = uint8(tuple[0].Value.IntPart())
+		u, err := ast.DecimalToUint64(tuple[0].Value)
+		if err != nil {
+			return nil, err
+		}
+		result[i] = uint8(u)
 	}
-	return result
+	return result, nil
 }
 
 func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output int) error {
@@ -81,8 +88,14 @@ func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output 
 	}
 	table := ctx.Storage.Schema[tableIdx]
 
-	ids := input[1].toUint64()
-	fields := input[2].toUint8()
+	ids, err := input[1].toUint64()
+	if err != nil {
+		return err
+	}
+	fields, err := input[2].toUint8()
+	if err != nil {
+		return err
+	}
 	op := Operand{
 		IsImmediate:   false,
 		Data:          make([]Tuple, len(ids)),
@@ -91,11 +104,10 @@ func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output 
 	for i := range op.Data {
 		op.Data[i] = make([]*Raw, len(fields))
 	}
-	meta, err := table.GetFieldType(fields)
+	op.Meta, err = table.GetFieldType(fields)
 	if err != nil {
 		return err
 	}
-	op.Meta = meta
 	for i, id := range ids {
 		slotDataCache := make(map[dexCommon.Hash]dexCommon.Hash)
 		head := ctx.Storage.GetPrimaryKeyHash(table.Name, id)
@@ -103,7 +115,7 @@ func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output 
 			col := table.Columns[int(fields[j])]
 			byteOffset := col.ByteOffset
 			slotOffset := col.SlotOffset
-			dt := meta[j]
+			dt := op.Meta[j]
 			size := dt.Size()
 			slot := ctx.Storage.ShiftHashUint64(head, uint64(slotOffset))
 			slotData := getSlotData(ctx, slot, slotDataCache)

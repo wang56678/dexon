@@ -169,6 +169,17 @@ func DataTypeDecode(t DataType) (TypeNode, error) {
 	return nil, se.ErrorCodeDataTypeDecode
 }
 
+func decimalToBig(d decimal.Decimal) (b *big.Int) {
+	if exponent := int64(d.Exponent()); exponent >= 0 {
+		exp := new(big.Int).Exp(bigIntTen, big.NewInt(exponent), nil)
+		b = new(big.Int).Mul(d.Coefficient(), exp)
+	} else {
+		exp := new(big.Int).Exp(bigIntTen, big.NewInt(-exponent), nil)
+		b = new(big.Int).Div(d.Coefficient(), exp)
+	}
+	return
+}
+
 // Don't handle overflow here.
 func decimalEncode(size int, d decimal.Decimal) []byte {
 	ret := make([]byte, size)
@@ -177,14 +188,7 @@ func decimalEncode(size int, d decimal.Decimal) []byte {
 		return ret
 	}
 
-	var b *big.Int
-	if exponent := int64(d.Exponent()); exponent >= 0 {
-		exp := new(big.Int).Exp(bigIntTen, big.NewInt(exponent), nil)
-		b = new(big.Int).Mul(d.Coefficient(), exp)
-	} else {
-		exp := new(big.Int).Exp(bigIntTen, big.NewInt(-exponent), nil)
-		b = new(big.Int).Div(d.Coefficient(), exp)
-	}
+	b := decimalToBig(d)
 
 	if s > 0 {
 		bs := b.Bytes()
@@ -297,4 +301,17 @@ func GetMinMax(dt DataType) (min, max decimal.Decimal, err error) {
 
 	decPairMap[dt] = decPair{Max: max, Min: min}
 	return
+}
+
+// DecimalToUint64 convert decimal to uint64.
+// Negative case will return error, and decimal part will be trancated.
+func DecimalToUint64(d decimal.Decimal) (uint64, error) {
+	s := d.Sign()
+	if s == 0 {
+		return 0, nil
+	}
+	if s < 0 {
+		return 0, se.ErrorCodeNegDecimalToUint64
+	}
+	return decimalToBig(d).Uint64(), nil
 }
