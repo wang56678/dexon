@@ -26,10 +26,10 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash = common.HexToHash("0xcde2f22a8ccad92a6839880e445bccf3949aae712056a9d139a318f9f4b18fe8")
-	TestnetGenesisHash = common.HexToHash("0x7463c980be61ae7e32e8a7611c9532989dfc4463c264b9ef3d31bfe490780425")
-	TaipeiGenesisHash  = common.HexToHash("0x953540c8dc6155c506b85be9944b97c636948e2cb47b698e4bdf7d58563a6e01")
-	YilanGenesisHash   = common.HexToHash("0x70654e2b863f01f00f843e6c4b0ecf2af39f7e27493f577ca4526b40eb1773c7")
+	MainnetGenesisHash = common.HexToHash("0x8ac8e240790046eb72225eb2a2381f3ef5a7a88291fffc702ba08503cc2a1341")
+	TestnetGenesisHash = common.HexToHash("0x3caf9a977e579b4de001956508b57563a4b61742c66f49323a1294ad214da29d")
+	TaipeiGenesisHash  = common.HexToHash("0x13e85a0207f2888ac9c1746c94d5d7fd87ff637cbd080b42d5db1252341f4428")
+	YilanGenesisHash   = common.HexToHash("0x6b1a94b5e4c24665942a3b768bd98b39d61771a5eaba97c0466644d78d8a2f11")
 )
 
 var (
@@ -59,8 +59,8 @@ var (
 			BlockGasLimit:     40000000,
 			LambdaBA:          250,
 			LambdaDKG:         2500,
-			NotarySetSize:     4,
-			DKGSetSize:        4,
+			NotaryParamAlpha:  70.5,
+			NotaryParamBeta:   264,
 			RoundLength:       600,
 			MinBlockInterval:  1000,
 			FineValues: []*big.Int{
@@ -110,8 +110,8 @@ var (
 			BlockGasLimit:     80000000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
-			NotarySetSize:     24,
-			DKGSetSize:        24,
+			NotaryParamAlpha:  70.5,
+			NotaryParamBeta:   264,
 			RoundLength:       1200,
 			MinBlockInterval:  1000,
 			FineValues: []*big.Int{
@@ -152,8 +152,8 @@ var (
 			BlockGasLimit:     21000 * 5000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
-			NotarySetSize:     24,
-			DKGSetSize:        24,
+			NotaryParamAlpha:  70.5,
+			NotaryParamBeta:   264,
 			RoundLength:       1200,
 			MinBlockInterval:  500,
 			FineValues: []*big.Int{
@@ -202,8 +202,8 @@ var (
 			BlockGasLimit:     21000 * 5000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
-			NotarySetSize:     4,
-			DKGSetSize:        4,
+			NotaryParamAlpha:  70.5,
+			NotaryParamBeta:   264,
 			RoundLength:       1200,
 			MinBlockInterval:  500,
 			FineValues: []*big.Int{
@@ -353,6 +353,8 @@ type DexconConfig struct {
 	LambdaBA          uint64         `json:"lambdaBA"`
 	LambdaDKG         uint64         `json:"lambdaDKG"`
 	NotarySetSize     uint32         `json:"notarySetSize"`
+	NotaryParamAlpha  float32        `json:"notaryParamAlpha"`
+	NotaryParamBeta   float32        `json:"notaryParamBeta"`
 	DKGSetSize        uint32         `json:"dkgSetSize"`
 	RoundLength       uint64         `json:"roundLength"`
 	MinBlockInterval  uint64         `json:"minBlockInterval"`
@@ -369,7 +371,7 @@ type dexconConfigSpecMarshaling struct {
 
 // String implements the stringer interface, returning the consensus engine details.
 func (d *DexconConfig) String() string {
-	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v MinStake: %v LockupPeriod: %v MiningVelocity: %v NextHalvingSupply: %v LastHalvedAmount: %v MinGasPrice: %v BlockGasLimit: %v LambdaBA: %v LambdaDKG: %v NotarySetSize: %v DKGSetSize: %v RoundLength: %v MinBlockInterval: %v FineValues: %v}",
+	return fmt.Sprintf("{GenesisCRSText: %v Owner: %v MinStake: %v LockupPeriod: %v MiningVelocity: %v NextHalvingSupply: %v LastHalvedAmount: %v MinGasPrice: %v BlockGasLimit: %v LambdaBA: %v LambdaDKG: %v NotaryParamAlpha: %v NotaryParamBeta: %v RoundLength: %v MinBlockInterval: %v FineValues: %v}",
 		d.GenesisCRSText,
 		d.Owner,
 		d.MinStake,
@@ -381,8 +383,8 @@ func (d *DexconConfig) String() string {
 		d.BlockGasLimit,
 		d.LambdaBA,
 		d.LambdaDKG,
-		d.NotarySetSize,
-		d.DKGSetSize,
+		d.NotaryParamAlpha,
+		d.NotaryParamBeta,
 		d.RoundLength,
 		d.MinBlockInterval,
 		d.FineValues,
