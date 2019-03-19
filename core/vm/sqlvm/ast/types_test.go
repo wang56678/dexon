@@ -212,6 +212,31 @@ func (s *TypesTestSuite) TestSize() {
 	}
 }
 
+func (s *TypesTestSuite) TestDecimalToUint64() {
+	pos := decimal.New(15, 1)
+	zero := decimal.Zero
+	neg := decimal.New(-150, -1)
+	posSmall := decimal.New(15, -2)
+	negSmall := decimal.New(-15, -2)
+
+	testcases := []struct {
+		d   decimal.Decimal
+		u   uint64
+		err error
+	}{
+		{pos, 150, nil},
+		{zero, 0, nil},
+		{neg, 0, errors.ErrorCodeNegDecimalToUint64},
+		{posSmall, 0, nil},
+		{negSmall, 0, errors.ErrorCodeNegDecimalToUint64},
+	}
+	for i, t := range testcases {
+		u, err := DecimalToUint64(t.d)
+		s.Require().Equalf(t.err, err, "err not match. testcase: %v", i)
+		s.Require().Equalf(t.u, u, "result not match. testcase: %v", i)
+	}
+}
+
 func TestTypes(t *testing.T) {
 	suite.Run(t, new(TypesTestSuite))
 }
