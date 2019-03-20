@@ -9,6 +9,7 @@ import (
 const (
 	EVM = byte(iota)
 	SQLVM
+	DVM
 )
 
 var (
@@ -93,7 +94,7 @@ func StaticCall(caller ContractRef, addr common.Address, input []byte,
 func getVMAndCode(code []byte) (byte, []byte) {
 	if MULTIVM && len(code) > 0 {
 		switch code[0] {
-		case EVM, SQLVM:
+		case EVM, SQLVM, DVM:
 			return code[0], code[1:]
 		default:
 			return EVM, code
