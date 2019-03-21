@@ -1,6 +1,6 @@
 package decimal
 
-import "github.com/shopspring/decimal"
+import "github.com/dexon-foundation/decimal"
 
 // Shared vars.
 var (

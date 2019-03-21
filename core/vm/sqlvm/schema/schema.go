@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
