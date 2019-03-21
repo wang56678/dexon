@@ -8,10 +8,11 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/dexon-foundation/decimal"
+
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
-	"github.com/shopspring/decimal"
 )
 
 // Parser was generated with pigeon v1.0.0-99-gbb0192c.

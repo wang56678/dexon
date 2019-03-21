@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 	"github.com/stretchr/testify/suite"
 
 	dexCommon "github.com/dexon-foundation/dexon/common"

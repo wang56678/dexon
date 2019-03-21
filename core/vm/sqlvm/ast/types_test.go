@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/dexon-foundation/dexon/common"

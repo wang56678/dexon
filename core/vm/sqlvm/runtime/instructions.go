@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 
 	dexCommon "github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"

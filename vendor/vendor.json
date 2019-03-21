@@ -139,6 +139,12 @@
 			"versionExact": "dev"
 		},
 		{
+			"checksumSHA1": "7puYGOPhizIgr5nZ6GcRPNfr4Dc=",
+			"path": "github.com/dexon-foundation/decimal",
+			"revision": "05ad7315b3c581519964b7762074e00de3c4ceac",
+			"revisionTime": "2019-03-25T09:02:55Z"
+		},
+		{
 			"checksumSHA1": "In6vBHYUsX7DUIGiFN2hQggBgvI=",
 			"path": "github.com/dexon-foundation/dexon-consensus/common",
 			"revision": "1d64520274d4e33b3038550083b78c5ebe1ea45d",
@@ -629,12 +635,6 @@
 			"path": "github.com/rs/xhandler",
 			"revision": "ed27b6fd65218132ee50cd95f38474a3d8a2cd12",
 			"revisionTime": "2016-06-18T19:32:21Z"
-		},
-		{
-			"checksumSHA1": "dhcoAs6YFyvXiG55mx5WDxg+/4g=",
-			"path": "github.com/shopspring/decimal",
-			"revision": "cd690d0c9e2447b1ef2a129a6b7b49077da89b8e",
-			"revisionTime": "2018-07-09T20:31:17Z"
 		},
 		{
 			"checksumSHA1": "mGbTYZ8dHVTiPTTJu3ktp+84pPI=",

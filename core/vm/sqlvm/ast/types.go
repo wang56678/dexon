@@ -6,7 +6,7 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 
 	"github.com/dexon-foundation/dexon/common"
 	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"

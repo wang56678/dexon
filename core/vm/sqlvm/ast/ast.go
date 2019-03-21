@@ -3,8 +3,9 @@ package ast
 import (
 	"fmt"
 
+	"github.com/dexon-foundation/decimal"
+
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
-	"github.com/shopspring/decimal"
 )
 
 // ---------------------------------------------------------------------------
