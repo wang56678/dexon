@@ -3,7 +3,7 @@ package common
 import (
 	"math/big"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 	"golang.org/x/crypto/sha3"
 
 	"github.com/dexon-foundation/dexon/common"
