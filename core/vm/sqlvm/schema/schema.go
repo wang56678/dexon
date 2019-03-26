@@ -161,9 +161,11 @@ type column struct {
 	ForeignTable  TableRef
 	ForeignColumn ColumnRef
 	Sequence      SequenceRef
-	Rest          interface{}
 	SlotOffset    uint8
 	ByteOffset    uint8
+	// Rest is a special field reserved for use in EncodeRLP. The value stored
+	// in it will be overwritten every time EncodeRLP is called.
+	Rest interface{}
 }
 
 // Column defines sqlvm index struct.
