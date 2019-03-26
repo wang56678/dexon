@@ -23,7 +23,7 @@ func (s *TypesTestSuite) requireEncodeAndDecodeDecimalNoError(
 	s.Require().Equal(t.String(), decode.String())
 }
 
-func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
+func (s *TypesTestSuite) requireEncodeAndDecodeDataTypeNoError(
 	d DataType, t TypeNode) {
 	encode, code, message := t.GetType()
 	s.Require().Zero(code)
@@ -34,65 +34,65 @@ func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
 	s.Require().Equal(t, decode)
 }
 
-func (s *TypesTestSuite) requireEncodeError(input TypeNode) {
+func (s *TypesTestSuite) requireEncodeDataTypeError(input TypeNode) {
 	_, code, message := input.GetType()
 	s.Require().NotZero(code)
 	s.Require().NotEmpty(message)
 }
 
-func (s *TypesTestSuite) requireDecodeError(input DataType) {
+func (s *TypesTestSuite) requireDecodeDataTypeError(input DataType) {
 	_, err := DataTypeDecode(input)
 	s.Require().Error(err)
 }
 
-func (s *TypesTestSuite) TestEncodeAndDecode() {
-	s.requireEncodeAndDecodeNoError(
+func (s *TypesTestSuite) TestEncodeAndDecodeDataType() {
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorBool, 0),
 		&BoolTypeNode{})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorAddress, 0),
 		&AddressTypeNode{})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorInt, 1),
 		&IntTypeNode{Size: 16})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorUint, 2),
 		&IntTypeNode{Unsigned: true, Size: 24})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorFixedBytes, 3),
 		&FixedBytesTypeNode{Size: 4})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorDynamicBytes, 0),
 		&DynamicBytesTypeNode{})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorFixed, 1),
 		&FixedTypeNode{Size: 8, FractionalDigits: 1})
-	s.requireEncodeAndDecodeNoError(
+	s.requireEncodeAndDecodeDataTypeNoError(
 		ComposeDataType(DataTypeMajorUfixed+1, 2),
 		&FixedTypeNode{Unsigned: true, Size: 16, FractionalDigits: 2})
 }
 
-func (s *TypesTestSuite) TestEncodeError() {
-	s.requireEncodeError(&IntTypeNode{Size: 1})
-	s.requireEncodeError(&IntTypeNode{Size: 257})
-	s.requireEncodeError(&FixedBytesTypeNode{Size: 0})
-	s.requireEncodeError(&FixedBytesTypeNode{Size: 257})
-	s.requireEncodeError(&FixedTypeNode{Size: 1, FractionalDigits: 0})
-	s.requireEncodeError(&FixedTypeNode{Size: 257, FractionalDigits: 0})
-	s.requireEncodeError(&FixedTypeNode{Size: 8, FractionalDigits: 81})
+func (s *TypesTestSuite) TestEncodeDataTypeError() {
+	s.requireEncodeDataTypeError(&IntTypeNode{Size: 1})
+	s.requireEncodeDataTypeError(&IntTypeNode{Size: 257})
+	s.requireEncodeDataTypeError(&FixedBytesTypeNode{Size: 0})
+	s.requireEncodeDataTypeError(&FixedBytesTypeNode{Size: 257})
+	s.requireEncodeDataTypeError(&FixedTypeNode{Size: 1, FractionalDigits: 0})
+	s.requireEncodeDataTypeError(&FixedTypeNode{Size: 257, FractionalDigits: 0})
+	s.requireEncodeDataTypeError(&FixedTypeNode{Size: 8, FractionalDigits: 81})
 }
 
-func (s *TypesTestSuite) TestDecodeError() {
-	s.requireDecodeError(DataTypeUnknown)
-	s.requireDecodeError(ComposeDataType(DataTypeMajorBool, 1))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorAddress, 1))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorInt, 0x20))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorUint, 0x20))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorFixedBytes, 0x20))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorDynamicBytes, 1))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorFixed, 81))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorUfixed, 81))
-	s.requireDecodeError(ComposeDataType(DataTypeMajorUfixed+0x20, 80))
+func (s *TypesTestSuite) TestDecodeDataTypeError() {
+	s.requireDecodeDataTypeError(DataTypeUnknown)
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorBool, 1))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorAddress, 1))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorInt, 0x20))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUint, 0x20))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorFixedBytes, 0x20))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorDynamicBytes, 1))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorFixed, 81))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUfixed, 81))
+	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUfixed+0x20, 80))
 }
 
 func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
