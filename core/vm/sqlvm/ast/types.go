@@ -68,6 +68,16 @@ func ComposeDataType(major DataTypeMajor, minor DataTypeMinor) DataType {
 	return (DataType(major) << 8) | DataType(minor)
 }
 
+// IsFixedRange checks if major is in range of DataTypeMajorFixed.
+func (d DataTypeMajor) IsFixedRange() bool {
+	return d >= DataTypeMajorFixed && d-DataTypeMajorFixed <= 0x1f
+}
+
+// IsUfixedRange checks if major is in range of DataTypeMajorUfixed.
+func (d DataTypeMajor) IsUfixedRange() bool {
+	return d >= DataTypeMajorUfixed && d-DataTypeMajorUfixed <= 0x1f
+}
+
 // Size return the bytes of the data type occupied.
 func (dt DataType) Size() uint8 {
 	major, minor := DecomposeDataType(dt)
@@ -89,16 +99,6 @@ func (dt DataType) Size() uint8 {
 	default:
 		panic(fmt.Sprintf("unknown data type %v", dt))
 	}
-}
-
-// IsFixedRange checks if major is in range of DataTypeMajorFixed.
-func (d DataTypeMajor) IsFixedRange() bool {
-	return d >= DataTypeMajorFixed && d-DataTypeMajorFixed <= 0x1f
-}
-
-// IsUfixedRange checks if major is in range of DataTypeMajorUfixed.
-func (d DataTypeMajor) IsUfixedRange() bool {
-	return d >= DataTypeMajorUfixed && d-DataTypeMajorUfixed <= 0x1f
 }
 
 // DataTypeEncode encodes data type node into DataType.
