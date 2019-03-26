@@ -20,6 +20,7 @@
 package dvm
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/big"
 	"reflect"
@@ -68,6 +69,7 @@ const (
 	GasCostLogTopic       = 375
 	GasCostCopy           = 3
 	GasCostBlockHash      = 800
+	GasCostRandom         = 800
 )
 
 var eeiTypes = &wasm.SectionTypes{
@@ -349,6 +351,11 @@ func eeiFuncs(in *DVM) []wasm.Function {
 		{
 			Sig:  &eeiTypes.Entries[12],
 			Host: reflect.ValueOf(func(p *exec.Process) int64 { return getBlockTimestamp(p, in) }),
+			Body: &wasm.FunctionBody{},
+		},
+		{
+			Sig:  &eeiTypes.Entries[12],
+			Host: reflect.ValueOf(func(p *exec.Process) int64 { return random(p, in) }),
 			Body: &wasm.FunctionBody{},
 		},
 	}
@@ -1004,4 +1011,28 @@ func selfDestruct(p *exec.Process, in *DVM, addressOffset int32) {
 func getBlockTimestamp(p *exec.Process, in *DVM) int64 {
 	in.gasAccounting(GasCostBase)
 	return in.Time.Int64()
+}
+
+func random(p *exec.Process, in *DVM) int64 {
+	in.gasAccounting(GasCostRandom)
+
+	nonce := in.StateDB().GetNonce(in.Origin)
+	binaryOriginNonce := make([]byte, binary.MaxVarintLen64)
+	binary.PutUvarint(binaryOriginNonce, nonce)
+
+	binaryUsedIndex := make([]byte, binary.MaxVarintLen64)
+	binary.PutUvarint(binaryUsedIndex, in.RandCallIndex)
+
+	in.RandCallIndex += 1
+
+	hash := crypto.Keccak256(
+		in.Randomness,
+		in.Origin.Bytes(),
+		binaryOriginNonce,
+		binaryUsedIndex)
+
+	ret := big.NewInt(0)
+	ret.SetBytes(hash)
+
+	return ret.Int64()
 }

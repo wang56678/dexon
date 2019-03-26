@@ -56,6 +56,7 @@ var eeiFunctionList = []string{
 	"returnDataCopy",
 	"selfDestruct",
 	"getBlockTimestamp",
+	"random",
 }
 
 var debugFunctionList = []string{
