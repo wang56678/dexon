@@ -25,8 +25,9 @@ func (s *TypesTestSuite) requireEncodeAndDecodeDecimalNoError(
 
 func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
 	d DataType, t TypeNode) {
-	encode, err := DataTypeEncode(t)
-	s.Require().NoError(err)
+	encode, code, message := t.GetType()
+	s.Require().Zero(code)
+	s.Require().Empty(message)
 	s.Require().Equal(d, encode)
 	decode, err := DataTypeDecode(d)
 	s.Require().NoError(err)
@@ -34,8 +35,9 @@ func (s *TypesTestSuite) requireEncodeAndDecodeNoError(
 }
 
 func (s *TypesTestSuite) requireEncodeError(input TypeNode) {
-	_, err := DataTypeEncode(input)
-	s.Require().Error(err)
+	_, code, message := input.GetType()
+	s.Require().NotZero(code)
+	s.Require().NotEmpty(message)
 }
 
 func (s *TypesTestSuite) requireDecodeError(input DataType) {
@@ -71,7 +73,6 @@ func (s *TypesTestSuite) TestEncodeAndDecode() {
 }
 
 func (s *TypesTestSuite) TestEncodeError() {
-	s.requireEncodeError(nil)
 	s.requireEncodeError(&IntTypeNode{Size: 1})
 	s.requireEncodeError(&IntTypeNode{Size: 257})
 	s.requireEncodeError(&FixedBytesTypeNode{Size: 0})
