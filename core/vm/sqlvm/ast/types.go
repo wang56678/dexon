@@ -101,18 +101,6 @@ func (dt DataType) Size() uint8 {
 	}
 }
 
-// DataTypeEncode encodes data type node into DataType.
-func DataTypeEncode(n TypeNode) (DataType, error) {
-	if n == nil {
-		return DataTypeUnknown, se.ErrorCodeDataTypeEncode
-	}
-	t, code := n.GetType()
-	if code == se.ErrorCodeNil {
-		return t, nil
-	}
-	return t, code
-}
-
 // DataTypeDecode decodes DataType into data type node.
 func DataTypeDecode(t DataType) (TypeNode, error) {
 	major, minor := DecomposeDataType(t)
