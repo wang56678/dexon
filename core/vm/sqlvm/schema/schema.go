@@ -123,10 +123,10 @@ func (t *Table) GetFieldType(fields []uint8) ([]ast.DataType, error) {
 	types := make([]ast.DataType, len(fields))
 	columns := t.Columns
 	for i, f := range fields {
-		if int(f) < 0 || int(f) >= len(columns) {
+		if int(f) >= len(columns) {
 			return nil, se.ErrorCodeIndexOutOfRange
 		}
-		types[i] = columns[int(fields[i])].Type
+		types[i] = columns[f].Type
 	}
 	return types, nil
 }
