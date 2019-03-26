@@ -84,11 +84,11 @@ func SetDataToStateDB(head common.Hash, storage Storage, addr common.Address,
 		b := t.slotData.Bytes()
 		if b[len(b)-1]&0x1 != 0 {
 			length := len(t.result)
-			slotNum := (length-1)/32 + 1
+			slotNum := (length-1)/common.HashLength + 1
 			ptr := crypto.Keccak256Hash(slot.Bytes())
 			for s := 0; s < slotNum; s++ {
-				start := s * 32
-				end := (s + 1) * 32
+				start := s * common.HashLength
+				end := (s + 1) * common.HashLength
 				if end > len(t.result) {
 					end = len(t.result)
 				}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
+	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 	"github.com/dexon-foundation/dexon/rlp"
@@ -136,7 +137,7 @@ func (t *Table) SetupColumnOffset() {
 	byteOffset := uint8(0)
 	for i, col := range t.Columns {
 		size := col.Type.Size()
-		if size+byteOffset > 32 {
+		if size+byteOffset > common.HashLength {
 			slotOffset++
 			byteOffset = 0
 		}
