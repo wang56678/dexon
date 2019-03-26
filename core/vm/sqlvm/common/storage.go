@@ -78,15 +78,15 @@ func getDByteSize(data common.Hash) uint64 {
 func (s Storage) DecodeDByteBySlot(address common.Address, slot common.Hash) []byte {
 	data := s.GetState(address, slot)
 	length := getDByteSize(data)
-	if length < 32 {
+	if length < common.HashLength {
 		return data[:length]
 	}
 	ptr := crypto.Keccak256Hash(slot.Bytes())
-	slotNum := (length-1)/32 + 1
-	rVal := make([]byte, slotNum*32)
+	slotNum := (length-1)/common.HashLength + 1
+	rVal := make([]byte, slotNum*common.HashLength)
 	for i := uint64(0); i < slotNum; i++ {
-		start := i * 32
-		copy(rVal[start:start+32], s.GetState(address, ptr).Bytes())
+		start := i * common.HashLength
+		copy(rVal[start:start+common.HashLength], s.GetState(address, ptr).Bytes())
 		ptr = s.ShiftHashUint64(ptr, 1)
 	}
 	return rVal[:length]
