@@ -341,15 +341,15 @@ func (n *IntTypeNode) GetType() (DataType, errors.ErrorCode, string) {
 			code = errors.ErrorCodeInvalidUintSize
 		}
 		if !isMultiple {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s size %d is not a multiple of 8", name, n.Size)
 		}
 		if !isNotZero {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s size cannot be zero", name)
 		}
 		if !isInRange {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s size %d cannot be larger than 256", name, n.Size)
 		}
 		panic("unreachable")
@@ -395,15 +395,15 @@ func (n *FixedTypeNode) GetType() (DataType, errors.ErrorCode, string) {
 			code = errors.ErrorCodeInvalidFixedSize
 		}
 		if !sizeIsMultiple {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s size %d is not a multiple of 8", name, n.Size)
 		}
 		if !sizeIsNotZero {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s size cannot be zero", name)
 		}
 		if !sizeIsInRange {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s size %d cannot be larger than 256", name, n.Size)
 		}
 		code = errors.ErrorCodeInvalidFixedFractionalDigits
@@ -411,7 +411,7 @@ func (n *FixedTypeNode) GetType() (DataType, errors.ErrorCode, string) {
 			code = errors.ErrorCodeInvalidUfixedFractionalDigits
 		}
 		if !fractionalDigitsInRange {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"%s fractional digits %d cannot be larger than 80",
 				name, n.FractionalDigits)
 		}
@@ -467,10 +467,10 @@ func (n *FixedBytesTypeNode) GetType() (DataType, errors.ErrorCode, string) {
 	if !isNotZero || !isInRange {
 		code := errors.ErrorCodeInvalidBytesSize
 		if !isNotZero {
-			return DataTypeUnknown, code, "bytes size cannot be zero"
+			return DataTypeBad, code, "bytes size cannot be zero"
 		}
 		if !isInRange {
-			return DataTypeUnknown, code, fmt.Sprintf(
+			return DataTypeBad, code, fmt.Sprintf(
 				"bytes size %d cannot be larger than 32", n.Size)
 		}
 		panic("unreachable")
@@ -881,7 +881,7 @@ func (n *CastOperatorNode) GetType() DataType {
 	if dt, code, _ := n.TargetType.GetType(); code == errors.ErrorCodeNil {
 		return dt
 	}
-	return DataTypeUnknown
+	return DataTypeBad
 }
 
 // ---------------------------------------------------------------------------

@@ -82,7 +82,8 @@ func (s *TypesTestSuite) TestEncodeDataTypeError() {
 }
 
 func (s *TypesTestSuite) TestDecodeDataTypeError() {
-	s.requireDecodeDataTypeError(DataTypeUnknown)
+	s.requireDecodeDataTypeError(DataTypePending)
+	s.requireDecodeDataTypeError(DataTypeBad)
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorInt, 0x20))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUint, 0x20))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorFixedBytes, 0x20))
