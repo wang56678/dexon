@@ -179,13 +179,15 @@ func TestPrestateTracerCreate2(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create call tracer: %v", err)
 	}
-	evm := evm.NewEVM(context, statedb, params.MainnetChainConfig, evm.Config{Debug: true, Tracer: tracer})
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{Tracer: tracer, Debug: true}
+	pack := vm.NewExecPack(&context, statedb, params.MainnetChainConfig, vmConfig)
 
 	msg, err := tx.AsMessage(signer)
 	if err != nil {
 		t.Fatalf("failed to prepare transaction for tracing: %v", err)
 	}
-	st := core.NewStateTransition(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+	st := core.NewStateTransition(&pack, msg, new(core.GasPool).AddGas(tx.Gas()))
 	core.TestingMode = true
 	if _, _, _, err = st.TransitionDb(); err != nil {
 		t.Fatalf("failed to execute transaction: %v", err)
@@ -287,12 +289,14 @@ func TestCallTracer(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create call tracer: %v", err)
 			}
-			evm := evm.NewEVM(context, statedb, test.Genesis.Config, evm.Config{Debug: true, Tracer: tracer})
+			vmConfig := [vm.NUMS]interface{}{}
+			vmConfig[vm.EVM] = evm.Config{Tracer: tracer, Debug: true}
+			pack := vm.NewExecPack(&context, statedb, test.Genesis.Config, vmConfig)
 			msg, err := tx.AsMessage(signer)
 			if err != nil {
 				t.Fatalf("failed to prepare transaction for tracing: %v", err)
 			}
-			st := core.NewStateTransition(evm, msg, new(core.GasPool).AddGas(tx.Gas()))
+			st := core.NewStateTransition(&pack, msg, new(core.GasPool).AddGas(tx.Gas()))
 			if _, _, _, err = st.TransitionDb(); err != nil {
 				t.Fatalf("failed to execute transaction: %v", err)
 			}

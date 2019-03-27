@@ -22,7 +22,7 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/misc"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -53,7 +53,7 @@ func NewStateProcessor(config *params.ChainConfig, bc *BlockChain, engine consen
 // Process returns the receipts and logs accumulated during the process and
 // returns the amount of gas that was used in the process. If any of the
 // transactions failed to execute due to insufficient gas it will return an error.
-func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error) {
+func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg [vm.NUMS]interface{}) (types.Receipts, []*types.Log, uint64, error) {
 	var (
 		receipts types.Receipts
 		usedGas  = new(uint64)
@@ -85,18 +85,18 @@ func (p *StateProcessor) Process(block *types.Block, statedb *state.StateDB, cfg
 // and uses the input parameters for its environment. It returns the receipt
 // for the transaction, gas used and an error if the transaction failed,
 // indicating the block was invalid.
-func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
+func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, vmConfig [vm.NUMS]interface{}) (*types.Receipt, uint64, error) {
 	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))
 	if err != nil {
 		return nil, 0, err
 	}
 	// Create a new context to be used in the EVM environment
-	context := NewEVMContext(msg, header, bc, author)
+	context := NewVMContext(msg, header, bc, author)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	vmenv := vm.NewEVM(context, statedb, config, cfg)
+	pack := vm.NewExecPack(context, statedb, config, vmConfig)
 	// Apply the transaction to the current state (included in the env)
-	_, gas, failed, err := ApplyMessage(vmenv, msg, gp)
+	_, gas, failed, err := ApplyMessage(&pack, msg, gp)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -116,7 +116,7 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
 	receipt.GasUsed = gas
 	// if the transaction created a contract, store the creation address in the receipt.
 	if msg.To() == nil {
-		receipt.ContractAddress = crypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
+		receipt.ContractAddress = crypto.CreateAddress(pack.Context.Origin, tx.Nonce())
 	}
 	// Set the receipt logs and create a bloom for filtering
 	receipt.Logs = statedb.GetLogs(tx.Hash())

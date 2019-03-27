@@ -16,7 +16,7 @@ type (
 	// GetHashFunc returns the nth block hash in the blockchain
 	// and is used by the BLOCKHASH EVM op code.
 	GetHashFunc func(uint64) common.Hash
-	// StateAtFunc returns the statedb given a root hash.
+	// StateAtNumberFunc returns the statedb given a root hash.
 	StateAtNumberFunc func(uint64) (*state.StateDB, error)
 	// GetRoundHeightFunc returns the round height.
 	GetRoundHeightFunc func(uint64) (uint64, bool)
@@ -50,7 +50,22 @@ type Context struct {
 	Difficulty  *big.Int       // Provides information for DIFFICULTY
 	Round       *big.Int       // Current round number.
 
-	RandCallIndex uint64 // Number of times opRand is called
+	// NoRecursion disabled Interpreter call, callcode,
+	// delegate call and create.
+	NoRecursion bool
+	// Depth is the current call stack
+	Depth int
+	// Whether to throw on stateful modifications
+	ReadOnly bool
+	// Number of times opRand is called
+	RandCallIndex uint64
+	IntPool       *IntPool
+	// CallGasTemp holds the gas available for the current call. This is needed because the
+	// available gas is calculated in gasCall* according to the 63/64 rule and later
+	// applied in opCall*.
+	CallGasTemp uint64
+
+	ExecPack *ExecPack
 }
 
 // StateDB is an EVM database for full state querying.

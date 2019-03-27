@@ -30,6 +30,7 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/crypto"
@@ -169,7 +170,9 @@ func newTestProtocolManager(lightSync bool, blocks int, generator func(int, *cor
 	if lightSync {
 		chain, _ = light.NewLightChain(odr, gspec.Config, engine)
 	} else {
-		blockchain, _ := core.NewBlockChain(db, nil, gspec.Config, engine, evm.Config{}, nil)
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		blockchain, _ := core.NewBlockChain(db, nil, gspec.Config, engine, vmConfig, nil)
 		gchain, _ := core.GenerateChain(gspec.Config, genesis, ethash.NewFaker(), db, blocks, generator)
 		if _, err := blockchain.InsertChain(gchain); err != nil {
 			panic(err)

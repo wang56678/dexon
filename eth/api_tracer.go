@@ -207,7 +207,7 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 				// Trace all the transactions contained within
 				for i, tx := range task.block.Transactions() {
 					msg, _ := tx.AsMessage(signer)
-					vmctx := core.NewEVMContext(msg, task.block.Header(), api.eth.blockchain, nil)
+					vmctx := core.NewVMContext(msg, task.block.Header(), api.eth.blockchain, nil)
 
 					res, err := api.traceTx(ctx, msg, vmctx, task.statedb, config)
 					if err != nil {
@@ -290,7 +290,9 @@ func (api *PrivateDebugAPI) traceChain(ctx context.Context, start, end *types.Bl
 				traced += uint64(len(txs))
 			}
 			// Generate the next state snapshot fast without tracing
-			_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, evm.Config{})
+			vmConfig := [vm.NUMS]interface{}{}
+			vmConfig[vm.EVM] = evm.Config{}
+			_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, vmConfig)
 			if err != nil {
 				failed = err
 				break
@@ -481,7 +483,7 @@ func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, 
 			// Fetch and execute the next transaction trace tasks
 			for task := range jobs {
 				msg, _ := txs[task.index].AsMessage(signer)
-				vmctx := core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
+				vmctx := core.NewVMContext(msg, block.Header(), api.eth.blockchain, nil)
 
 				res, err := api.traceTx(ctx, msg, vmctx, task.statedb, config)
 				if err != nil {
@@ -500,16 +502,17 @@ func (api *PrivateDebugAPI) traceBlock(ctx context.Context, block *types.Block, 
 
 		// Generate the next state snapshot fast without tracing
 		msg, _ := tx.AsMessage(signer)
-		vmctx := core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
-
-		vmenv := evm.NewEVM(vmctx, statedb, api.config, evm.Config{})
-		if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas())); err != nil {
+		vmctx := core.NewVMContext(msg, block.Header(), api.eth.blockchain, nil)
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		pack := vm.NewExecPack(vmctx, statedb, api.config, vmConfig)
+		if _, _, _, err := core.ApplyMessage(&pack, msg, new(core.GasPool).AddGas(msg.Gas())); err != nil {
 			failed = err
 			break
 		}
 		// Finalize the state so any modifications are written to the trie
 		// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
+		statedb.Finalise(pack.ChainConfig.IsEIP158(block.Number()))
 	}
 	close(jobs)
 	pend.Wait()
@@ -575,7 +578,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 		// Prepare the trasaction for un-traced execution
 		var (
 			msg, _ = tx.AsMessage(signer)
-			vmctx  = core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
+			vmctx  = core.NewVMContext(msg, block.Header(), api.eth.blockchain, nil)
 
 			vmConf evm.Config
 			dump   *os.File
@@ -600,8 +603,10 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 			}
 		}
 		// Execute the transaction and flush any traces to disk
-		vmenv := evm.NewEVM(vmctx, statedb, api.config, vmConf)
-		_, _, _, err = core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(msg.Gas()))
+		vmConfigs := [vm.NUMS]interface{}{}
+		vmConfigs[vm.EVM] = vmConf
+		pack := vm.NewExecPack(vmctx, statedb, api.config, vmConfigs)
+		_, _, _, err = core.ApplyMessage(&pack, msg, new(core.GasPool).AddGas(msg.Gas()))
 
 		if dump != nil {
 			dump.Close()
@@ -612,7 +617,7 @@ func (api *PrivateDebugAPI) standardTraceBlockToFile(ctx context.Context, block 
 		}
 		// Finalize the state so any modifications are written to the trie
 		// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
+		statedb.Finalise(pack.ChainConfig.IsEIP158(block.Number()))
 
 		// If we've traced the transaction we were looking for, abort
 		if tx.Hash() == txHash {
@@ -668,7 +673,9 @@ func (api *PrivateDebugAPI) computeStateDB(block *types.Block, reexec uint64) (*
 		if block = api.eth.blockchain.GetBlockByNumber(block.NumberU64() + 1); block == nil {
 			return nil, fmt.Errorf("block #%d not found", block.NumberU64()+1)
 		}
-		_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, evm.Config{})
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		_, _, _, err := api.eth.blockchain.Processor().Process(block, statedb, vmConfig)
 		if err != nil {
 			return nil, fmt.Errorf("processing block %d failed: %v", block.NumberU64(), err)
 		}
@@ -714,7 +721,7 @@ func (api *PrivateDebugAPI) TraceTransaction(ctx context.Context, hash common.Ha
 // traceTx configures a new tracer according to the provided configuration, and
 // executes the given message in the provided environment. The return value will
 // be tracer dependent.
-func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, vmctx vm.Context, statedb *state.StateDB, config *TraceConfig) (interface{}, error) {
+func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, vmctx *vm.Context, statedb *state.StateDB, config *TraceConfig) (interface{}, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
 		tracer evm.Tracer
@@ -748,9 +755,11 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 		tracer = evm.NewStructLogger(config.LogConfig)
 	}
 	// Run the transaction with tracing enabled.
-	vmenv := evm.NewEVM(vmctx, statedb, api.config, evm.Config{Debug: true, Tracer: tracer})
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{Tracer: tracer, Debug: true}
+	pack := vm.NewExecPack(vmctx, statedb, api.config, vmConfig)
 
-	ret, gas, failed, err := core.ApplyMessage(vmenv, message, new(core.GasPool).AddGas(message.Gas()))
+	ret, gas, failed, err := core.ApplyMessage(&pack, message, new(core.GasPool).AddGas(message.Gas()))
 	if err != nil {
 		return nil, fmt.Errorf("tracing failed: %v", err)
 	}
@@ -773,19 +782,19 @@ func (api *PrivateDebugAPI) traceTx(ctx context.Context, message core.Message, v
 }
 
 // computeTxEnv returns the execution environment of a certain transaction.
-func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, reexec uint64) (core.Message, vm.Context, *state.StateDB, error) {
+func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, reexec uint64) (core.Message, *vm.Context, *state.StateDB, error) {
 	// Create the parent state database
 	block := api.eth.blockchain.GetBlockByHash(blockHash)
 	if block == nil {
-		return nil, vm.Context{}, nil, fmt.Errorf("block %#x not found", blockHash)
+		return nil, nil, nil, fmt.Errorf("block %#x not found", blockHash)
 	}
 	parent := api.eth.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1)
 	if parent == nil {
-		return nil, vm.Context{}, nil, fmt.Errorf("parent %#x not found", block.ParentHash())
+		return nil, nil, nil, fmt.Errorf("parent %#x not found", block.ParentHash())
 	}
 	statedb, err := api.computeStateDB(parent, reexec)
 	if err != nil {
-		return nil, vm.Context{}, nil, err
+		return nil, nil, nil, err
 	}
 	// Recompute transactions up to the target index.
 	signer := types.MakeSigner(api.config, block.Number())
@@ -793,18 +802,21 @@ func (api *PrivateDebugAPI) computeTxEnv(blockHash common.Hash, txIndex int, ree
 	for idx, tx := range block.Transactions() {
 		// Assemble the transaction call message and return if the requested offset
 		msg, _ := tx.AsMessage(signer)
-		context := core.NewEVMContext(msg, block.Header(), api.eth.blockchain, nil)
+		context := core.NewVMContext(msg, block.Header(), api.eth.blockchain, nil)
 		if idx == txIndex {
 			return msg, context, statedb, nil
 		}
 		// Not yet the searched for transaction, execute on top of the current state
-		vmenv := evm.NewEVM(context, statedb, api.config, evm.Config{})
-		if _, _, _, err := core.ApplyMessage(vmenv, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
-			return nil, vm.Context{}, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
+
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		pack := vm.NewExecPack(context, statedb, api.config, vmConfig)
+		if _, _, _, err := core.ApplyMessage(&pack, msg, new(core.GasPool).AddGas(tx.Gas())); err != nil {
+			return nil, nil, nil, fmt.Errorf("transaction %#x failed: %v", tx.Hash(), err)
 		}
 		// Ensure any modifications are committed to the state
 		// Only delete empty objects if EIP158/161 (a.k.a Spurious Dragon) is in effect
-		statedb.Finalise(vmenv.ChainConfig().IsEIP158(block.Number()))
+		statedb.Finalise(pack.ChainConfig.IsEIP158(block.Number()))
 	}
-	return nil, vm.Context{}, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, blockHash)
+	return nil, nil, nil, fmt.Errorf("transaction index %d out of range for block %#x", txIndex, blockHash)
 }

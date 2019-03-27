@@ -22,7 +22,8 @@ import (
 
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -79,7 +80,9 @@ func ExampleGenerateChain() {
 	})
 
 	// Import the chain. This runs all block validation rules.
-	blockchain, _ := NewBlockChain(db, nil, gspec.Config, ethash.NewFaker(), vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, _ := NewBlockChain(db, nil, gspec.Config, ethash.NewFaker(), vmConfig, nil)
 	defer blockchain.Stop()
 
 	if i, err := blockchain.InsertChain(chain); err != nil {

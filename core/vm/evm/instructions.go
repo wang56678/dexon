@@ -55,7 +55,7 @@ func opAdd(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	x, y := stack.Pop(), stack.Peek()
 	math.U256(y.Add(x, y))
 
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -63,7 +63,7 @@ func opSub(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	x, y := stack.Pop(), stack.Peek()
 	math.U256(y.Sub(x, y))
 
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -71,7 +71,7 @@ func opMul(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	x, y := stack.Pop(), stack.Pop()
 	stack.Push(math.U256(x.Mul(x, y)))
 
-	interpreter.intPool.Put(y)
+	interpreter.evm.IntPool.Put(y)
 
 	return nil, nil
 }
@@ -83,13 +83,13 @@ func opDiv(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	} else {
 		y.SetUint64(0)
 	}
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
 func opSdiv(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	x, y := math.S256(stack.Pop()), math.S256(stack.Pop())
-	res := interpreter.intPool.GetZero()
+	res := interpreter.evm.IntPool.GetZero()
 
 	if y.Sign() == 0 || x.Sign() == 0 {
 		stack.Push(res)
@@ -102,7 +102,7 @@ func opSdiv(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 		}
 		stack.Push(math.U256(res))
 	}
-	interpreter.intPool.Put(x, y)
+	interpreter.evm.IntPool.Put(x, y)
 	return nil, nil
 }
 
@@ -113,13 +113,13 @@ func opMod(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	} else {
 		stack.Push(math.U256(x.Mod(x, y)))
 	}
-	interpreter.intPool.Put(y)
+	interpreter.evm.IntPool.Put(y)
 	return nil, nil
 }
 
 func opSmod(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	x, y := math.S256(stack.Pop()), math.S256(stack.Pop())
-	res := interpreter.intPool.GetZero()
+	res := interpreter.evm.IntPool.GetZero()
 
 	if y.Sign() == 0 {
 		stack.Push(res)
@@ -132,7 +132,7 @@ func opSmod(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 		}
 		stack.Push(math.U256(res))
 	}
-	interpreter.intPool.Put(x, y)
+	interpreter.evm.IntPool.Put(x, y)
 	return nil, nil
 }
 
@@ -140,12 +140,12 @@ func opExp(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	base, exponent := stack.Pop(), stack.Pop()
 	if base.Cmp(big2) == 0 && exponent.Cmp(big256) == -1 {
 		exp := exponent.Int64()
-		stack.Push(interpreter.intPool.Get().Set(power2[exp]))
+		stack.Push(interpreter.evm.IntPool.Get().Set(power2[exp]))
 	} else {
 		stack.Push(math.Exp(base, exponent))
 	}
 
-	interpreter.intPool.Put(base, exponent)
+	interpreter.evm.IntPool.Put(base, exponent)
 
 	return nil, nil
 }
@@ -166,7 +166,7 @@ func opSignExtend(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract
 		stack.Push(math.U256(num))
 	}
 
-	interpreter.intPool.Put(back)
+	interpreter.evm.IntPool.Put(back)
 	return nil, nil
 }
 
@@ -183,7 +183,7 @@ func opLt(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory
 	} else {
 		y.SetUint64(0)
 	}
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -194,7 +194,7 @@ func opGt(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory
 	} else {
 		y.SetUint64(0)
 	}
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -218,7 +218,7 @@ func opSlt(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 			y.SetUint64(0)
 		}
 	}
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -242,7 +242,7 @@ func opSgt(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 			y.SetUint64(0)
 		}
 	}
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -253,7 +253,7 @@ func opEq(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory
 	} else {
 		y.SetUint64(0)
 	}
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -271,7 +271,7 @@ func opAnd(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	x, y := stack.Pop(), stack.Pop()
 	stack.Push(x.And(x, y))
 
-	interpreter.intPool.Put(y)
+	interpreter.evm.IntPool.Put(y)
 	return nil, nil
 }
 
@@ -279,7 +279,7 @@ func opOr(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory
 	x, y := stack.Pop(), stack.Peek()
 	y.Or(x, y)
 
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -287,7 +287,7 @@ func opXor(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 	x, y := stack.Pop(), stack.Peek()
 	y.Xor(x, y)
 
-	interpreter.intPool.Put(x)
+	interpreter.evm.IntPool.Put(x)
 	return nil, nil
 }
 
@@ -299,7 +299,7 @@ func opByte(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 	} else {
 		val.SetUint64(0)
 	}
-	interpreter.intPool.Put(th)
+	interpreter.evm.IntPool.Put(th)
 	return nil, nil
 }
 
@@ -312,7 +312,7 @@ func opAddmod(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 	} else {
 		stack.Push(x.SetUint64(0))
 	}
-	interpreter.intPool.Put(y, z)
+	interpreter.evm.IntPool.Put(y, z)
 	return nil, nil
 }
 
@@ -325,7 +325,7 @@ func opMulmod(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 	} else {
 		stack.Push(x.SetUint64(0))
 	}
-	interpreter.intPool.Put(y, z)
+	interpreter.evm.IntPool.Put(y, z)
 	return nil, nil
 }
 
@@ -335,7 +335,7 @@ func opMulmod(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 func opSHL(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	// Note, second operand is left in the stack; accumulate result into it, and no need to push it afterwards
 	shift, value := math.U256(stack.Pop()), math.U256(stack.Peek())
-	defer interpreter.intPool.Put(shift) // First operand back into the pool
+	defer interpreter.evm.IntPool.Put(shift) // First operand back into the pool
 
 	if shift.Cmp(common.Big256) >= 0 {
 		value.SetUint64(0)
@@ -353,7 +353,7 @@ func opSHL(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 func opSHR(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	// Note, second operand is left in the stack; accumulate result into it, and no need to push it afterwards
 	shift, value := math.U256(stack.Pop()), math.U256(stack.Peek())
-	defer interpreter.intPool.Put(shift) // First operand back into the pool
+	defer interpreter.evm.IntPool.Put(shift) // First operand back into the pool
 
 	if shift.Cmp(common.Big256) >= 0 {
 		value.SetUint64(0)
@@ -371,7 +371,7 @@ func opSHR(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memor
 func opSAR(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	// Note, S256 returns (potentially) a new bigint, so we're popping, not peeking this one
 	shift, value := math.U256(stack.Pop()), math.S256(stack.Pop())
-	defer interpreter.intPool.Put(shift) // First operand back into the pool
+	defer interpreter.evm.IntPool.Put(shift) // First operand back into the pool
 
 	if shift.Cmp(common.Big256) >= 0 {
 		if value.Sign() >= 0 {
@@ -405,9 +405,9 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 	if evm.vmConfig.EnablePreimageRecording {
 		evm.StateDB.AddPreimage(interpreter.hasherBuf, data)
 	}
-	stack.Push(interpreter.intPool.Get().SetBytes(interpreter.hasherBuf[:]))
+	stack.Push(interpreter.evm.IntPool.Get().SetBytes(interpreter.hasherBuf[:]))
 
-	interpreter.intPool.Put(offset, size)
+	interpreter.evm.IntPool.Put(offset, size)
 	return nil, nil
 }
 
@@ -421,7 +421,7 @@ func opRand(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 	binaryUsedIndex := make([]byte, binary.MaxVarintLen64)
 	binary.PutUvarint(binaryUsedIndex, evm.RandCallIndex)
 
-	evm.RandCallIndex += 1
+	evm.RandCallIndex++
 
 	hash := crypto.Keccak256(
 		evm.Randomness,
@@ -429,7 +429,7 @@ func opRand(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 		binaryOriginNonce,
 		binaryUsedIndex)
 
-	stack.Push(interpreter.intPool.Get().SetBytes(hash))
+	stack.Push(interpreter.evm.IntPool.Get().SetBytes(hash))
 	return nil, nil
 }
 
@@ -455,17 +455,17 @@ func opCaller(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 }
 
 func opCallValue(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().Set(contract.Value))
+	stack.Push(interpreter.evm.IntPool.Get().Set(contract.Value))
 	return nil, nil
 }
 
 func opCallDataLoad(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().SetBytes(vm.GetDataBig(contract.Input, stack.Pop(), big32)))
+	stack.Push(interpreter.evm.IntPool.Get().SetBytes(vm.GetDataBig(contract.Input, stack.Pop(), big32)))
 	return nil, nil
 }
 
 func opCallDataSize(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().SetInt64(int64(len(contract.Input))))
+	stack.Push(interpreter.evm.IntPool.Get().SetInt64(int64(len(contract.Input))))
 	return nil, nil
 }
 
@@ -477,12 +477,12 @@ func opCallDataCopy(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contra
 	)
 	memory.Set(memOffset.Uint64(), length.Uint64(), vm.GetDataBig(contract.Input, dataOffset, length))
 
-	interpreter.intPool.Put(memOffset, dataOffset, length)
+	interpreter.evm.IntPool.Put(memOffset, dataOffset, length)
 	return nil, nil
 }
 
 func opReturnDataSize(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().SetUint64(uint64(len(interpreter.returnData))))
+	stack.Push(interpreter.evm.IntPool.Get().SetUint64(uint64(len(interpreter.returnData))))
 	return nil, nil
 }
 
@@ -491,9 +491,9 @@ func opReturnDataCopy(pc *uint64, interpreter *EVMInterpreter, contract *vm.Cont
 		memOffset  = stack.Pop()
 		dataOffset = stack.Pop()
 		length     = stack.Pop()
-		end        = interpreter.intPool.Get().Add(dataOffset, length)
+		end        = interpreter.evm.IntPool.Get().Add(dataOffset, length)
 	)
-	defer interpreter.intPool.Put(memOffset, dataOffset, length, end)
+	defer interpreter.evm.IntPool.Put(memOffset, dataOffset, length, end)
 
 	if end.BitLen() > 64 || uint64(len(interpreter.returnData)) < end.Uint64() {
 		return nil, errReturnDataOutOfBounds
@@ -511,7 +511,7 @@ func opExtCodeSize(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contrac
 }
 
 func opCodeSize(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	l := interpreter.intPool.Get().SetInt64(int64(len(contract.Code)))
+	l := interpreter.evm.IntPool.Get().SetInt64(int64(len(contract.Code)))
 	stack.Push(l)
 
 	return nil, nil
@@ -526,7 +526,7 @@ func opCodeCopy(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, 
 	codeCopy := vm.GetDataBig(contract.Code, codeOffset, length)
 	memory.Set(memOffset.Uint64(), length.Uint64(), codeCopy)
 
-	interpreter.intPool.Put(memOffset, codeOffset, length)
+	interpreter.evm.IntPool.Put(memOffset, codeOffset, length)
 	return nil, nil
 }
 
@@ -540,7 +540,7 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contrac
 	codeCopy := vm.GetDataBig(interpreter.evm.StateDB.GetCode(addr), codeOffset, length)
 	memory.Set(memOffset.Uint64(), length.Uint64(), codeCopy)
 
-	interpreter.intPool.Put(memOffset, codeOffset, length)
+	interpreter.evm.IntPool.Put(memOffset, codeOffset, length)
 	return nil, nil
 }
 
@@ -582,20 +582,20 @@ func opExtCodeHash(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contrac
 }
 
 func opGasprice(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().Set(interpreter.evm.GasPrice))
+	stack.Push(interpreter.evm.IntPool.Get().Set(interpreter.evm.GasPrice))
 	return nil, nil
 }
 
 func opBlockhash(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	num := stack.Pop()
 
-	n := interpreter.intPool.Get().Sub(interpreter.evm.BlockNumber, common.Big257)
+	n := interpreter.evm.IntPool.Get().Sub(interpreter.evm.BlockNumber, common.Big257)
 	if num.Cmp(n) > 0 && num.Cmp(interpreter.evm.BlockNumber) < 0 {
 		stack.Push(interpreter.evm.GetHash(num.Uint64()).Big())
 	} else {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	}
-	interpreter.intPool.Put(num, n)
+	interpreter.evm.IntPool.Put(num, n)
 	return nil, nil
 }
 
@@ -605,36 +605,36 @@ func opCoinbase(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, 
 }
 
 func opTimestamp(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(math.U256(interpreter.intPool.Get().Set(interpreter.evm.Time)))
+	stack.Push(math.U256(interpreter.evm.IntPool.Get().Set(interpreter.evm.Time)))
 	return nil, nil
 }
 
 func opNumber(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(math.U256(interpreter.intPool.Get().Set(interpreter.evm.BlockNumber)))
+	stack.Push(math.U256(interpreter.evm.IntPool.Get().Set(interpreter.evm.BlockNumber)))
 	return nil, nil
 }
 
 func opDifficulty(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(math.U256(interpreter.intPool.Get().Set(interpreter.evm.Difficulty)))
+	stack.Push(math.U256(interpreter.evm.IntPool.Get().Set(interpreter.evm.Difficulty)))
 	return nil, nil
 }
 
 func opGasLimit(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(math.U256(interpreter.intPool.Get().SetUint64(interpreter.evm.GasLimit)))
+	stack.Push(math.U256(interpreter.evm.IntPool.Get().SetUint64(interpreter.evm.GasLimit)))
 	return nil, nil
 }
 
 func opPop(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	interpreter.intPool.Put(stack.Pop())
+	interpreter.evm.IntPool.Put(stack.Pop())
 	return nil, nil
 }
 
 func opMload(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
 	offset := stack.Pop()
-	val := interpreter.intPool.Get().SetBytes(memory.Get(offset.Int64(), 32))
+	val := interpreter.evm.IntPool.Get().SetBytes(memory.Get(offset.Int64(), 32))
 	stack.Push(val)
 
-	interpreter.intPool.Put(offset)
+	interpreter.evm.IntPool.Put(offset)
 	return nil, nil
 }
 
@@ -643,7 +643,7 @@ func opMstore(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 	mStart, val := stack.Pop(), stack.Pop()
 	memory.Set32(mStart.Uint64(), val)
 
-	interpreter.intPool.Put(mStart, val)
+	interpreter.evm.IntPool.Put(mStart, val)
 	return nil, nil
 }
 
@@ -666,7 +666,7 @@ func opSstore(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 	val := stack.Pop()
 	interpreter.evm.StateDB.SetState(contract.Address(), loc, common.BigToHash(val))
 
-	interpreter.intPool.Put(val)
+	interpreter.evm.IntPool.Put(val)
 	return nil, nil
 }
 
@@ -678,7 +678,7 @@ func opJump(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 	}
 	*pc = pos.Uint64()
 
-	interpreter.intPool.Put(pos)
+	interpreter.evm.IntPool.Put(pos)
 	return nil, nil
 }
 
@@ -694,7 +694,7 @@ func opJumpi(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, mem
 		*pc++
 	}
 
-	interpreter.intPool.Put(pos, cond)
+	interpreter.evm.IntPool.Put(pos, cond)
 	return nil, nil
 }
 
@@ -703,17 +703,17 @@ func opJumpdest(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, 
 }
 
 func opPc(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().SetUint64(*pc))
+	stack.Push(interpreter.evm.IntPool.Get().SetUint64(*pc))
 	return nil, nil
 }
 
 func opMsize(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().SetInt64(int64(memory.Len())))
+	stack.Push(interpreter.evm.IntPool.Get().SetInt64(int64(memory.Len())))
 	return nil, nil
 }
 
 func opGas(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	stack.Push(interpreter.intPool.Get().SetUint64(contract.Gas))
+	stack.Push(interpreter.evm.IntPool.Get().SetUint64(contract.Gas))
 	return nil, nil
 }
 
@@ -729,20 +729,20 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 		gas -= gas / 64
 	}
 	contract.UseGas(gas)
-	res, addr, returnGas, suberr := vm.Create(contract, input, gas, value, interpreter)
+	res, addr, returnGas, suberr := vm.Create(contract, input, gas, value, interpreter.evm.ExecPack)
 	// Push item on the stack based on the returned error. If the ruleset is
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
 	if interpreter.evm.ChainConfig().IsHomestead(interpreter.evm.BlockNumber) && suberr == vm.ErrCodeStoreOutOfGas {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else if suberr != nil && suberr != vm.ErrCodeStoreOutOfGas {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else {
 		stack.Push(addr.Big())
 	}
 	contract.Gas += returnGas
-	interpreter.intPool.Put(value, offset, size)
+	interpreter.evm.IntPool.Put(value, offset, size)
 
 	if suberr == errExecutionReverted {
 		return res, nil
@@ -762,15 +762,15 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, m
 	// Apply EIP150
 	gas -= gas / 64
 	contract.UseGas(gas)
-	res, addr, returnGas, suberr := vm.Create2(contract, input, gas, endowment, salt, interpreter)
+	res, addr, returnGas, suberr := vm.Create2(contract, input, gas, endowment, salt, interpreter.evm.ExecPack)
 	// Push item on the stack based on the returned error.
 	if suberr != nil {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else {
 		stack.Push(addr.Big())
 	}
 	contract.Gas += returnGas
-	interpreter.intPool.Put(endowment, offset, size, salt)
+	interpreter.evm.IntPool.Put(endowment, offset, size, salt)
 
 	if suberr == errExecutionReverted {
 		return res, nil
@@ -779,9 +779,9 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, m
 }
 
 func opCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	// Pop gas. The actual gas in interpreter.evm.callGasTemp.
-	interpreter.intPool.Put(stack.Pop())
-	gas := interpreter.evm.callGasTemp
+	// Pop gas. The actual gas in interpreter.evm.CallGasTemp.
+	interpreter.evm.IntPool.Put(stack.Pop())
+	gas := interpreter.evm.CallGasTemp
 	// Pop other call parameters.
 	addr, value, inOffset, inSize, retOffset, retSize := stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop()
 	toAddr := common.BigToAddress(addr)
@@ -792,25 +792,25 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memo
 	if value.Sign() != 0 {
 		gas += params.CallStipend
 	}
-	ret, returnGas, err := vm.Call(contract, toAddr, args, gas, value, interpreter)
+	ret, returnGas, err := vm.Call(contract, toAddr, args, gas, value, interpreter.evm.ExecPack)
 	if err != nil {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else {
-		stack.Push(interpreter.intPool.Get().SetUint64(1))
+		stack.Push(interpreter.evm.IntPool.Get().SetUint64(1))
 	}
 	if err == nil || err == errExecutionReverted {
 		memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	contract.Gas += returnGas
 
-	interpreter.intPool.Put(addr, value, inOffset, inSize, retOffset, retSize)
+	interpreter.evm.IntPool.Put(addr, value, inOffset, inSize, retOffset, retSize)
 	return ret, nil
 }
 
 func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	// Pop gas. The actual gas is in interpreter.evm.callGasTemp.
-	interpreter.intPool.Put(stack.Pop())
-	gas := interpreter.evm.callGasTemp
+	// Pop gas. The actual gas is in interpreter.evm.CallGasTemp.
+	interpreter.evm.IntPool.Put(stack.Pop())
+	gas := interpreter.evm.CallGasTemp
 	// Pop other call parameters.
 	addr, value, inOffset, inSize, retOffset, retSize := stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop()
 	toAddr := common.BigToAddress(addr)
@@ -821,68 +821,68 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, 
 	if value.Sign() != 0 {
 		gas += params.CallStipend
 	}
-	ret, returnGas, err := vm.CallCode(contract, toAddr, args, gas, value, interpreter)
+	ret, returnGas, err := vm.CallCode(contract, toAddr, args, gas, value, interpreter.evm.ExecPack)
 	if err != nil {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else {
-		stack.Push(interpreter.intPool.Get().SetUint64(1))
+		stack.Push(interpreter.evm.IntPool.Get().SetUint64(1))
 	}
 	if err == nil || err == errExecutionReverted {
 		memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	contract.Gas += returnGas
 
-	interpreter.intPool.Put(addr, value, inOffset, inSize, retOffset, retSize)
+	interpreter.evm.IntPool.Put(addr, value, inOffset, inSize, retOffset, retSize)
 	return ret, nil
 }
 
 func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	// Pop gas. The actual gas is in interpreter.evm.callGasTemp.
-	interpreter.intPool.Put(stack.Pop())
-	gas := interpreter.evm.callGasTemp
+	// Pop gas. The actual gas is in interpreter.evm.CallGasTemp.
+	interpreter.evm.IntPool.Put(stack.Pop())
+	gas := interpreter.evm.CallGasTemp
 	// Pop other call parameters.
 	addr, inOffset, inSize, retOffset, retSize := stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop()
 	toAddr := common.BigToAddress(addr)
 	// Get arguments from the memory.
 	args := memory.Get(inOffset.Int64(), inSize.Int64())
 
-	ret, returnGas, err := vm.DelegateCall(contract, toAddr, args, gas, interpreter)
+	ret, returnGas, err := vm.DelegateCall(contract, toAddr, args, gas, interpreter.evm.ExecPack)
 	if err != nil {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else {
-		stack.Push(interpreter.intPool.Get().SetUint64(1))
+		stack.Push(interpreter.evm.IntPool.Get().SetUint64(1))
 	}
 	if err == nil || err == errExecutionReverted {
 		memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	contract.Gas += returnGas
 
-	interpreter.intPool.Put(addr, inOffset, inSize, retOffset, retSize)
+	interpreter.evm.IntPool.Put(addr, inOffset, inSize, retOffset, retSize)
 	return ret, nil
 }
 
 func opStaticCall(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-	// Pop gas. The actual gas is in interpreter.evm.callGasTemp.
-	interpreter.intPool.Put(stack.Pop())
-	gas := interpreter.evm.callGasTemp
+	// Pop gas. The actual gas is in interpreter.evm.CallGasTemp.
+	interpreter.evm.IntPool.Put(stack.Pop())
+	gas := interpreter.evm.CallGasTemp
 	// Pop other call parameters.
 	addr, inOffset, inSize, retOffset, retSize := stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop(), stack.Pop()
 	toAddr := common.BigToAddress(addr)
 	// Get arguments from the memory.
 	args := memory.Get(inOffset.Int64(), inSize.Int64())
 
-	ret, returnGas, err := vm.StaticCall(contract, toAddr, args, gas, interpreter)
+	ret, returnGas, err := vm.StaticCall(contract, toAddr, args, gas, interpreter.evm.ExecPack)
 	if err != nil {
-		stack.Push(interpreter.intPool.GetZero())
+		stack.Push(interpreter.evm.IntPool.GetZero())
 	} else {
-		stack.Push(interpreter.intPool.Get().SetUint64(1))
+		stack.Push(interpreter.evm.IntPool.Get().SetUint64(1))
 	}
 	if err == nil || err == errExecutionReverted {
 		memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
 	}
 	contract.Gas += returnGas
 
-	interpreter.intPool.Put(addr, inOffset, inSize, retOffset, retSize)
+	interpreter.evm.IntPool.Put(addr, inOffset, inSize, retOffset, retSize)
 	return ret, nil
 }
 
@@ -890,7 +890,7 @@ func opReturn(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 	offset, size := stack.Pop(), stack.Pop()
 	ret := memory.GetPtr(offset.Int64(), size.Int64())
 
-	interpreter.intPool.Put(offset, size)
+	interpreter.evm.IntPool.Put(offset, size)
 	return ret, nil
 }
 
@@ -898,7 +898,7 @@ func opRevert(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, me
 	offset, size := stack.Pop(), stack.Pop()
 	ret := memory.GetPtr(offset.Int64(), size.Int64())
 
-	interpreter.intPool.Put(offset, size)
+	interpreter.evm.IntPool.Put(offset, size)
 	return ret, nil
 }
 
@@ -935,7 +935,7 @@ func makeLog(size int) executionFunc {
 			BlockNumber: interpreter.evm.BlockNumber.Uint64(),
 		})
 
-		interpreter.intPool.Put(mStart, mSize)
+		interpreter.evm.IntPool.Put(mStart, mSize)
 		return nil, nil
 	}
 }
@@ -955,7 +955,7 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 			endMin = startMin + pushByteSize
 		}
 
-		integer := interpreter.intPool.Get()
+		integer := interpreter.evm.IntPool.Get()
 		stack.Push(integer.SetBytes(common.RightPadBytes(contract.Code[startMin:endMin], pushByteSize)))
 
 		*pc += size
@@ -966,7 +966,7 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 // make dup instruction function
 func makeDup(size int64) executionFunc {
 	return func(pc *uint64, interpreter *EVMInterpreter, contract *vm.Contract, memory *vm.Memory, stack *vm.Stack) ([]byte, error) {
-		stack.Dup(interpreter.intPool, int(size))
+		stack.Dup(interpreter.evm.IntPool, int(size))
 		return nil, nil
 	}
 }

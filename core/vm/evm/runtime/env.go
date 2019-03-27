@@ -20,15 +20,14 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/vm"
-	"github.com/dexon-foundation/dexon/core/vm/evm"
 )
 
-func NewEnv(cfg *Config) *evm.EVM {
+// NewExecPack is a wrapper for creating ExecPack.
+func NewExecPack(cfg *Config) vm.ExecPack {
 	context := vm.Context{
 		CanTransfer: core.CanTransfer,
 		Transfer:    core.Transfer,
 		GetHash:     func(uint64) common.Hash { return common.Hash{} },
-
 		Origin:      cfg.Origin,
 		Coinbase:    cfg.Coinbase,
 		BlockNumber: cfg.BlockNumber,
@@ -37,6 +36,7 @@ func NewEnv(cfg *Config) *evm.EVM {
 		GasLimit:    cfg.GasLimit,
 		GasPrice:    cfg.GasPrice,
 	}
-
-	return evm.NewEVM(context, cfg.State, cfg.ChainConfig, cfg.EVMConfig)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = cfg.EVMConfig
+	return vm.NewExecPack(&context, cfg.State, cfg.ChainConfig, vmConfig)
 }

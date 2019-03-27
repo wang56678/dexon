@@ -35,7 +35,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/bloombits"
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/eth/downloader"
 	"github.com/dexon-foundation/dexon/eth/filters"
 	"github.com/dexon-foundation/dexon/eth/gasprice"
@@ -151,14 +152,17 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		rawdb.WriteDatabaseVersion(chainDb, core.BlockChainVersion)
 	}
 	var (
-		vmConfig = vm.Config{
+		vmConfig = evm.Config{
 			EnablePreimageRecording: config.EnablePreimageRecording,
 			EWASMInterpreter:        config.EWASMInterpreter,
 			EVMInterpreter:          config.EVMInterpreter,
 		}
 		cacheConfig = &core.CacheConfig{Disabled: config.NoPruning, TrieCleanLimit: config.TrieCleanCache, TrieDirtyLimit: config.TrieDirtyCache, TrieTimeLimit: config.TrieTimeout}
 	)
-	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, eth.chainConfig, eth.engine, vmConfig, eth.shouldPreserve)
+
+	vmConfigs := [vm.NUMS]interface{}{}
+	vmConfigs[vm.EVM] = vmConfig
+	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, eth.chainConfig, eth.engine, vmConfigs, eth.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}

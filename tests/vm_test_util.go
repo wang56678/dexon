@@ -79,9 +79,9 @@ type vmExecMarshaling struct {
 	GasPrice *math.HexOrDecimal256
 }
 
-func (t *VMTest) Run(vmconfig evm.Config) error {
+func (t *VMTest) Run(cfg evm.Config) error {
 	statedb := MakePreState(ethdb.NewMemDatabase(), t.json.Pre)
-	ret, gasRemaining, err := t.exec(statedb, vmconfig)
+	ret, gasRemaining, err := t.exec(statedb, cfg)
 
 	if t.json.GasRemaining == nil {
 		if err == nil {
@@ -115,13 +115,13 @@ func (t *VMTest) Run(vmconfig evm.Config) error {
 	return nil
 }
 
-func (t *VMTest) exec(statedb *state.StateDB, vmconfig evm.Config) ([]byte, uint64, error) {
-	evm := t.newEVM(statedb, vmconfig)
+func (t *VMTest) exec(statedb *state.StateDB, cfg evm.Config) ([]byte, uint64, error) {
+	evm := t.newEVM(statedb, cfg)
 	e := t.json.Exec
-	return evm.Call(vm.AccountRef(e.Caller), e.Address, e.Data, e.GasLimit, e.Value)
+	return evm.Call(vm.AccountRef(e.Caller), e.Address, e.Data, e.GasLimit, e.Value, evm.ExecPack)
 }
 
-func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig evm.Config) *evm.EVM {
+func (t *VMTest) newEVM(statedb *state.StateDB, cfg evm.Config) *evm.EVM {
 	initialCall := true
 	canTransfer := func(db vm.StateDB, address common.Address, amount *big.Int) bool {
 		if initialCall {
@@ -142,9 +142,12 @@ func (t *VMTest) newEVM(statedb *state.StateDB, vmconfig evm.Config) *evm.EVM {
 		GasLimit:    t.json.Env.GasLimit,
 		Difficulty:  t.json.Env.Difficulty,
 		GasPrice:    t.json.Exec.GasPrice,
+		NoRecursion: true,
 	}
-	vmconfig.NoRecursion = true
-	return evm.NewEVM(context, statedb, params.EthereumMainnetChainConfig, vmconfig)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = cfg
+	pack := vm.NewExecPack(&context, statedb, params.EthereumMainnetChainConfig, vmConfig)
+	return pack.VMList[vm.EVM].(*evm.EVM)
 }
 
 func vmTestBlockHash(n uint64) common.Hash {

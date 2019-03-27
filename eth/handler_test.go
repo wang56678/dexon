@@ -29,7 +29,8 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/eth/downloader"
 	"github.com/dexon-foundation/dexon/ethdb"
@@ -474,7 +475,9 @@ func testDAOChallenge(t *testing.T, localForked, remoteForked bool, timeout bool
 		gspec   = &core.Genesis{Config: config}
 		genesis = gspec.MustCommit(db)
 	)
-	blockchain, err := core.NewBlockChain(db, nil, config, pow, vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, err := core.NewBlockChain(db, nil, config, pow, vmConfig, nil)
 	if err != nil {
 		t.Fatalf("failed to create new blockchain: %v", err)
 	}
@@ -555,7 +558,9 @@ func testBroadcastBlock(t *testing.T, totalPeers, broadcastExpected int) {
 		gspec   = &core.Genesis{Config: config}
 		genesis = gspec.MustCommit(db)
 	)
-	blockchain, err := core.NewBlockChain(db, nil, config, pow, vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, err := core.NewBlockChain(db, nil, config, pow, vmConfig, nil)
 	if err != nil {
 		t.Fatalf("failed to create new blockchain: %v", err)
 	}

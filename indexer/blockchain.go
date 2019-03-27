@@ -8,7 +8,7 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/event"
 	"github.com/dexon-foundation/dexon/params"
 	"github.com/dexon-foundation/dexon/rlp"
@@ -43,7 +43,7 @@ type ReadOnlyBlockChain interface {
 	GetTd(common.Hash, uint64) *big.Int
 	GetTdByHash(common.Hash) *big.Int
 	GetUnclesInChain(*types.Block, int) []*types.Header
-	GetVMConfig() *vm.Config
+	GetVMConfig() [vm.NUMS]interface{}
 	HasBlock(common.Hash, uint64) bool
 	HasBlockAndState(common.Hash, uint64) bool
 	HasHeader(common.Hash, uint64) bool

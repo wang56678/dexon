@@ -32,7 +32,8 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
 	"github.com/dexon-foundation/dexon/rlp"
@@ -118,7 +119,9 @@ func (t *BlockTest) Run() error {
 	} else {
 		engine = ethash.NewShared()
 	}
-	chain, err := core.NewBlockChain(db, &core.CacheConfig{TrieCleanLimit: 0}, config, engine, vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	chain, err := core.NewBlockChain(db, &core.CacheConfig{TrieCleanLimit: 0}, config, engine, vmConfig, nil)
 	if err != nil {
 		return err
 	}

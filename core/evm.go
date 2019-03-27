@@ -45,8 +45,8 @@ type ChainContext interface {
 	GetRoundHeight(uint64) (uint64, bool)
 }
 
-// NewEVMContext creates a new context for use in the EVM.
-func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author *common.Address) vm.Context {
+// NewVMContext creates a new context for use in the EVM.
+func NewVMContext(msg Message, header *types.Header, chain ChainContext, author *common.Address) *vm.Context {
 	// If we don't have an explicit author (i.e. not mining), extract from the header
 	var beneficiary common.Address
 	if author == nil {
@@ -55,7 +55,7 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 		beneficiary = *author
 	}
 
-	return vm.Context{
+	return &vm.Context{
 		CanTransfer:    CanTransfer,
 		Transfer:       Transfer,
 		GetHash:        GetHashFn(header, chain),
@@ -70,6 +70,7 @@ func NewEVMContext(msg Message, header *types.Header, chain ChainContext, author
 		Round:          new(big.Int).SetUint64(header.Round),
 		GasLimit:       header.GasLimit,
 		GasPrice:       new(big.Int).Set(msg.GasPrice()),
+		IntPool:        vm.NewIntPool(),
 	}
 }
 

@@ -31,7 +31,8 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/eth/downloader"
 	"github.com/dexon-foundation/dexon/ethdb"
@@ -58,9 +59,11 @@ func newTestProtocolManager(mode downloader.SyncMode, blocks int, generator func
 			Config: params.TestChainConfig,
 			Alloc:  core.GenesisAlloc{testBank: {Balance: big.NewInt(1000000)}},
 		}
-		genesis       = gspec.MustCommit(db)
-		blockchain, _ = core.NewBlockChain(db, nil, gspec.Config, engine, vm.Config{}, nil)
+		genesis = gspec.MustCommit(db)
 	)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, _ := core.NewBlockChain(db, nil, gspec.Config, engine, vmConfig, nil)
 	chain, _ := core.GenerateChain(gspec.Config, genesis, ethash.NewFaker(), db, blocks, generator)
 	if _, err := blockchain.InsertChain(chain); err != nil {
 		panic(err)

@@ -8,60 +8,65 @@ import (
 	"github.com/dexon-foundation/dexon/params"
 )
 
+// SQLVM implements the required VM interface.
 type SQLVM struct {
 	// Context provides auxiliary blockchain related information
-	vm.Context
+	*vm.Context
 	// StateDB gives access to the underlying state
 	StateDB vm.StateDB
-	// Depth is the current call stack
-	depth int
 
-	// chainConfig contains information about the current chain
-	chainConfig *params.ChainConfig
-	// chain rules contains the chain rules for the current epoch
-	chainRules params.Rules
 	// abort is used to abort the SQLVM calling operations
 	// NOTE: must be set atomically
 	abort int32
-	// callGasTemp holds the gas available for the current call. This is needed because the
-	// available gas is calculated in gasCall* according to the 63/64 rule and later
-	// applied in opCall*.
-	callGasTemp uint64
 }
 
 func init() {
-	vm.Register(vm.SQLVM, &SQLVM{})
+	vm.Register(vm.SQLVM, NewSQLVM)
 }
 
+// NewSQLVM is the SQLVM constructor.
+func NewSQLVM(context *vm.Context, stateDB vm.StateDB, chainConfig *params.ChainConfig, vmConfig interface{}) vm.VM {
+	return &SQLVM{Context: context, StateDB: stateDB}
+}
+
+// Create creates SQL contract.
 func (sqlvm *SQLVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *big.Int,
-	in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+	pack *vm.ExecPack) ([]byte, common.Address, uint64, error) {
 	// todo (jm) need to implemnt
 	return nil, common.Address{}, gas, nil
 }
 
+// Create2 mock interface.
 func (sqlvm *SQLVM) Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int,
-	in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+	pack *vm.ExecPack) ([]byte, common.Address, uint64, error) {
 	// todo (jm) need to implemnt
 	return nil, common.Address{}, gas, nil
 }
+
+// Call is the entry to call SQLVM contract.
 func (sqlvm *SQLVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int,
-	in vm.Interpreter) ([]byte, uint64, error) {
-	// todo (jm) need to implemnt
-	return nil, gas, nil
-}
-func (sqlvm *SQLVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
-	value *big.Int, in vm.Interpreter) ([]byte, uint64, error) {
+	pack *vm.ExecPack) ([]byte, uint64, error) {
 	// todo (jm) need to implemnt
 	return nil, gas, nil
 }
 
-func (sqlvm *SQLVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
-	in vm.Interpreter) ([]byte, uint64, error) {
+// CallCode mock interface.
+func (sqlvm *SQLVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
+	value *big.Int, pack *vm.ExecPack) ([]byte, uint64, error) {
 	// todo (jm) need to implemnt
 	return nil, gas, nil
 }
+
+// DelegateCall mock interface.
+func (sqlvm *SQLVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
+	pack *vm.ExecPack) ([]byte, uint64, error) {
+	// todo (jm) need to implemnt
+	return nil, gas, nil
+}
+
+// StaticCall is the entry for read-only call on SQL contract.
 func (sqlvm *SQLVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64,
-	in vm.Interpreter) ([]byte, uint64, error) {
+	pack *vm.ExecPack) ([]byte, uint64, error) {
 	// todo (jm) need to implemnt
 	return nil, gas, nil
 }

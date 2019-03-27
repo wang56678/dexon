@@ -71,7 +71,7 @@ type StateTransition struct {
 	value      *big.Int
 	data       []byte
 	state      vm.StateDB
-	evm        *evm.EVM
+	execPack   *vm.ExecPack
 }
 
 // Message represents a message sent to a contract.
@@ -123,15 +123,15 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 }
 
 // NewStateTransition initialises and returns a new state transition object.
-func NewStateTransition(evm *evm.EVM, msg Message, gp *GasPool) *StateTransition {
+func NewStateTransition(pack *vm.ExecPack, msg Message, gp *GasPool) *StateTransition {
 	return &StateTransition{
 		gp:       gp,
-		evm:      evm,
+		execPack: pack,
 		msg:      msg,
 		gasPrice: msg.GasPrice(),
 		value:    msg.Value(),
 		data:     msg.Data(),
-		state:    evm.StateDB,
+		state:    pack.StateDB,
 	}
 }
 
@@ -142,8 +142,8 @@ func NewStateTransition(evm *evm.EVM, msg Message, gp *GasPool) *StateTransition
 // the gas used (which includes gas refunds) and an error if it failed. An error always
 // indicates a core error meaning that the message would always fail for that particular
 // state and would never be accepted within a block.
-func ApplyMessage(evm *evm.EVM, msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
-	return NewStateTransition(evm, msg, gp).TransitionDb()
+func ApplyMessage(pack *vm.ExecPack, msg Message, gp *GasPool) ([]byte, uint64, bool, error) {
+	return NewStateTransition(pack, msg, gp).TransitionDb()
 }
 
 // to returns the recipient of the message.
@@ -201,14 +201,14 @@ func (st *StateTransition) inExtendedRound() bool {
 
 	if h := lastInExtendedRoundResultCache.Load(); h != nil {
 		res := h.(*lastInExtendedRoundResultType)
-		if res.Height == st.evm.BlockNumber.Uint64() {
+		if res.Height == st.execPack.Context.BlockNumber.Uint64() {
 			return res.Result
 		}
 	}
 
 	gs := evm.GovernanceState{st.state}
 
-	round := st.evm.Round.Uint64()
+	round := st.execPack.Context.Round.Uint64()
 	if round < dexCore.ConfigRoundShift {
 		round = 0
 	} else {
@@ -216,23 +216,23 @@ func (st *StateTransition) inExtendedRound() bool {
 	}
 
 	configHeight := gs.RoundHeight(new(big.Int).SetUint64(round))
-	state, err := st.evm.StateAtNumber(configHeight.Uint64())
+	state, err := st.execPack.Context.StateAtNumber(configHeight.Uint64())
 	if err != nil {
 		panic(err)
 	}
 	rgs := evm.GovernanceState{state}
 
-	roundEnd := gs.RoundHeight(st.evm.Round).Uint64() + rgs.RoundLength().Uint64()
+	roundEnd := gs.RoundHeight(st.execPack.Context.Round).Uint64() + rgs.RoundLength().Uint64()
 
 	// Round 0 starts and height 0 instead of height 1.
 	if round == 0 {
-		roundEnd += 1
+		roundEnd++
 	}
 
-	res := st.evm.BlockNumber.Uint64() >= roundEnd
+	res := st.execPack.Context.BlockNumber.Uint64() >= roundEnd
 
 	lastInExtendedRoundResultCache.Store(&lastInExtendedRoundResultType{
-		Height: st.evm.BlockNumber.Uint64(),
+		Height: st.execPack.Context.BlockNumber.Uint64(),
 		Result: res,
 	})
 	return res
@@ -247,7 +247,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	}
 	msg := st.msg
 	sender := vm.AccountRef(msg.From())
-	homestead := st.evm.ChainConfig().IsHomestead(st.evm.BlockNumber)
+	homestead := st.execPack.ChainConfig.IsHomestead(st.execPack.Context.BlockNumber)
 	contractCreation := msg.To() == nil
 
 	// Pay intrinsic gas
@@ -266,13 +266,14 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		// error.
 		vmerr error
 	)
-	i := st.evm.Interpreter().(*evm.EVMInterpreter)
 	if contractCreation {
-		ret, _, st.gas, vmerr = vm.Create(sender, st.data, st.gas, st.value, i)
+		ret, _, st.gas, vmerr = vm.Create(sender, st.data, st.gas,
+			st.value, st.execPack)
 	} else {
 		// Increment the nonce for the next transaction
 		st.state.SetNonce(msg.From(), st.state.GetNonce(sender.Address())+1)
-		ret, st.gas, vmerr = vm.Call(sender, st.to(), st.data, st.gas, st.value, i)
+		ret, st.gas, vmerr = vm.Call(sender, st.to(), st.data, st.gas,
+			st.value, st.execPack)
 	}
 	if vmerr != nil {
 		log.Debug("VM returned with error", "err", vmerr)
@@ -290,7 +291,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		st.dexonRefundGas()
 	}
 
-	receiver := st.evm.Coinbase
+	receiver := st.execPack.Context.Coinbase
 	if !*legacyEvm && st.inExtendedRound() {
 		gs := evm.GovernanceState{st.state}
 		receiver = gs.Owner()

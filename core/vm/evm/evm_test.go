@@ -91,15 +91,14 @@ func newTestVM() *testVM {
 		Time:        big.NewInt(time.Now().UnixNano() / 1000000000),
 		BlockNumber: big.NewInt(0),
 	}
-
-	env := NewEVM(context, stateDB, params.TestChainConfig, Config{})
-	evmInterpreter := NewEVMInterpreter(env, env.vmConfig)
-
-	env.interpreter = evmInterpreter
+	vmConfig := [vmlib.NUMS]interface{}{}
+	vmConfig[vmlib.EVM] = Config{}
+	p := vmlib.NewExecPack(&context, stateDB, params.TestChainConfig, vmConfig)
+	evm := p.VMList[vmlib.EVM].(*EVM)
 
 	return &testVM{
-		evm:         env,
-		interpreter: evmInterpreter,
+		evm:         evm,
+		interpreter: NewEVMInterpreter(evm, evm.vmConfig),
 	}
 }
 

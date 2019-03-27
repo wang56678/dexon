@@ -28,6 +28,7 @@ import (
 	"github.com/dexon-foundation/dexon/consensus"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -110,7 +111,9 @@ func (b *DexonBlockGen) ProcessTransactions(c ChainContext) {
 	for _, tx := range b.txs {
 		b.statedb.Prepare(tx.Hash(), common.Hash{}, len(b.txs))
 		// TODO: fix the chain context parameter
-		receipt, _, err := ApplyTransaction(b.config, c, &b.header.Coinbase, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, evm.Config{})
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		receipt, _, err := ApplyTransaction(b.config, c, &b.header.Coinbase, b.gasPool, b.statedb, b.header, tx, &b.header.GasUsed, vmConfig)
 		if err != nil {
 			panic(err)
 		}

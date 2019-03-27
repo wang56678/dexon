@@ -29,7 +29,8 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -120,7 +121,7 @@ func (t *StateTest) Subtests() []StateSubtest {
 }
 
 // Run executes a specific subtest.
-func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateDB, error) {
+func (t *StateTest) Run(subtest StateSubtest, vmcfg evm.Config) (*state.StateDB, error) {
 	config, ok := Forks[subtest.Fork]
 	if !ok {
 		return nil, UnsupportedForkError{subtest.Fork}
@@ -133,14 +134,14 @@ func (t *StateTest) Run(subtest StateSubtest, vmconfig vm.Config) (*state.StateD
 	if err != nil {
 		return nil, err
 	}
-	context := core.NewEVMContext(msg, block.Header(), nil, &t.json.Env.Coinbase)
+	context := core.NewVMContext(msg, block.Header(), nil, &t.json.Env.Coinbase)
 	context.GetHash = vmTestBlockHash
-	evm := vm.NewEVM(context, statedb, config, vmconfig)
-
+	vmConfigs := [vm.NUMS]interface{}{vmcfg}
+	pack := vm.NewExecPack(context, statedb, config, vmConfigs)
 	gaspool := new(core.GasPool)
 	gaspool.AddGas(block.GasLimit())
 	snapshot := statedb.Snapshot()
-	if _, _, _, err := core.ApplyMessage(evm, msg, gaspool); err != nil {
+	if _, _, _, err := core.ApplyMessage(&pack, msg, gaspool); err != nil {
 		statedb.RevertToSnapshot(snapshot)
 	}
 	// Commit block

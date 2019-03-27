@@ -27,7 +27,8 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -88,7 +89,10 @@ func TestTxPool(t *testing.T) {
 	)
 	gspec.MustCommit(ldb)
 	// Assemble the test environment
-	blockchain, _ := core.NewBlockChain(sdb, nil, params.TestChainConfig, ethash.NewFullFaker(), vm.Config{}, nil)
+
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, _ := core.NewBlockChain(sdb, nil, params.TestChainConfig, ethash.NewFullFaker(), vmConfig, nil)
 	gchain, _ := core.GenerateChain(params.TestChainConfig, genesis, ethash.NewFaker(), sdb, poolTestBlocks, txPoolTestChainGen)
 	if _, err := blockchain.InsertChain(gchain); err != nil {
 		panic(err)

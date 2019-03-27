@@ -27,15 +27,11 @@ import (
 	"github.com/dexon-foundation/dexon/params"
 )
 
-// Config are the configuration options for the Interpreter
 type Config struct {
 	// Debug enabled debugging Interpreter options
 	Debug bool
 	// Tracer is the op code logger
 	Tracer Tracer
-	// NoRecursion disabled Interpreter call, callcode,
-	// delegate call and create.
-	NoRecursion bool
 	// Enable recording of SHA3/keccak preimages
 	EnablePreimageRecording bool
 	// JumpTable contains the EVM instruction table. This
@@ -88,12 +84,9 @@ type EVMInterpreter struct {
 	cfg      Config
 	gasTable params.GasTable
 
-	intPool *vm.IntPool
-
 	hasher    keccakState // Keccak256 hasher instance shared across opcodes
 	hasherBuf common.Hash // Keccak256 hasher result array shared aross opcodes
 
-	readOnly   bool   // Whether to throw on stateful modifications
 	returnData []byte // Last CALL's return data for subsequent reuse
 }
 
@@ -114,17 +107,16 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 			cfg.JumpTable = frontierInstructionSet
 		}
 	}
-
 	return &EVMInterpreter{
 		evm:      evm,
-		cfg:      cfg,
 		gasTable: evm.ChainConfig().GasTable(evm.BlockNumber),
+		cfg:      cfg,
 	}
 }
 
 func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, stack *vm.Stack) error {
 	if in.evm.chainRules.IsByzantium {
-		if in.readOnly {
+		if in.evm.ReadOnly {
 			// If the interpreter is operating in readonly mode, make sure no
 			// state-modifying operation is performed. The 3rd stack item
 			// for a call operation is the value. Transferring value from one
@@ -145,23 +137,23 @@ func (in *EVMInterpreter) enforceRestrictions(op OpCode, operation operation, st
 // considered a revert-and-consume-all-gas operation except for
 // errExecutionReverted which means revert-and-keep-gas-left.
 func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool) (ret []byte, err error) {
-	if in.intPool == nil {
-		in.intPool = vm.PoolOfIntPools.Get()
+	if in.evm.IntPool == nil {
+		in.evm.IntPool = vm.PoolOfIntPools.Get()
 		defer func() {
-			vm.PoolOfIntPools.Put(in.intPool)
-			in.intPool = nil
+			vm.PoolOfIntPools.Put(in.evm.IntPool)
+			in.evm.IntPool = nil
 		}()
 	}
 
 	// Increment the call depth which is restricted to 1024
-	in.evm.depth++
-	defer func() { in.evm.depth-- }()
+	in.evm.Depth++
+	defer func() { in.evm.Depth-- }()
 
 	// Make sure the readOnly is only set if we aren't in readOnly yet.
 	// This makes also sure that the readOnly flag isn't removed for child calls.
-	if readOnly && !in.readOnly {
-		in.readOnly = true
-		defer func() { in.readOnly = false }()
+	if readOnly && !in.evm.ReadOnly {
+		in.evm.ReadOnly = true
+		defer func() { in.evm.ReadOnly = false }()
 	}
 
 	// Reset the previous call's return data. It's unimportant to preserve the old buffer
@@ -189,17 +181,17 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 	contract.Input = input
 	// Reclaim the stack as an int pool when the execution stops
 	defer func() {
-		in.intPool.Put(stack.Data...)
+		in.evm.IntPool.Put(stack.Data...)
 		Recyclestack(stack)
 	}()
 
-	if in.cfg.Debug {
+	if in.evm.vmConfig.Debug {
 		defer func() {
 			if err != nil {
 				if !logged {
-					in.cfg.Tracer.CaptureState(in.evm, pcCopy, op, gasCopy, cost, mem, stack, contract, in.evm.depth, err)
+					in.evm.vmConfig.Tracer.CaptureState(in.evm, pcCopy, op, gasCopy, cost, mem, stack, contract, in.evm.Depth, err)
 				} else {
-					in.cfg.Tracer.CaptureFault(in.evm, pcCopy, op, gasCopy, cost, mem, stack, contract, in.evm.depth, err)
+					in.evm.vmConfig.Tracer.CaptureFault(in.evm, pcCopy, op, gasCopy, cost, mem, stack, contract, in.evm.Depth, err)
 				}
 			}
 		}()
@@ -209,7 +201,7 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 	// the execution of one of the operations or until the done flag is set by the
 	// parent context.
 	for atomic.LoadInt32(&in.evm.abort) == 0 {
-		if in.cfg.Debug {
+		if in.evm.vmConfig.Debug {
 			// Capture pre-execution values for tracing.
 			logged, pcCopy, gasCopy = false, pc, contract.Gas
 		}
@@ -254,8 +246,8 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 			mem.Resize(memorySize)
 		}
 
-		if in.cfg.Debug {
-			in.cfg.Tracer.CaptureState(in.evm, pc, op, gasCopy, cost, mem, stack, contract, in.evm.depth, err)
+		if in.evm.vmConfig.Debug {
+			in.evm.vmConfig.Tracer.CaptureState(in.evm, pc, op, gasCopy, cost, mem, stack, contract, in.evm.Depth, err)
 			logged = true
 		}
 
@@ -264,7 +256,7 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 		// verifyPool is a build flag. Pool verification makes sure the integrity
 		// of the integer pool by comparing values to a default value.
 		if vm.VerifyPool {
-			vm.VerifyIntegerPool(in.intPool)
+			vm.VerifyIntegerPool(in.evm.IntPool)
 		}
 		// if the operation clears the return data (e.g. it has returning data)
 		// set the last return to the result of the operation.
@@ -291,9 +283,4 @@ func (in *EVMInterpreter) Run(contract *vm.Contract, input []byte, readOnly bool
 // run by the current interpreter.
 func (in *EVMInterpreter) CanRun(code []byte) bool {
 	return true
-}
-
-// StateDB return StateDB stored in evm
-func (in *EVMInterpreter) StateDB() vm.StateDB {
-	return in.evm.StateDB
 }

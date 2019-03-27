@@ -27,7 +27,8 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/event"
@@ -96,7 +97,10 @@ func newTestWorkerBackend(t *testing.T, chainConfig *params.ChainConfig, engine 
 	}
 	genesis := gspec.MustCommit(db)
 
-	chain, _ := core.NewBlockChain(db, nil, gspec.Config, engine, vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+
+	chain, _ := core.NewBlockChain(db, nil, gspec.Config, engine, vmConfig, nil)
 	txpool := core.NewTxPool(testTxPoolConfig, chainConfig, chain)
 
 	// Generate a small n-block chain and an uncle block for it

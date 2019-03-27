@@ -24,7 +24,7 @@ import (
 	"os"
 
 	"github.com/dexon-foundation/dexon/core/state"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/tests"
 
@@ -58,24 +58,24 @@ func stateTestCmd(ctx *cli.Context) error {
 	log.Root().SetHandler(glogger)
 
 	// Configure the EVM logger
-	config := &vm.LogConfig{
+	config := &evm.LogConfig{
 		DisableMemory: ctx.GlobalBool(DisableMemoryFlag.Name),
 		DisableStack:  ctx.GlobalBool(DisableStackFlag.Name),
 	}
 	var (
-		tracer   vm.Tracer
-		debugger *vm.StructLogger
+		tracer   evm.Tracer
+		debugger *evm.StructLogger
 	)
 	switch {
 	case ctx.GlobalBool(MachineFlag.Name):
-		tracer = vm.NewJSONLogger(config, os.Stderr)
+		tracer = evm.NewJSONLogger(config, os.Stderr)
 
 	case ctx.GlobalBool(DebugFlag.Name):
-		debugger = vm.NewStructLogger(config)
+		debugger = evm.NewStructLogger(config)
 		tracer = debugger
 
 	default:
-		debugger = vm.NewStructLogger(config)
+		debugger = evm.NewStructLogger(config)
 	}
 	// Load the test content from the input file
 	src, err := ioutil.ReadFile(ctx.Args().First())
@@ -87,7 +87,7 @@ func stateTestCmd(ctx *cli.Context) error {
 		return err
 	}
 	// Iterate over all the tests, run them and aggregate the results
-	cfg := vm.Config{
+	cfg := evm.Config{
 		Tracer: tracer,
 		Debug:  ctx.GlobalBool(DebugFlag.Name) || ctx.GlobalBool(MachineFlag.Name),
 	}
@@ -116,7 +116,7 @@ func stateTestCmd(ctx *cli.Context) error {
 			if ctx.GlobalBool(DebugFlag.Name) {
 				if debugger != nil {
 					fmt.Fprintln(os.Stderr, "#### TRACE ####")
-					vm.WriteTrace(os.Stderr, debugger.StructLogs())
+					evm.WriteTrace(os.Stderr, debugger.StructLogs())
 				}
 			}
 		}

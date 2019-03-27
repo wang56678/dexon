@@ -31,7 +31,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
@@ -196,10 +197,12 @@ func odrContractCall(ctx context.Context, db ethdb.Database, bc *core.BlockChain
 		// Perform read-only call.
 		st.SetBalance(testBankAddress, math.MaxBig256)
 		msg := callmsg{types.NewMessage(testBankAddress, &testContractAddr, 0, new(big.Int), 1000000, new(big.Int), data, false)}
-		context := core.NewEVMContext(msg, header, chain, nil)
-		vmenv := vm.NewEVM(context, st, config, vm.Config{})
+		context := core.NewVMContext(msg, header, chain, nil)
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		pack := vm.NewExecPack(context, st, config, vmConfig)
 		gp := new(core.GasPool).AddGas(math.MaxUint64)
-		ret, _, _, _ := core.ApplyMessage(vmenv, msg, gp)
+		ret, _, _, _ := core.ApplyMessage(&pack, msg, gp)
 		res = append(res, ret...)
 		if st.Error() != nil {
 			return res, st.Error()
@@ -259,7 +262,9 @@ func testChainOdr(t *testing.T, protocol int, fn odrTestFn) {
 	)
 	gspec.MustCommit(ldb)
 	// Assemble the test environment
-	blockchain, _ := core.NewBlockChain(sdb, nil, params.TestChainConfig, ethash.NewFullFaker(), vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, _ := core.NewBlockChain(sdb, nil, params.TestChainConfig, ethash.NewFullFaker(), vmConfig, nil)
 	gchain, _ := core.GenerateChain(params.TestChainConfig, genesis, ethash.NewFaker(), sdb, 4, testChainGen)
 	if _, err := blockchain.InsertChain(gchain); err != nil {
 		t.Fatal(err)

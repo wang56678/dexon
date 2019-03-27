@@ -5,8 +5,7 @@
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
-// The go-ethereum library is distributed in the hope that it will be useful,
+// // The go-ethereum library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -104,19 +103,20 @@ func Execute(code, input []byte, cfg *Config) ([]byte, *state.StateDB, error) {
 	}
 	var (
 		address = common.BytesToAddress([]byte("contract"))
-		vmenv   = NewEnv(cfg)
+		pack    = NewExecPack(cfg)
 		sender  = vm.AccountRef(cfg.Origin)
 	)
 	cfg.State.CreateAccount(address)
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code)
 	// Call the code with the given configuration.
-	ret, _, err := vmenv.Call(
+	ret, _, err := pack.VMList[vm.EVM].(*evm.EVM).Call(
 		sender,
 		common.BytesToAddress([]byte("contract")),
 		input,
 		cfg.GasLimit,
 		cfg.Value,
+		&pack,
 	)
 
 	return ret, cfg.State, err
@@ -133,16 +133,17 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 		cfg.State, _ = state.New(common.Hash{}, state.NewDatabase(ethdb.NewMemDatabase()))
 	}
 	var (
-		vmenv  = NewEnv(cfg)
+		pack   = NewExecPack(cfg)
 		sender = vm.AccountRef(cfg.Origin)
 	)
 
 	// Call the code with the given configuration.
-	code, address, leftOverGas, err := vmenv.Create(
+	code, address, leftOverGas, err := pack.VMList[vm.EVM].(*evm.EVM).Create(
 		sender,
 		input,
 		cfg.GasLimit,
 		cfg.Value,
+		&pack,
 	)
 	return code, address, leftOverGas, err
 }
@@ -155,16 +156,17 @@ func Create(input []byte, cfg *Config) ([]byte, common.Address, uint64, error) {
 func Call(address common.Address, input []byte, cfg *Config) ([]byte, uint64, error) {
 	setDefaults(cfg)
 
-	vmenv := NewEnv(cfg)
-
+	pack := NewExecPack(cfg)
+	e := pack.VMList[vm.EVM].(*evm.EVM)
 	sender := cfg.State.GetOrNewStateObject(cfg.Origin)
 	// Call the code with the given configuration.
-	ret, leftOverGas, err := vmenv.Call(
+	ret, leftOverGas, err := e.Call(
 		sender,
 		address,
 		input,
 		cfg.GasLimit,
 		cfg.Value,
+		&pack,
 	)
 
 	return ret, leftOverGas, err

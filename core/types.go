@@ -20,7 +20,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
 )
 
 // Validator is an interface which defines the standard for block validation. It
@@ -46,5 +46,5 @@ type Validator interface {
 // of gas used in the process and return an error if any of the internal rules
 // failed.
 type Processor interface {
-	Process(block *types.Block, statedb *state.StateDB, cfg vm.Config) (types.Receipts, []*types.Log, uint64, error)
+	Process(block *types.Block, statedb *state.StateDB, vmConfig [vm.NUMS]interface{}) (types.Receipts, []*types.Log, uint64, error)
 }

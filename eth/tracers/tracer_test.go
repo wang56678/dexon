@@ -52,12 +52,17 @@ type dummyStatedb struct {
 func (*dummyStatedb) GetRefund() uint64 { return 1337 }
 
 func runTrace(tracer *Tracer) (json.RawMessage, error) {
-	env := evm.NewEVM(vm.Context{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, params.TestChainConfig, evm.Config{Debug: true, Tracer: tracer})
 
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{Tracer: tracer, Debug: true}
+	vmctx := &vm.Context{BlockNumber: big.NewInt(1)}
+	pack := vm.NewExecPack(vmctx, &dummyStatedb{}, params.TestChainConfig, vmConfig)
+	e := pack.VMList[vm.EVM].(*evm.EVM)
+	interpreter := evm.NewEVMInterpreter(e, e.VMConfig())
 	contract := vm.NewContract(account{}, account{}, big.NewInt(0), 10000)
 	contract.Code = []byte{byte(evm.PUSH1), 0x1, byte(evm.PUSH1), 0x1, 0x0}
 
-	_, err := env.Interpreter().Run(contract, []byte{}, false)
+	_, err := interpreter.Run(contract, []byte{}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -134,13 +139,18 @@ func TestHaltBetweenSteps(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	env := evm.NewEVM(vm.Context{BlockNumber: big.NewInt(1)}, &dummyStatedb{}, params.TestChainConfig, evm.Config{Debug: true, Tracer: tracer})
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{Tracer: tracer, Debug: true}
+	vmctx := &vm.Context{BlockNumber: big.NewInt(1)}
+	pack := vm.NewExecPack(vmctx, &dummyStatedb{}, params.TestChainConfig, vmConfig)
+	evm := pack.VMList[vm.EVM].(*evm.EVM)
+
 	contract := vm.NewContract(&account{}, &account{}, big.NewInt(0), 0)
 
-	tracer.CaptureState(env, 0, 0, 0, 0, nil, nil, contract, 0, nil)
+	tracer.CaptureState(evm, 0, 0, 0, 0, nil, nil, contract, 0, nil)
 	timeout := errors.New("stahp")
 	tracer.Stop(timeout)
-	tracer.CaptureState(env, 0, 0, 0, 0, nil, nil, contract, 0, nil)
+	tracer.CaptureState(evm, 0, 0, 0, 0, nil, nil, contract, 0, nil)
 
 	if _, err := tracer.GetResult(); err.Error() != timeout.Error() {
 		t.Errorf("Expected timeout error, got %v", err)

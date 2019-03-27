@@ -25,7 +25,8 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core/rawdb"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
 )
@@ -140,7 +141,9 @@ func TestSetupGenesis(t *testing.T) {
 				// Advance to block #4, past the homestead transition block of customg.
 				genesis := oldcustomg.MustCommit(db)
 
-				bc, _ := NewBlockChain(db, nil, oldcustomg.Config, ethash.NewFullFaker(), vm.Config{}, nil)
+				vmConfig := [vm.NUMS]interface{}{}
+				vmConfig[vm.EVM] = evm.Config{}
+				bc, _ := NewBlockChain(db, nil, oldcustomg.Config, ethash.NewFullFaker(), vmConfig, nil)
 				defer bc.Stop()
 
 				blocks, _ := GenerateChain(oldcustomg.Config, genesis, ethash.NewFaker(), db, 4, nil)

@@ -51,16 +51,19 @@ func (*dummyStatedb) GetRefund() uint64 { return 1337 }
 
 func TestStoreCapture(t *testing.T) {
 	var (
-		env      = NewEVM(vm.Context{}, &dummyStatedb{}, params.TestChainConfig, Config{})
 		logger   = NewStructLogger(nil)
 		mem      = vm.NewMemory()
 		stack    = NewStack()
 		contract = vm.NewContract(&dummyContractRef{}, &dummyContractRef{}, new(big.Int), 0)
 	)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = Config{}
+	vmctx := &vm.Context{IntPool: vm.NewIntPool()}
+	pack := vm.NewExecPack(vmctx, &dummyStatedb{}, params.TestChainConfig, vmConfig)
 	stack.Push(big.NewInt(1))
 	stack.Push(big.NewInt(0))
 	var index common.Hash
-	logger.CaptureState(env, 0, SSTORE, 0, 0, mem, stack, contract, 0, nil)
+	logger.CaptureState(pack.VMList[vm.EVM].(*EVM), 0, SSTORE, 0, 0, mem, stack, contract, 0, nil)
 	if len(logger.changedValues[contract.Address()]) == 0 {
 		t.Fatalf("expected exactly 1 changed value on address %x, got %d", contract.Address(), len(logger.changedValues[contract.Address()]))
 	}

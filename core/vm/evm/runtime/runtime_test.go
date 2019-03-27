@@ -29,6 +29,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm/tools"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaults(t *testing.T) {
@@ -119,6 +120,55 @@ func TestCall(t *testing.T) {
 	if num.Cmp(big.NewInt(10)) != 0 {
 		t.Error("Expected 10, got", num)
 	}
+}
+
+func TestStaticCallAndRand(t *testing.T) {
+	state, _ := state.New(common.Hash{}, state.NewDatabase(ethdb.NewMemDatabase()))
+	address := common.HexToAddress("0x0a")
+	address2 := common.HexToAddress("0x0b")
+	code := []byte{
+		byte(vm.EVM),
+		byte(evm.PUSH1), 0, // StaticCall retSize
+		byte(evm.PUSH1), 0, // StaticCall retOffset
+		byte(evm.PUSH1), 0, // StaticCall inputSize
+		byte(evm.PUSH1), 0, // StaticCall inputOffset
+		byte(evm.PUSH20),
+	}
+	code = append(code, address2.Bytes()...)
+	code = append(code,
+		byte(evm.PUSH1), 0xff, // StaticCall gas
+		byte(evm.STATICCALL),
+		byte(evm.RAND),
+		byte(evm.RETURN),
+	)
+	state.SetCode(address, code)
+
+	state.SetCode(address2, []byte{
+		byte(vm.EVM),
+		byte(evm.RAND),
+		byte(evm.RETURN),
+	})
+
+	cfg := &Config{
+		State: state,
+	}
+	setDefaults(cfg)
+	cfg.ChainConfig.ByzantiumBlock = new(big.Int).SetUint64(0)
+
+	pack := NewExecPack(cfg)
+	e := pack.VMList[vm.EVM]
+	sender := cfg.State.GetOrNewStateObject(cfg.Origin)
+	_, _, err := e.Call(
+		sender,
+		address,
+		nil,
+		cfg.GasLimit,
+		cfg.Value,
+		&pack,
+	)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, uint64(2), pack.Context.RandCallIndex)
+	assert.Equal(t, false, pack.Context.ReadOnly)
 }
 
 func BenchmarkCall(b *testing.B) {

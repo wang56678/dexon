@@ -25,7 +25,8 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/params"
@@ -448,7 +449,10 @@ func TestClique(t *testing.T) {
 			batches[len(batches)-1] = append(batches[len(batches)-1], block)
 		}
 		// Pass all the headers through clique and ensure tallying succeeds
-		chain, err := core.NewBlockChain(db, nil, &config, engine, vm.Config{}, nil)
+
+		vmConfig := [vm.NUMS]interface{}{}
+		vmConfig[vm.EVM] = evm.Config{}
+		chain, err := core.NewBlockChain(db, nil, &config, engine, vmConfig, nil)
 		if err != nil {
 			t.Errorf("test %d: failed to create test chain: %v", i, err)
 			continue

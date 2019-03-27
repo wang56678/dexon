@@ -37,7 +37,8 @@ import (
 	"github.com/dexon-foundation/dexon/consensus/ethash"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/dashboard"
 	"github.com/dexon-foundation/dexon/dex"
@@ -1253,7 +1254,6 @@ func SetDexConfig(ctx *cli.Context, stack *node.Node, cfg *dex.Config) {
 		// TODO(fjl): force-enable this in --dev mode
 		cfg.EnablePreimageRecording = ctx.GlobalBool(VMEnableDebugFlag.Name)
 	}
-
 	if ctx.GlobalIsSet(EWASMInterpreterFlag.Name) {
 		cfg.EWASMInterpreter = ctx.GlobalString(EWASMInterpreterFlag.Name)
 	}
@@ -1516,7 +1516,8 @@ func MakeChain(ctx *cli.Context, stack *node.Node) (chain *core.BlockChain, chai
 	if ctx.GlobalIsSet(CacheFlag.Name) || ctx.GlobalIsSet(CacheGCFlag.Name) {
 		cache.TrieDirtyLimit = ctx.GlobalInt(CacheFlag.Name) * ctx.GlobalInt(CacheGCFlag.Name) / 100
 	}
-	vmcfg := vm.Config{EnablePreimageRecording: ctx.GlobalBool(VMEnableDebugFlag.Name)}
+	vmcfg := [vm.NUMS]interface{}{}
+	vmcfg[vm.EVM] = evm.Config{EnablePreimageRecording: ctx.GlobalBool(VMEnableDebugFlag.Name)}
 	chain, err = core.NewBlockChain(chainDb, cache, config, engine, vmcfg, nil)
 	if err != nil {
 		Fatalf("Can't create BlockChain: %v", err)

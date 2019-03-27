@@ -23,6 +23,7 @@ import (
 
 var checkVal = big.NewInt(-42)
 
+// PoolLimit is the size of stack of IntPool
 const PoolLimit = 256
 
 // IntPool is a Pool of big integers that
@@ -31,11 +32,12 @@ type IntPool struct {
 	Pool *Stack
 }
 
-func newIntPool() *IntPool {
+// NewIntPool return an IntPool instance.
+func NewIntPool() *IntPool {
 	return &IntPool{Pool: &Stack{Data: make([]*big.Int, 0, 1024)}}
 }
 
-// get retrieves a big int from the Pool, allocating one if the Pool is empty.
+// Get retrieves a big int from the Pool, allocating one if the Pool is empty.
 // Note, the returned int's value is arbitrary and will not be zeroed!
 func (p *IntPool) Get() *big.Int {
 	if p.Pool.Len() > 0 {
@@ -44,7 +46,7 @@ func (p *IntPool) Get() *big.Int {
 	return new(big.Int)
 }
 
-// getZero retrieves a big int from the Pool, setting it to zero or allocating
+// GetZero retrieves a big int from the Pool, setting it to zero or allocating
 // a new one if the Pool is empty.
 func (p *IntPool) GetZero() *big.Int {
 	if p.Pool.Len() > 0 {
@@ -53,7 +55,7 @@ func (p *IntPool) GetZero() *big.Int {
 	return new(big.Int)
 }
 
-// put returns an allocated big int to the Pool to be later reused by get calls.
+// Put returns an allocated big int to the Pool to be later reused by get calls.
 // Note, the values as saved as is; neither put nor get zeroes the ints out!
 func (p *IntPool) Put(is ...*big.Int) {
 	if len(p.Pool.Data) > PoolLimit {
@@ -69,7 +71,7 @@ func (p *IntPool) Put(is ...*big.Int) {
 	}
 }
 
-// The IntPool Pool's default capacity
+// PoolDefaultCap is the IntPool Pool's default capacity
 const PoolDefaultCap = 25
 
 // IntPoolPool manages a Pool of IntPools.
@@ -78,11 +80,12 @@ type IntPoolPool struct {
 	lock  sync.Mutex
 }
 
+// PoolOfIntPools is an instance of IntPoolPool.
 var PoolOfIntPools = &IntPoolPool{
 	Pools: make([]*IntPool, 0, PoolDefaultCap),
 }
 
-// get is looking for an available Pool to return.
+// Get is looking for an available Pool to return.
 func (ipp *IntPoolPool) Get() *IntPool {
 	ipp.lock.Lock()
 	defer ipp.lock.Unlock()
@@ -92,10 +95,10 @@ func (ipp *IntPoolPool) Get() *IntPool {
 		ipp.Pools = ipp.Pools[:len(ipp.Pools)-1]
 		return ip
 	}
-	return newIntPool()
+	return NewIntPool()
 }
 
-// put a Pool that has been allocated with get.
+// Put a Pool that has been allocated with get.
 func (ipp *IntPoolPool) Put(ip *IntPool) {
 	ipp.lock.Lock()
 	defer ipp.lock.Unlock()

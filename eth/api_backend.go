@@ -27,7 +27,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/bloombits"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/eth/gasprice"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/event"
@@ -125,12 +126,13 @@ func (b *EthAPIBackend) GetTd(blockHash common.Hash) *big.Int {
 	return b.eth.blockchain.GetTdByHash(blockHash)
 }
 
-func (b *EthAPIBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header) (*vm.EVM, func() error, error) {
+func (b *EthAPIBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header) (*evm.EVM, func() error, error) {
 	state.SetBalance(msg.From(), math.MaxBig256)
 	vmError := func() error { return nil }
 
-	context := core.NewEVMContext(msg, header, b.eth.BlockChain(), nil)
-	return vm.NewEVM(context, state, b.eth.chainConfig, *b.eth.blockchain.GetVMConfig()), vmError, nil
+	context := core.NewVMContext(msg, header, b.eth.BlockChain(), nil)
+	pack := vm.NewExecPack(context, state, b.eth.chainConfig, b.eth.blockchain.GetVMConfig())
+	return pack.VMList[vm.EVM].(*evm.EVM), vmError, nil
 }
 
 func (b *EthAPIBackend) SubscribeRemovedLogsEvent(ch chan<- core.RemovedLogsEvent) event.Subscription {

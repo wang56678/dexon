@@ -41,7 +41,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/event"
@@ -138,7 +139,7 @@ type BlockChain struct {
 	engine    consensus.Engine
 	processor Processor // block processor interface
 	validator Validator // block and state validator interface
-	vmConfig  vm.Config
+	vmConfig  [vm.NUMS]interface{}
 
 	badBlocks      *lru.Cache              // Bad block cache
 	shouldPreserve func(*types.Block) bool // Function used to determine whether should preserve the given block.
@@ -153,7 +154,7 @@ type BlockChain struct {
 // NewBlockChain returns a fully initialised block chain using information
 // available in the database. It initialises the default Ethereum Validator and
 // Processor.
-func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
+func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig [vm.NUMS]interface{}, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
 	if cacheConfig == nil {
 		cacheConfig = &CacheConfig{
 			TrieCleanLimit: 256,
@@ -271,8 +272,8 @@ func (bc *BlockChain) getProcInterrupt() bool {
 }
 
 // GetVMConfig returns the block chain VM config.
-func (bc *BlockChain) GetVMConfig() *vm.Config {
-	return &bc.vmConfig
+func (bc *BlockChain) GetVMConfig() [vm.NUMS]interface{} {
+	return bc.vmConfig
 }
 
 // loadLastState loads the last known chain state from the database. This method
@@ -1893,7 +1894,7 @@ func (bc *BlockChain) GetGovStateByHash(hash common.Hash) (*types.GovState, erro
 	if err != nil {
 		return nil, err
 	}
-	return state.GetGovState(statedb, header, vm.GovernanceContractAddress)
+	return state.GetGovState(statedb, header, evm.GovernanceContractAddress)
 }
 
 func (bc *BlockChain) GetGovStateByNumber(number uint64) (*types.GovState, error) {
@@ -1905,7 +1906,7 @@ func (bc *BlockChain) GetGovStateByNumber(number uint64) (*types.GovState, error
 	if err != nil {
 		return nil, err
 	}
-	return state.GetGovState(statedb, header, vm.GovernanceContractAddress)
+	return state.GetGovState(statedb, header, evm.GovernanceContractAddress)
 }
 
 // reorg takes two blocks, an old chain and a new chain and will reconstruct the

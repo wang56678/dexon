@@ -32,7 +32,7 @@ import (
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/state"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/core/vm/evm/runtime"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/log"
@@ -73,15 +73,15 @@ func runCmd(ctx *cli.Context) error {
 	glogger := log.NewGlogHandler(log.StreamHandler(os.Stderr, log.TerminalFormat(false)))
 	glogger.Verbosity(log.Lvl(ctx.GlobalInt(VerbosityFlag.Name)))
 	log.Root().SetHandler(glogger)
-	logconfig := &vm.LogConfig{
+	logconfig := &evm.LogConfig{
 		DisableMemory: ctx.GlobalBool(DisableMemoryFlag.Name),
 		DisableStack:  ctx.GlobalBool(DisableStackFlag.Name),
 		Debug:         ctx.GlobalBool(DebugFlag.Name),
 	}
 
 	var (
-		tracer        vm.Tracer
-		debugLogger   *vm.StructLogger
+		tracer        evm.Tracer
+		debugLogger   *evm.StructLogger
 		statedb       *state.StateDB
 		chainConfig   *params.ChainConfig
 		sender        = common.BytesToAddress([]byte("sender"))
@@ -89,12 +89,12 @@ func runCmd(ctx *cli.Context) error {
 		genesisConfig *core.Genesis
 	)
 	if ctx.GlobalBool(MachineFlag.Name) {
-		tracer = vm.NewJSONLogger(logconfig, os.Stdout)
+		tracer = evm.NewJSONLogger(logconfig, os.Stdout)
 	} else if ctx.GlobalBool(DebugFlag.Name) {
-		debugLogger = vm.NewStructLogger(logconfig)
+		debugLogger = evm.NewStructLogger(logconfig)
 		tracer = debugLogger
 	} else {
-		debugLogger = vm.NewStructLogger(logconfig)
+		debugLogger = evm.NewStructLogger(logconfig)
 	}
 	if ctx.GlobalString(GenesisFlag.Name) != "" {
 		gen := readGenesis(ctx.GlobalString(GenesisFlag.Name))
@@ -170,7 +170,7 @@ func runCmd(ctx *cli.Context) error {
 		Time:        new(big.Int).SetUint64(genesisConfig.Timestamp),
 		Coinbase:    genesisConfig.Coinbase,
 		BlockNumber: new(big.Int).SetUint64(genesisConfig.Number),
-		EVMConfig: vm.Config{
+		EVMConfig: evm.Config{
 			Tracer: tracer,
 			Debug:  ctx.GlobalBool(DebugFlag.Name) || ctx.GlobalBool(MachineFlag.Name),
 		},
@@ -227,10 +227,10 @@ func runCmd(ctx *cli.Context) error {
 	if ctx.GlobalBool(DebugFlag.Name) {
 		if debugLogger != nil {
 			fmt.Fprintln(os.Stderr, "#### TRACE ####")
-			vm.WriteTrace(os.Stderr, debugLogger.StructLogs())
+			evm.WriteTrace(os.Stderr, debugLogger.StructLogs())
 		}
 		fmt.Fprintln(os.Stderr, "#### LOGS ####")
-		vm.WriteLogs(os.Stderr, statedb.Logs())
+		evm.WriteLogs(os.Stderr, statedb.Logs())
 	}
 
 	if ctx.GlobalBool(StatDumpFlag.Name) {

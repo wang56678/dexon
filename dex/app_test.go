@@ -20,6 +20,7 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/types"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
@@ -2336,8 +2337,10 @@ func newDexon(masterKey *ecdsa.PrivateKey, accountNum int) (*Dexon, []*ecdsa.Pri
 		networkID:   config.NetworkId,
 		engine:      engine,
 	}
+	vmConfigs := [vm.NUMS]interface{}{}
+	vmConfigs[vm.EVM] = vmConfig
 
-	dex.blockchain, err = core.NewBlockChain(db, nil, chainConfig, engine, vmConfig, nil)
+	dex.blockchain, err = core.NewBlockChain(db, nil, chainConfig, engine, vmConfigs, nil)
 	if err != nil {
 		return nil, nil, err
 	}

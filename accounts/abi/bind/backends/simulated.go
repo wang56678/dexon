@@ -34,7 +34,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/eth/filters"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/event"
@@ -69,7 +70,9 @@ func NewSimulatedBackend(alloc core.GenesisAlloc, gasLimit uint64) *SimulatedBac
 	database := ethdb.NewMemDatabase()
 	genesis := core.Genesis{Config: params.AllEthashProtocolChanges, GasLimit: gasLimit, Alloc: alloc}
 	genesis.MustCommit(database)
-	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, ethash.NewFaker(), vm.Config{}, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	blockchain, _ := core.NewBlockChain(database, nil, genesis.Config, ethash.NewFaker(), vmConfig, nil)
 
 	backend := &SimulatedBackend{
 		database:   database,
@@ -282,13 +285,15 @@ func (b *SimulatedBackend) callContract(ctx context.Context, call dexon.CallMsg,
 	// Execute the call.
 	msg := callmsg{call}
 
-	evmContext := core.NewEVMContext(msg, block.Header(), b.blockchain, nil)
+	evmContext := core.NewVMContext(msg, block.Header(), b.blockchain, nil)
 	// Create a new environment which holds all relevant information
 	// about the transaction and calling mechanisms.
-	vmenv := vm.NewEVM(evmContext, statedb, b.config, vm.Config{})
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	pack := vm.NewExecPack(evmContext, statedb, b.config, vmConfig)
 	gaspool := new(core.GasPool).AddGas(math.MaxUint64)
 
-	return core.NewStateTransition(vmenv, msg, gaspool).TransitionDb()
+	return core.NewStateTransition(&pack, msg, gaspool).TransitionDb()
 }
 
 // SendTransaction updates the pending block to include the given transaction.

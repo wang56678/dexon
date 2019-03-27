@@ -415,11 +415,11 @@ func gasCall(gt params.GasTable, evm *EVM, contract *vm.Contract, stack *vm.Stac
 		return 0, errGasUintOverflow
 	}
 
-	evm.callGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
+	evm.CallGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
-	if gas, overflow = math.SafeAdd(gas, evm.callGasTemp); overflow {
+	if gas, overflow = math.SafeAdd(gas, evm.CallGasTemp); overflow {
 		return 0, errGasUintOverflow
 	}
 	return gas, nil
@@ -439,11 +439,11 @@ func gasCallCode(gt params.GasTable, evm *EVM, contract *vm.Contract, stack *vm.
 		return 0, errGasUintOverflow
 	}
 
-	evm.callGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
+	evm.CallGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
-	if gas, overflow = math.SafeAdd(gas, evm.callGasTemp); overflow {
+	if gas, overflow = math.SafeAdd(gas, evm.CallGasTemp); overflow {
 		return 0, errGasUintOverflow
 	}
 	return gas, nil
@@ -493,11 +493,11 @@ func gasDelegateCall(gt params.GasTable, evm *EVM, contract *vm.Contract, stack 
 		return 0, errGasUintOverflow
 	}
 
-	evm.callGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
+	evm.CallGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
-	if gas, overflow = math.SafeAdd(gas, evm.callGasTemp); overflow {
+	if gas, overflow = math.SafeAdd(gas, evm.CallGasTemp); overflow {
 		return 0, errGasUintOverflow
 	}
 	return gas, nil
@@ -513,11 +513,11 @@ func gasStaticCall(gt params.GasTable, evm *EVM, contract *vm.Contract, stack *v
 		return 0, errGasUintOverflow
 	}
 
-	evm.callGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
+	evm.CallGasTemp, err = callGas(gt, contract.Gas, gas, stack.Back(0))
 	if err != nil {
 		return 0, err
 	}
-	if gas, overflow = math.SafeAdd(gas, evm.callGasTemp); overflow {
+	if gas, overflow = math.SafeAdd(gas, evm.CallGasTemp); overflow {
 		return 0, errGasUintOverflow
 	}
 	return gas, nil

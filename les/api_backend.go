@@ -28,7 +28,8 @@ import (
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/state"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/eth/gasprice"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/event"
@@ -105,10 +106,13 @@ func (b *LesApiBackend) GetTd(hash common.Hash) *big.Int {
 	return b.eth.blockchain.GetTdByHash(hash)
 }
 
-func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header) (*vm.EVM, func() error, error) {
+func (b *LesApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header) (*evm.EVM, func() error, error) {
 	state.SetBalance(msg.From(), math.MaxBig256)
-	context := core.NewEVMContext(msg, header, b.eth.blockchain, nil)
-	return vm.NewEVM(context, state, b.eth.chainConfig, vm.Config{}), state.Error, nil
+	context := core.NewVMContext(msg, header, b.eth.blockchain, nil)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.Config{}
+	pack := vm.NewExecPack(context, state, b.eth.chainConfig, vmConfig)
+	return pack.VMList[vm.EVM].(*evm.EVM), state.Error, nil
 }
 
 func (b *LesApiBackend) SendTx(ctx context.Context, signedTx *types.Transaction) error {

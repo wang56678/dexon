@@ -35,7 +35,8 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/rawdb"
 	"github.com/dexon-foundation/dexon/core/types"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/p2p"
@@ -778,7 +779,10 @@ func (s *PublicBlockChainAPI) doCall(ctx context.Context, args CallArgs, blockNr
 	// Setup the gas pool (also for unmetered requests)
 	// and apply the message.
 	gp := new(core.GasPool).AddGas(math.MaxUint64)
-	res, gas, failed, err := core.ApplyMessage(evm, msg, gp)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evm.VMConfig()
+	pack := vm.NewExecPack(evm.Context, evm.StateDB, evm.ChainConfig(), vmConfig)
+	res, gas, failed, err := core.ApplyMessage(&pack, msg, gp)
 	if err := vmError(); err != nil {
 		return nil, 0, false, err
 	}
@@ -871,7 +875,7 @@ type StructLogRes struct {
 }
 
 // formatLogs formats EVM returned structured logs for json output
-func FormatLogs(logs []vm.StructLog) []StructLogRes {
+func FormatLogs(logs []evm.StructLog) []StructLogRes {
 	formatted := make([]StructLogRes, len(logs))
 	for index, trace := range logs {
 		formatted[index] = StructLogRes{

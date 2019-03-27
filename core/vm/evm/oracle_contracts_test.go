@@ -249,8 +249,11 @@ func (g *OracleContractsTestSuite) call(
 
 	g.context.Time = big.NewInt(time.Now().UnixNano() / 1000000)
 
-	evm := NewEVM(g.context, g.stateDB, params.TestChainConfig, Config{IsBlockProposer: true})
-	ret, _, err := evm.Call(vm.AccountRef(caller), contractAddr, input, 10000000, value)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = Config{IsBlockProposer: true}
+	pack := vm.NewExecPack(&g.context, g.stateDB, params.TestChainConfig, vmConfig)
+	evm := pack.VMList[vm.EVM].(*EVM)
+	ret, _, err := evm.Call(vm.AccountRef(caller), contractAddr, input, 10000000, value, &pack)
 	return ret, err
 }
 
@@ -1068,7 +1071,7 @@ func (g *OracleContractsTestSuite) TestResetDKG() {
 				g.s.PutDKGSuccess(addr, true)
 				g.s.IncDKGSuccessesCount()
 			}
-			i += 1
+			i++
 		}
 		dkgSetSize := len(dkgSet)
 		g.Require().Len(g.s.DKGMasterPublicKeys(), dkgSetSize)

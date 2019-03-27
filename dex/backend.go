@@ -28,7 +28,8 @@ import (
 	"github.com/dexon-foundation/dexon/core"
 	"github.com/dexon-foundation/dexon/core/bloombits"
 	"github.com/dexon-foundation/dexon/core/rawdb"
-	vm "github.com/dexon-foundation/dexon/core/vm/evm"
+	"github.com/dexon-foundation/dexon/core/vm"
+	"github.com/dexon-foundation/dexon/core/vm/evm"
 	"github.com/dexon-foundation/dexon/dex/downloader"
 	"github.com/dexon-foundation/dexon/eth/filters"
 	"github.com/dexon-foundation/dexon/eth/gasprice"
@@ -118,7 +119,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Dexon, error) {
 	}
 
 	var (
-		vmConfig = vm.Config{
+		evmConfig = evm.Config{
 			EnablePreimageRecording: config.EnablePreimageRecording,
 			EWASMInterpreter:        config.EWASMInterpreter,
 			EVMInterpreter:          config.EVMInterpreter,
@@ -126,6 +127,8 @@ func New(ctx *node.ServiceContext, config *Config) (*Dexon, error) {
 		}
 		cacheConfig = &core.CacheConfig{Disabled: config.NoPruning, TrieCleanLimit: config.TrieCleanCache, TrieDirtyLimit: config.TrieDirtyCache, TrieTimeLimit: config.TrieTimeout}
 	)
+	vmConfig := [vm.NUMS]interface{}{}
+	vmConfig[vm.EVM] = evmConfig
 	dex.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, dex.chainConfig, dex.engine, vmConfig, nil)
 
 	// Rewind the chain in case of an incompatible config upgrade.
