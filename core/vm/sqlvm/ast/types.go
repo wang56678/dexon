@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/shopspring/decimal"
@@ -27,7 +28,7 @@ type DataType uint16
 
 // DataTypeMajor enums.
 const (
-	DataTypeMajorUnknown DataTypeMajor = iota
+	DataTypeMajorPending DataTypeMajor = iota
 	DataTypeMajorSpecial
 	DataTypeMajorBool
 	DataTypeMajorAddress
@@ -47,8 +48,11 @@ const (
 	DataTypeMinorSpecialDefault DataTypeMinor = 0x02
 )
 
-// DataTypeUnknown for unknown data type.
-const DataTypeUnknown DataType = 0
+// Special data types which are commonly used.
+const (
+	DataTypePending DataType = (DataType(DataTypeMajorPending) << 8) | DataType(DataTypeMinorDontCare)
+	DataTypeBad     DataType = math.MaxUint16
+)
 
 // DecomposeDataType to major and minor part with given data type.
 func DecomposeDataType(t DataType) (DataTypeMajor, DataTypeMinor) {
