@@ -153,33 +153,33 @@ func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
 		3)
 }
 
-func (s *TypesTestSuite) TestGetMinMax() {
+func (s *TypesTestSuite) TestDataTypeGetMinMax() {
 	decAddressMax := decimal.New(2, 0).Pow(decimal.New(common.AddressLength*8, 0)).Sub(dec.One)
 	testcases := []struct {
 		Name     string
 		In       DataType
 		Min, Max decimal.Decimal
-		Err      error
+		Ok       bool
 	}{
-		{"Bool", ComposeDataType(DataTypeMajorBool, 0), dec.False, dec.True, nil},
-		{"Address", ComposeDataType(DataTypeMajorAddress, 0), decimal.Zero, decAddressMax, nil},
-		{"Int8", ComposeDataType(DataTypeMajorInt, 0), decimal.New(-128, 0), decimal.New(127, 0), nil},
-		{"Int16", ComposeDataType(DataTypeMajorInt, 1), decimal.New(-32768, 0), decimal.New(32767, 0), nil},
-		{"UInt8", ComposeDataType(DataTypeMajorUint, 0), decimal.Zero, decimal.New(255, 0), nil},
-		{"UInt16", ComposeDataType(DataTypeMajorUint, 1), decimal.Zero, decimal.New(65535, 0), nil},
-		{"Bytes1", ComposeDataType(DataTypeMajorFixedBytes, 0), decimal.Zero, decimal.New(255, 0), nil},
-		{"Bytes2", ComposeDataType(DataTypeMajorFixedBytes, 1), decimal.Zero, decimal.New(65535, 0), nil},
-		{"Dynamic Bytes", ComposeDataType(DataTypeMajorDynamicBytes, 0), decimal.Zero, decimal.Zero, errors.ErrorCodeGetMinMax},
+		{"Bool", ComposeDataType(DataTypeMajorBool, 0), dec.False, dec.True, true},
+		{"Address", ComposeDataType(DataTypeMajorAddress, 0), decimal.Zero, decAddressMax, true},
+		{"Int8", ComposeDataType(DataTypeMajorInt, 0), decimal.New(-128, 0), decimal.New(127, 0), true},
+		{"Int16", ComposeDataType(DataTypeMajorInt, 1), decimal.New(-32768, 0), decimal.New(32767, 0), true},
+		{"UInt8", ComposeDataType(DataTypeMajorUint, 0), decimal.Zero, decimal.New(255, 0), true},
+		{"UInt16", ComposeDataType(DataTypeMajorUint, 1), decimal.Zero, decimal.New(65535, 0), true},
+		{"Bytes1", ComposeDataType(DataTypeMajorFixedBytes, 0), decimal.Zero, decimal.New(255, 0), true},
+		{"Bytes2", ComposeDataType(DataTypeMajorFixedBytes, 1), decimal.Zero, decimal.New(65535, 0), true},
+		{"Dynamic Bytes", ComposeDataType(DataTypeMajorDynamicBytes, 0), decimal.Zero, decimal.Zero, false},
 	}
 
 	var (
 		min, max decimal.Decimal
-		err      error
+		ok       bool
 	)
 	for _, t := range testcases {
-		min, max, err = GetMinMax(t.In)
-		s.Require().Equal(t.Err, err, "Case: %v. Error not equal: %v != %v", t.Name, t.Err, err)
-		if t.Err != nil {
+		min, max, ok = t.In.GetMinMax()
+		s.Require().Equal(t.Ok, ok, "Case: %v. Ok not equal: %v != %v", t.Name, t.Ok, ok)
+		if !ok {
 			continue
 		}
 

@@ -16,14 +16,6 @@ var (
 	bigIntTen = big.NewInt(10)
 )
 
-type decPair struct {
-	Min, Max decimal.Decimal
-}
-
-var (
-	decPairMap = make(map[DataType]decPair)
-)
-
 // DataTypeMajor defines type for high byte of DataType.
 type DataTypeMajor uint8
 
@@ -152,6 +144,67 @@ func (dt DataType) GetNode() TypeNode {
 	return nil
 }
 
+type decimalMinMaxPair struct {
+	Min, Max decimal.Decimal
+}
+
+var decimalMinMaxMap = func() map[DataType]decimalMinMaxPair {
+	m := make(map[DataType]decimalMinMaxPair)
+
+	// bool
+	{
+		dt := ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
+		m[dt] = decimalMinMaxPair{Min: dec.False, Max: dec.True}
+	}
+
+	// address
+	{
+		dt := ComposeDataType(DataTypeMajorAddress, DataTypeMinorDontCare)
+		bigMax := new(big.Int)
+		bigMax.Lsh(bigIntOne, common.AddressLength*8)
+		bigMax.Sub(bigMax, bigIntOne)
+		max := decimal.NewFromBigInt(bigMax, 0)
+		m[dt] = decimalMinMaxPair{Min: decimal.Zero, Max: max}
+	}
+
+	// uint, bytes{X}
+	for i := uint(0); i <= 0x1f; i++ {
+		dtUint := ComposeDataType(DataTypeMajorUint, DataTypeMinor(i))
+		dtBytes := ComposeDataType(DataTypeMajorFixedBytes, DataTypeMinor(i))
+		bigMax := new(big.Int)
+		bigMax.Lsh(bigIntOne, (i+1)*8)
+		bigMax.Sub(bigMax, bigIntOne)
+		max := decimal.NewFromBigInt(bigMax, 0)
+		m[dtUint] = decimalMinMaxPair{Min: decimal.Zero, Max: max}
+		m[dtBytes] = decimalMinMaxPair{Min: decimal.Zero, Max: max}
+	}
+
+	// int
+	for i := uint(0); i <= 0x1f; i++ {
+		dt := ComposeDataType(DataTypeMajorInt, DataTypeMinor(i))
+		bigMax := new(big.Int)
+		bigMax.Lsh(bigIntOne, (i+1)*8-1)
+		bigMin := new(big.Int)
+		bigMin.Neg(bigMax)
+		bigMax.Sub(bigMax, bigIntOne)
+		min := decimal.NewFromBigInt(bigMin, 0)
+		max := decimal.NewFromBigInt(bigMax, 0)
+		m[dt] = decimalMinMaxPair{Min: min, Max: max}
+	}
+
+	return m
+}()
+
+// GetMinMax returns min, max pair according to given data type.
+func (dt DataType) GetMinMax() (decimal.Decimal, decimal.Decimal, bool) {
+	var (
+		pair decimalMinMaxPair
+		ok   bool
+	)
+	pair, ok = decimalMinMaxMap[dt]
+	return pair.Min, pair.Max, ok
+}
+
 func decimalToBig(d decimal.Decimal) (b *big.Int) {
 	if exponent := int64(d.Exponent()); exponent >= 0 {
 		exp := new(big.Int).Exp(bigIntTen, big.NewInt(exponent), nil)
@@ -252,38 +305,6 @@ func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
 	}
 
 	return decimal.Zero, se.ErrorCodeDecimalDecode
-}
-
-// GetMinMax returns min, max pair according to given data type.
-func GetMinMax(dt DataType) (min, max decimal.Decimal, err error) {
-	cached, ok := decPairMap[dt]
-	if ok {
-		min, max = cached.Min, cached.Max
-		return
-	}
-
-	major, minor := DecomposeDataType(dt)
-	switch major {
-	case DataTypeMajorBool:
-		min, max = dec.False, dec.True
-	case DataTypeMajorAddress:
-		bigUMax := new(big.Int).Lsh(bigIntOne, common.AddressLength*8)
-		max = decimal.NewFromBigInt(bigUMax, 0).Sub(dec.One)
-	case DataTypeMajorInt:
-		bigMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8-1)
-		decMax := decimal.NewFromBigInt(bigMax, 0)
-		min, max = decMax.Neg(), decMax.Sub(dec.One)
-	case DataTypeMajorUint,
-		DataTypeMajorFixedBytes:
-		bigUMax := new(big.Int).Lsh(bigIntOne, (uint(minor)+1)*8)
-		max = decimal.NewFromBigInt(bigUMax, 0).Sub(dec.One)
-	default:
-		err = se.ErrorCodeGetMinMax
-		return
-	}
-
-	decPairMap[dt] = decPair{Max: max, Min: min}
-	return
 }
 
 // DecimalToUint64 convert decimal to uint64.

@@ -110,7 +110,6 @@ const (
 	ErrorCodeInvalidUfixedFractionalDigits
 	ErrorCodeDecimalEncode
 	ErrorCodeDecimalDecode
-	ErrorCodeGetMinMax
 
 	// Runtime Error
 	ErrorCodeInvalidDataType
@@ -142,7 +141,6 @@ var errorCodeMap = [...]string{
 	ErrorCodeInvalidUfixedFractionalDigits: "invalid ufixed fractional digits",
 	ErrorCodeDecimalEncode:                 "decimal encode failed",
 	ErrorCodeDecimalDecode:                 "decimal decode failed",
-	ErrorCodeGetMinMax:                     "get (min, max) failed",
 	// Runtime Error
 	ErrorCodeInvalidDataType:    "invalid data type",
 	ErrorCodeOverflow:           "overflow",
