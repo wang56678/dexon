@@ -188,7 +188,7 @@ func (s *TypesTestSuite) TestDataTypeGetMinMax() {
 	}
 }
 
-func (s *TypesTestSuite) TestSize() {
+func (s *TypesTestSuite) TestDataTypeSize() {
 	testcases := []struct {
 		Name string
 		Dt   DataType
