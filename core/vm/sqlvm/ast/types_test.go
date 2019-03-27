@@ -29,8 +29,7 @@ func (s *TypesTestSuite) requireEncodeAndDecodeDataTypeNoError(
 	s.Require().Zero(code)
 	s.Require().Empty(message)
 	s.Require().Equal(d, encode)
-	decode, err := DataTypeDecode(d)
-	s.Require().NoError(err)
+	decode := d.GetNode()
 	s.Require().Equal(t, decode)
 }
 
@@ -41,8 +40,8 @@ func (s *TypesTestSuite) requireEncodeDataTypeError(input TypeNode) {
 }
 
 func (s *TypesTestSuite) requireDecodeDataTypeError(input DataType) {
-	_, err := DataTypeDecode(input)
-	s.Require().Error(err)
+	decode := input.GetNode()
+	s.Require().Nil(decode)
 }
 
 func (s *TypesTestSuite) TestEncodeAndDecodeDataType() {
@@ -84,12 +83,9 @@ func (s *TypesTestSuite) TestEncodeDataTypeError() {
 
 func (s *TypesTestSuite) TestDecodeDataTypeError() {
 	s.requireDecodeDataTypeError(DataTypeUnknown)
-	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorBool, 1))
-	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorAddress, 1))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorInt, 0x20))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUint, 0x20))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorFixedBytes, 0x20))
-	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorDynamicBytes, 1))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorFixed, 81))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUfixed, 81))
 	s.requireDecodeDataTypeError(ComposeDataType(DataTypeMajorUfixed+0x20, 80))
