@@ -88,7 +88,6 @@ const (
 	notarySetSizeLoc
 	notaryParamAlphaLoc
 	notaryParamBetaLoc
-	dkgSetSizeLoc
 	roundLengthLoc
 	minBlockIntervalLoc
 	fineValuesLoc
@@ -704,8 +703,8 @@ func (s *GovernanceState) PutDKGMPKReady(addr common.Address, ready bool) {
 	}
 	s.setStateBigInt(mapLoc, res)
 }
-func (s *GovernanceState) ClearDKGMPKReadys(dkgSet map[coreTypes.NodeID]struct{}) {
-	for id := range dkgSet {
+func (s *GovernanceState) ClearDKGMPKReadys(notarySet map[coreTypes.NodeID]struct{}) {
+	for id := range notarySet {
 		s.PutDKGMPKReady(IdToAddress(id), false)
 	}
 }
@@ -853,22 +852,6 @@ func (s *GovernanceState) NotaryParamBeta() *big.Int {
 	return s.getStateBigInt(big.NewInt(notaryParamBetaLoc))
 }
 
-// uint256 public dkgSetSize;
-func (s *GovernanceState) DKGSetSize() *big.Int {
-	return s.getStateBigInt(big.NewInt(dkgSetSizeLoc))
-}
-func (s *GovernanceState) CalDKGSetSize() {
-	nodeSetSize := float64(len(s.QualifiedNodes()))
-	setSize := math.Ceil((nodeSetSize*0.6-1)/3)*3 + 1
-
-	if nodeSetSize >= 100 {
-		alpha := float64(s.NotaryParamAlpha().Uint64()) / decimalMultiplier
-		beta := float64(s.NotaryParamBeta().Uint64()) / decimalMultiplier
-		setSize = math.Ceil(alpha*math.Log(nodeSetSize) - beta)
-	}
-	s.setStateBigInt(big.NewInt(dkgSetSizeLoc), big.NewInt(int64(setSize)))
-}
-
 // uint256 public roundLength;
 func (s *GovernanceState) RoundLength() *big.Int {
 	return s.getStateBigInt(big.NewInt(roundLengthLoc))
@@ -1012,7 +995,6 @@ func (s *GovernanceState) Configuration() *params.DexconConfig {
 		LambdaBA:          s.getStateBigInt(big.NewInt(lambdaBALoc)).Uint64(),
 		LambdaDKG:         s.getStateBigInt(big.NewInt(lambdaDKGLoc)).Uint64(),
 		NotarySetSize:     uint32(s.getStateBigInt(big.NewInt(notarySetSizeLoc)).Uint64()),
-		DKGSetSize:        uint32(s.getStateBigInt(big.NewInt(dkgSetSizeLoc)).Uint64()),
 		NotaryParamAlpha:  float32(s.getStateBigInt(big.NewInt(notaryParamAlphaLoc)).Uint64()) / decimalMultiplier,
 		NotaryParamBeta:   float32(s.getStateBigInt(big.NewInt(notaryParamBetaLoc)).Uint64()) / decimalMultiplier,
 		RoundLength:       s.getStateBigInt(big.NewInt(roundLengthLoc)).Uint64(),
@@ -1035,14 +1017,12 @@ func (s *GovernanceState) UpdateConfiguration(cfg *params.DexconConfig) {
 	s.setStateBigInt(big.NewInt(notarySetSizeLoc), big.NewInt(int64(cfg.NotarySetSize)))
 	s.setStateBigInt(big.NewInt(notaryParamAlphaLoc), big.NewInt(int64(cfg.NotaryParamAlpha*decimalMultiplier)))
 	s.setStateBigInt(big.NewInt(notaryParamBetaLoc), big.NewInt(int64(cfg.NotaryParamBeta*decimalMultiplier)))
-	s.setStateBigInt(big.NewInt(dkgSetSizeLoc), big.NewInt(int64(cfg.DKGSetSize)))
 	s.setStateBigInt(big.NewInt(roundLengthLoc), big.NewInt(int64(cfg.RoundLength)))
 	s.setStateBigInt(big.NewInt(minBlockIntervalLoc), big.NewInt(int64(cfg.MinBlockInterval)))
 	s.SetFineValues(cfg.FineValues)
 
 	// Calculate set size.
 	s.CalNotarySetSize()
-	s.CalDKGSetSize()
 }
 
 type rawConfigStruct struct {
@@ -1074,7 +1054,6 @@ func (s *GovernanceState) UpdateConfigurationRaw(cfg *rawConfigStruct) {
 	s.SetFineValues(cfg.FineValues)
 
 	s.CalNotarySetSize()
-	s.CalDKGSetSize()
 }
 
 // event ConfigurationChanged();
@@ -1287,15 +1266,15 @@ func (g *GovernanceContract) useGas(gas uint64) ([]byte, error) {
 	return nil, nil
 }
 
-func (g *GovernanceContract) configDKGSetSize(round *big.Int) *big.Int {
+func (g *GovernanceContract) configNotarySetSize(round *big.Int) *big.Int {
 	s, err := getConfigState(g.evm, round)
 	if err != nil {
 		return big.NewInt(0)
 	}
-	return s.DKGSetSize()
+	return s.NotarySetSize()
 }
 
-func (g *GovernanceContract) getDKGSet(round *big.Int) map[coreTypes.NodeID]struct{} {
+func (g *GovernanceContract) getNotarySet(round *big.Int) map[coreTypes.NodeID]struct{} {
 	crsRound := g.state.CRSRound()
 	var crs common.Hash
 	cmp := round.Cmp(crsRound)
@@ -1320,7 +1299,7 @@ func (g *GovernanceContract) getDKGSet(round *big.Int) map[coreTypes.NodeID]stru
 		crs = state.CRS()
 	}
 
-	target := coreTypes.NewDKGSetTarget(coreCommon.Hash(crs))
+	target := coreTypes.NewNotarySetTarget(coreCommon.Hash(crs))
 	ns := coreTypes.NewNodeSet()
 
 	state, err := getConfigState(g.evm, round)
@@ -1334,17 +1313,17 @@ func (g *GovernanceContract) getDKGSet(round *big.Int) map[coreTypes.NodeID]stru
 		}
 		ns.Add(coreTypes.NewNodeID(mpk))
 	}
-	return ns.GetSubSet(int(g.configDKGSetSize(round).Uint64()), target)
+	return ns.GetSubSet(int(g.configNotarySetSize(round).Uint64()), target)
 }
 
-func (g *GovernanceContract) inDKGSet(round *big.Int, nodeID coreTypes.NodeID) bool {
-	dkgSet := g.getDKGSet(round)
+func (g *GovernanceContract) inNotarySet(round *big.Int, nodeID coreTypes.NodeID) bool {
+	dkgSet := g.getNotarySet(round)
 	_, ok := dkgSet[nodeID]
 	return ok
 }
 
 func (g *GovernanceContract) clearDKG() {
-	dkgSet := g.getDKGSet(g.evm.Round)
+	dkgSet := g.getNotarySet(g.evm.Round)
 	g.state.ClearDKGMasterPublicKeyProposed()
 	g.state.ClearDKGMasterPublicKeys()
 	g.state.ClearDKGComplaintProposed()
@@ -1372,7 +1351,7 @@ func (g *GovernanceContract) addDKGComplaint(comp []byte) ([]byte, error) {
 	// Calculate 2f
 	threshold := new(big.Int).Mul(
 		big.NewInt(2),
-		new(big.Int).Div(g.state.DKGSetSize(), big.NewInt(3)))
+		new(big.Int).Div(g.state.NotarySetSize(), big.NewInt(3)))
 
 	// If 2f + 1 of DKG set is finalized, one can not propose complaint anymore.
 	if g.state.DKGFinalizedsCount().Cmp(threshold) > 0 {
@@ -1397,7 +1376,7 @@ func (g *GovernanceContract) addDKGComplaint(comp []byte) ([]byte, error) {
 	}
 
 	// DKGComplaint must belongs to someone in DKG set.
-	if !g.inDKGSet(round, dkgComplaint.ProposerID) {
+	if !g.inNotarySet(round, dkgComplaint.ProposerID) {
 		return nil, errExecutionReverted
 	}
 
@@ -1475,7 +1454,7 @@ func (g *GovernanceContract) addDKGMasterPublicKey(mpk []byte) ([]byte, error) {
 	// Calculate 2f
 	threshold := new(big.Int).Mul(
 		big.NewInt(2),
-		new(big.Int).Div(g.state.DKGSetSize(), big.NewInt(3)))
+		new(big.Int).Div(g.state.NotarySetSize(), big.NewInt(3)))
 
 	// If 2f + 1 of DKG set is mpk ready, one can not propose mpk anymore.
 	if g.state.DKGMPKReadysCount().Cmp(threshold) > 0 {
@@ -1487,7 +1466,7 @@ func (g *GovernanceContract) addDKGMasterPublicKey(mpk []byte) ([]byte, error) {
 	}
 
 	// DKGMasterPublicKey must belongs to someone in DKG set.
-	if !g.inDKGSet(round, dkgMasterPK.ProposerID) {
+	if !g.inNotarySet(round, dkgMasterPK.ProposerID) {
 		return nil, errExecutionReverted
 	}
 
@@ -1518,7 +1497,7 @@ func (g *GovernanceContract) addDKGMPKReady(ready []byte) ([]byte, error) {
 	}
 
 	// DKGFInalize must belongs to someone in DKG set.
-	if !g.inDKGSet(round, dkgReady.ProposerID) {
+	if !g.inNotarySet(round, dkgReady.ProposerID) {
 		return nil, errExecutionReverted
 	}
 
@@ -1552,7 +1531,7 @@ func (g *GovernanceContract) addDKGFinalize(finalize []byte) ([]byte, error) {
 	}
 
 	// DKGFInalize must belongs to someone in DKG set.
-	if !g.inDKGSet(round, dkgFinalize.ProposerID) {
+	if !g.inNotarySet(round, dkgFinalize.ProposerID) {
 		return nil, errExecutionReverted
 	}
 
@@ -1634,7 +1613,6 @@ func (g *GovernanceContract) register(
 		g.state.emitStaked(caller, value)
 
 		g.state.CalNotarySetSize()
-		g.state.CalDKGSetSize()
 	}
 	return g.useGas(GovernanceActionGasCost)
 }
@@ -1664,7 +1642,6 @@ func (g *GovernanceContract) stake() ([]byte, error) {
 	g.state.emitStaked(caller, value)
 
 	g.state.CalNotarySetSize()
-	g.state.CalDKGSetSize()
 
 	return g.useGas(GovernanceActionGasCost)
 }
@@ -1701,7 +1678,6 @@ func (g *GovernanceContract) unstake(amount *big.Int) ([]byte, error) {
 	g.state.emitUnstaked(caller, amount)
 
 	g.state.CalNotarySetSize()
-	g.state.CalDKGSetSize()
 
 	return g.useGas(GovernanceActionGasCost)
 }
@@ -1782,7 +1758,6 @@ func (g *GovernanceContract) payFine(nodeAddr common.Address) ([]byte, error) {
 	g.state.emitFinePaid(nodeAddr, g.contract.Value())
 
 	g.state.CalNotarySetSize()
-	g.state.CalDKGSetSize()
 
 	return g.useGas(GovernanceActionGasCost)
 }
@@ -1803,7 +1778,7 @@ func (g *GovernanceContract) proposeCRS(nextRound *big.Int, signedCRS []byte) ([
 	}
 
 	threshold := coreUtils.GetDKGThreshold(&coreTypes.Config{
-		DKGSetSize: uint32(g.state.DKGSetSize().Uint64())})
+		NotarySetSize: uint32(g.state.NotarySetSize().Uint64())})
 	dkgGPK, err := g.coreDKGUtils.NewGroupPublicKey(&g.state, nextRound, threshold)
 	if err != nil {
 		return nil, errExecutionReverted
@@ -1954,9 +1929,9 @@ func (g *GovernanceContract) resetDKG(newSignedCRS []byte) ([]byte, error) {
 	// Calculate 2f
 	threshold := new(big.Int).Mul(
 		big.NewInt(2),
-		new(big.Int).Div(g.state.DKGSetSize(), big.NewInt(3)))
+		new(big.Int).Div(g.state.NotarySetSize(), big.NewInt(3)))
 	tsigThreshold := coreUtils.GetDKGThreshold(&coreTypes.Config{
-		DKGSetSize: uint32(g.state.DKGSetSize().Uint64())})
+		NotarySetSize: uint32(g.state.NotarySetSize().Uint64())})
 
 	// If 2f + 1 of DKG set is finalized, check if DKG succeeded.
 	if g.state.DKGFinalizedsCount().Cmp(threshold) > 0 {
@@ -2248,12 +2223,6 @@ func (g *GovernanceContract) Run(evm *EVM, input []byte, contract *Contract) (re
 		return res, nil
 	case "dkgRound":
 		res, err := method.Outputs.Pack(g.state.DKGRound())
-		if err != nil {
-			return nil, errExecutionReverted
-		}
-		return res, nil
-	case "dkgSetSize":
-		res, err := method.Outputs.Pack(g.state.DKGSetSize())
 		if err != nil {
 			return nil, errExecutionReverted
 		}
