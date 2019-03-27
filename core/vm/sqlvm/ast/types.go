@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"database/sql"
 	"fmt"
 	"math"
 	"math/big"
@@ -15,6 +16,16 @@ import (
 var (
 	bigIntOne = big.NewInt(1)
 	bigIntTen = big.NewInt(10)
+)
+
+// BoolValue represents a boolean value used by SQL three-valued logic.
+type BoolValue uint8
+
+// Define valid values for SQL boolean type. The zero value is invalid.
+const (
+	BoolValueTrue    BoolValue = 1
+	BoolValueFalse   BoolValue = 2
+	BoolValueUnknown BoolValue = 3
 )
 
 // DataTypeMajor defines type for high byte of DataType.
@@ -53,6 +64,90 @@ const (
 	DataTypePending DataType = (DataType(DataTypeMajorPending) << 8) | DataType(DataTypeMinorDontCare)
 	DataTypeBad     DataType = math.MaxUint16
 )
+
+// Valid returns whether a BoolValue is valid.
+func (v BoolValue) Valid() bool {
+	return v-1 < 3
+}
+
+var boolValueStringMap = [3]string{
+	BoolValueTrue - 1:    "TRUE",
+	BoolValueFalse - 1:   "FALSE",
+	BoolValueUnknown - 1: "UNKNOWN",
+}
+
+// String returns a string for printing a BoolValue.
+func (v BoolValue) String() string {
+	return boolValueStringMap[v-1]
+}
+
+var boolValueNullBoolMap = [3]sql.NullBool{
+	BoolValueTrue - 1:    {Valid: true, Bool: true},
+	BoolValueFalse - 1:   {Valid: true, Bool: false},
+	BoolValueUnknown - 1: {Valid: false, Bool: false},
+}
+
+// NullBool converts a BoolValue to a sql.NullBool.
+func (v BoolValue) NullBool() sql.NullBool {
+	return boolValueNullBoolMap[v-1]
+}
+
+var boolValueAndTruthTable = [3][3]BoolValue{
+	BoolValueTrue - 1: {
+		BoolValueTrue - 1:    BoolValueTrue,
+		BoolValueFalse - 1:   BoolValueFalse,
+		BoolValueUnknown - 1: BoolValueUnknown,
+	},
+	BoolValueFalse - 1: {
+		BoolValueTrue - 1:    BoolValueFalse,
+		BoolValueFalse - 1:   BoolValueFalse,
+		BoolValueUnknown - 1: BoolValueFalse,
+	},
+	BoolValueUnknown - 1: {
+		BoolValueTrue - 1:    BoolValueUnknown,
+		BoolValueFalse - 1:   BoolValueFalse,
+		BoolValueUnknown - 1: BoolValueUnknown,
+	},
+}
+
+// And returns v AND v2.
+func (v BoolValue) And(v2 BoolValue) BoolValue {
+	return boolValueAndTruthTable[v-1][v2-1]
+}
+
+var boolValueOrTruthTable = [3][3]BoolValue{
+	BoolValueTrue - 1: {
+		BoolValueTrue - 1:    BoolValueTrue,
+		BoolValueFalse - 1:   BoolValueTrue,
+		BoolValueUnknown - 1: BoolValueTrue,
+	},
+	BoolValueFalse - 1: {
+		BoolValueTrue - 1:    BoolValueTrue,
+		BoolValueFalse - 1:   BoolValueFalse,
+		BoolValueUnknown - 1: BoolValueUnknown,
+	},
+	BoolValueUnknown - 1: {
+		BoolValueTrue - 1:    BoolValueTrue,
+		BoolValueFalse - 1:   BoolValueUnknown,
+		BoolValueUnknown - 1: BoolValueUnknown,
+	},
+}
+
+// Or returns v OR v2.
+func (v BoolValue) Or(v2 BoolValue) BoolValue {
+	return boolValueOrTruthTable[v-1][v2-1]
+}
+
+var boolValueNotTruthTable = [3]BoolValue{
+	BoolValueTrue - 1:    BoolValueFalse,
+	BoolValueFalse - 1:   BoolValueTrue,
+	BoolValueUnknown - 1: BoolValueUnknown,
+}
+
+// Not returns NOT v.
+func (v BoolValue) Not() BoolValue {
+	return boolValueNotTruthTable[v-1]
+}
 
 // DecomposeDataType to major and minor part with given data type.
 func DecomposeDataType(t DataType) (DataTypeMajor, DataTypeMinor) {

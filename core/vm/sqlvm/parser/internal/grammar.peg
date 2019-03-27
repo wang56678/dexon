@@ -912,7 +912,11 @@ BoolLiteral
 	node := &ast.BoolValueNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
-	node.V = bytes.EqualFold(b.([]byte), []byte("TRUE"))
+	if bytes.EqualFold(b.([]byte), []byte("TRUE")) {
+		node.V = ast.BoolValueTrue
+	} else {
+		node.V = ast.BoolValueFalse
+	}
 	return node, nil
 }
 
