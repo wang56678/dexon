@@ -101,60 +101,55 @@ func (dt DataType) Size() uint8 {
 	}
 }
 
-// DataTypeDecode decodes DataType into data type node.
-func DataTypeDecode(t DataType) (TypeNode, error) {
-	major, minor := DecomposeDataType(t)
+// GetNode constructs an AST node from a data type.
+func (dt DataType) GetNode() TypeNode {
+	major, minor := DecomposeDataType(dt)
 	switch major {
-	// TODO(wmin0): define unsupported error for special type.
 	case DataTypeMajorBool:
-		if minor == 0 {
-			return &BoolTypeNode{}, nil
-		}
+		return &BoolTypeNode{}
 	case DataTypeMajorAddress:
-		if minor == 0 {
-			return &AddressTypeNode{}, nil
-		}
+		return &AddressTypeNode{}
 	case DataTypeMajorInt:
 		if minor <= 0x1f {
 			size := (uint32(minor) + 1) * 8
-			return &IntTypeNode{Unsigned: false, Size: size}, nil
+			return &IntTypeNode{Unsigned: false, Size: size}
 		}
 	case DataTypeMajorUint:
 		if minor <= 0x1f {
 			size := (uint32(minor) + 1) * 8
-			return &IntTypeNode{Unsigned: true, Size: size}, nil
+			return &IntTypeNode{Unsigned: true, Size: size}
 		}
 	case DataTypeMajorFixedBytes:
 		if minor <= 0x1f {
 			size := uint32(minor) + 1
-			return &FixedBytesTypeNode{Size: size}, nil
+			return &FixedBytesTypeNode{Size: size}
 		}
 	case DataTypeMajorDynamicBytes:
-		if minor == 0 {
-			return &DynamicBytesTypeNode{}, nil
-		}
+		return &DynamicBytesTypeNode{}
 	}
 	switch {
 	case major.IsFixedRange():
 		if minor <= 80 {
 			size := (uint32(major-DataTypeMajorFixed) + 1) * 8
+			fractionalDigits := uint32(minor)
 			return &FixedTypeNode{
 				Unsigned:         false,
 				Size:             size,
-				FractionalDigits: uint32(minor),
-			}, nil
+				FractionalDigits: fractionalDigits,
+			}
 		}
 	case major.IsUfixedRange():
 		if minor <= 80 {
 			size := (uint32(major-DataTypeMajorUfixed) + 1) * 8
+			fractionalDigits := uint32(minor)
 			return &FixedTypeNode{
 				Unsigned:         true,
 				Size:             size,
-				FractionalDigits: uint32(minor),
-			}, nil
+				FractionalDigits: fractionalDigits,
+			}
 		}
 	}
-	return nil, se.ErrorCodeDataTypeDecode
+	return nil
 }
 
 func decimalToBig(d decimal.Decimal) (b *big.Int) {
