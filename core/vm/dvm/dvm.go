@@ -159,31 +159,31 @@ func (dvm *DVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 	// 	}
 
 	// Fail if we're trying to execute above the call depth limit
-	if dvm.depth > int(params.CallCreateDepth) {
+	if in.(*DVM).depth > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
-	if !dvm.Context.CanTransfer(dvm.StateDB(), caller.Address(), value) {
+	if !in.(*DVM).Context.CanTransfer(in.(*DVM).StateDB(), caller.Address(), value) {
 		return nil, gas, vm.ErrInsufficientBalance
 	}
 
 	var (
 		to       = vm.AccountRef(addr)
-		snapshot = dvm.StateDB().Snapshot()
+		snapshot = in.(*DVM).StateDB().Snapshot()
 	)
-	if !dvm.StateDB().Exist(addr) {
+	if !in.(*DVM).StateDB().Exist(addr) {
 		precompiles := vm.PrecompiledContractsByzantium
 		if precompiles[addr] == nil && value.Sign() == 0 {
 			return nil, gas, nil
 		}
-		dvm.StateDB().CreateAccount(addr)
+		in.(*DVM).StateDB().CreateAccount(addr)
 	}
-	dvm.Transfer(dvm.StateDB(), caller.Address(), to.Address(), value)
+	in.(*DVM).Transfer(in.(*DVM).StateDB(), caller.Address(), to.Address(), value)
 
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
 	contract := vm.NewContract(caller, to, value, gas)
-	code := dvm.StateDB().GetCode(addr)
+	code := in.(*DVM).StateDB().GetCode(addr)
 	if len(code) > 0 && code[0] == vm.DVM && vm.MULTIVM {
 		code = code[1:]
 	}
@@ -191,13 +191,13 @@ func (dvm *DVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 	contract.SetCodeOptionalHash(&addr, &codeAndHash)
 
 	// Even if the account has no code, we need to continue because it might be a precompile
-	ret, err := dvm.run(contract, input, false)
+	ret, err := in.(*DVM).run(contract, input, false)
 
 	// When an error was returned by the DVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
-		dvm.StateDB().RevertToSnapshot(snapshot)
+		in.(*DVM).StateDB().RevertToSnapshot(snapshot)
 		if err != errExecutionReverted {
 			contract.UseGas(contract.Gas)
 		}
@@ -439,7 +439,6 @@ func (dvm *DVM) run(contract *vm.Contract, input []byte, ro bool) ([]byte, error
 	dvm.depth++
 	defer func() { dvm.depth-- }()
 
-	fmt.Printf("contract.Code %v\n", contract.Code)
 	dvm.contract = contract
 	dvm.contract.Input = input
 
