@@ -135,7 +135,7 @@ type Valuer interface {
 // BoolValueNode is a boolean constant.
 type BoolValueNode struct {
 	UntaggedExprNodeBase
-	V bool
+	V BoolValue
 }
 
 var _ ExprNode = (*BoolValueNode)(nil)

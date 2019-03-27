@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"database/sql"
 	"testing"
 
 	"github.com/shopspring/decimal"
@@ -232,6 +233,79 @@ func (s *TypesTestSuite) TestDecimalToUint64() {
 		u, err := DecimalToUint64(t.d)
 		s.Require().Equalf(t.err, err, "err not match. testcase: %v", i)
 		s.Require().Equalf(t.u, u, "result not match. testcase: %v", i)
+	}
+}
+
+func (s *TypesTestSuite) TestBoolValueValidity() {
+	var v BoolValue
+	s.Require().False(v.Valid())
+	s.Require().Panics(func() { _ = v.String() })
+	s.Require().Panics(func() { _ = v.NullBool() })
+	v = BoolValue(1)
+	s.Require().True(v.Valid())
+	s.Require().Equal("TRUE", v.String())
+	s.Require().Equal(sql.NullBool{Valid: true, Bool: true}, v.NullBool())
+	v = BoolValue(4)
+	s.Require().False(v.Valid())
+	s.Require().Panics(func() { _ = v.String() })
+	s.Require().Panics(func() { _ = v.NullBool() })
+}
+
+func (s *TypesTestSuite) TestBoolValueOperations() {
+	and := func(v, v2 BoolValue) BoolValue {
+		if v == BoolValueFalse || v2 == BoolValueFalse {
+			return BoolValueFalse
+		}
+		if v == BoolValueUnknown || v2 == BoolValueUnknown {
+			return BoolValueUnknown
+		}
+		// v is true.
+		return v2
+	}
+	or := func(v, v2 BoolValue) BoolValue {
+		if v == BoolValueTrue || v2 == BoolValueTrue {
+			return BoolValueTrue
+		}
+		if v == BoolValueUnknown || v2 == BoolValueUnknown {
+			return BoolValueUnknown
+		}
+		// v is false.
+		return v2
+	}
+	not := func(v BoolValue) BoolValue {
+		switch v {
+		case BoolValueTrue:
+			return BoolValueFalse
+		case BoolValueFalse:
+			return BoolValueTrue
+		case BoolValueUnknown:
+			return BoolValueUnknown
+		}
+		// v is invalid.
+		return v
+	}
+	values := [3]BoolValue{BoolValueTrue, BoolValueFalse, BoolValueUnknown}
+	for _, v := range values {
+		for _, v2 := range values {
+			expected := and(v, v2)
+			actual := v.And(v2)
+			s.Require().Equalf(expected, actual,
+				"%v AND %v = %v, but %v is returned", v, v2, expected, actual)
+		}
+	}
+	for _, v := range values {
+		for _, v2 := range values {
+			expected := or(v, v2)
+			actual := v.Or(v2)
+			s.Require().Equalf(expected, actual,
+				"%v OR %v = %v, but %v is returned", v, v2, expected, actual)
+		}
+	}
+	for _, v := range values {
+		expected := not(v)
+		actual := v.Not()
+		s.Require().Equalf(expected, actual,
+			"NOT %v = %v, but %v is returned", v, expected, actual)
 	}
 }
 
