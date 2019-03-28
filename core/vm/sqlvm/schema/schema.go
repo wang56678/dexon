@@ -61,6 +61,9 @@ func (a ColumnAttr) GetDerivedFlags() ColumnAttr {
 	return a & mask
 }
 
+// FunctionRef defines the type for number of builtin function.
+type FunctionRef uint16
+
 // TableRef defines the type for table index in Schema.
 type TableRef uint8
 
@@ -261,9 +264,28 @@ func (c *Column) DecodeRLP(s *rlp.Stream) error {
 	return nil
 }
 
+// FunctionDescriptor identifies a function.
+type FunctionDescriptor struct {
+	Function FunctionRef
+}
+
+var _ ast.IdentifierDescriptor = (*FunctionDescriptor)(nil)
+
+// GetDescriptor is a useless function to satisfy the interface.
+func (d FunctionDescriptor) GetDescriptor() uint32 {
+	return uint32(0)<<24 | uint32(d.Function)<<8
+}
+
 // TableDescriptor identifies a table in a schema by an array index.
 type TableDescriptor struct {
 	Table TableRef
+}
+
+var _ ast.IdentifierDescriptor = (*TableDescriptor)(nil)
+
+// GetDescriptor is a useless function to satisfy the interface.
+func (d TableDescriptor) GetDescriptor() uint32 {
+	return uint32(1)<<24 | uint32(d.Table)<<16
 }
 
 // ColumnDescriptor identifies a column in a schema by array indices.
@@ -272,14 +294,35 @@ type ColumnDescriptor struct {
 	Column ColumnRef
 }
 
+var _ ast.IdentifierDescriptor = (*ColumnDescriptor)(nil)
+
+// GetDescriptor is a useless function to satisfy the interface.
+func (d ColumnDescriptor) GetDescriptor() uint32 {
+	return uint32(2)<<24 | uint32(d.Table)<<16 | uint32(d.Column)<<8
+}
+
 // IndexDescriptor identifies a index in a schema by array indices.
 type IndexDescriptor struct {
 	Table TableRef
 	Index IndexRef
 }
 
+var _ ast.IdentifierDescriptor = (*IndexDescriptor)(nil)
+
+// GetDescriptor is a useless function to satisfy the interface.
+func (d IndexDescriptor) GetDescriptor() uint32 {
+	return uint32(3)<<24 | uint32(d.Table)<<16 | uint32(d.Index)<<8
+}
+
 // SelectColumnDescriptor identifies a column specified in a select command by
 // an array index.
 type SelectColumnDescriptor struct {
 	SelectColumn SelectColumnRef
+}
+
+var _ ast.IdentifierDescriptor = (*SelectColumnDescriptor)(nil)
+
+// GetDescriptor is a useless function to satisfy the interface.
+func (d SelectColumnDescriptor) GetDescriptor() uint32 {
+	return uint32(4)<<24 | uint32(d.SelectColumn)<<8
 }

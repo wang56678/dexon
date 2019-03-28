@@ -105,10 +105,18 @@ func (n *TaggedExprNodeBase) SetType(t DataType) {
 	n.Type = t
 }
 
+// IdentifierDescriptor defines the interface of a descriptor. A descriptor
+// identifies an object in a SQL statement. This interface is intended to be
+// used by IdentifierNode to store the target after the name is resolved.
+type IdentifierDescriptor interface {
+	GetDescriptor() uint32
+}
+
 // IdentifierNode references table, column, or function.
 type IdentifierNode struct {
 	TaggedExprNodeBase
 	Name []byte
+	Desc IdentifierDescriptor
 }
 
 var _ ExprNode = (*IdentifierNode)(nil)
