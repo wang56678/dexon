@@ -54,7 +54,7 @@ func createSchema(storage *common.Storage, raws []*raw) {
 		storage.Schema[1].Columns[i] = schema.NewColumn(
 			[]byte{byte(i)},
 			ast.ComposeDataType(raws[i].major, raws[i].minor),
-			0, 0, 0, 0,
+			0, nil, 0,
 		)
 	}
 	storage.Schema.SetupColumnOffset()

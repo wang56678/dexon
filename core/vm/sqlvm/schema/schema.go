@@ -158,14 +158,13 @@ type Index struct {
 }
 
 type column struct {
-	Name          []byte
-	Type          ast.DataType
-	Attr          ColumnAttr
-	ForeignTable  TableRef
-	ForeignColumn ColumnRef
-	Sequence      SequenceRef
-	SlotOffset    uint8
-	ByteOffset    uint8
+	Name        []byte
+	Type        ast.DataType
+	Attr        ColumnAttr
+	ForeignKeys []ColumnDescriptor
+	Sequence    SequenceRef
+	SlotOffset  uint8
+	ByteOffset  uint8
 	// Rest is a special field reserved for use in EncodeRLP. The value stored
 	// in it will be overwritten every time EncodeRLP is called.
 	Rest interface{}
@@ -178,15 +177,14 @@ type Column struct {
 }
 
 // NewColumn return a Column instance.
-func NewColumn(Name []byte, Type ast.DataType, Attr ColumnAttr, Sequence SequenceRef,
-	FT TableRef, FC ColumnRef) Column {
+func NewColumn(Name []byte, Type ast.DataType, Attr ColumnAttr,
+	ForeignKeys []ColumnDescriptor, Sequence SequenceRef) Column {
 	c := column{
-		Name:          Name,
-		Type:          Type,
-		Attr:          Attr,
-		Sequence:      Sequence,
-		ForeignTable:  FT,
-		ForeignColumn: FC,
+		Name:        Name,
+		Type:        Type,
+		Attr:        Attr,
+		ForeignKeys: ForeignKeys,
+		Sequence:    Sequence,
 	}
 
 	return Column{

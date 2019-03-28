@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"io/ioutil"
+	"reflect"
 	"testing"
 
 	"github.com/shopspring/decimal"
@@ -16,6 +17,39 @@ import (
 
 type SchemaTestSuite struct{ suite.Suite }
 
+func (s *SchemaTestSuite) normalizeEmptySlice(i interface{}) {
+	var process func(reflect.Type, reflect.Value)
+	process = func(t reflect.Type, v reflect.Value) {
+		switch t.Kind() {
+		case reflect.Ptr:
+			process(t.Elem(), v.Elem())
+		case reflect.Array:
+			l := v.Len()
+			for i := 0; i < l; i++ {
+				process(t.Elem(), v.Index(i))
+			}
+		case reflect.Slice:
+			if v.IsNil() {
+				s := reflect.MakeSlice(t, 0, 0)
+				v.Set(s)
+			} else {
+				l := v.Len()
+				for i := 0; i < l; i++ {
+					process(t.Elem(), v.Index(i))
+				}
+			}
+		case reflect.Struct:
+			l := t.NumField()
+			for i := 0; i < l; i++ {
+				ft := t.Field(i).Type
+				fv := v.Field(i)
+				process(ft, fv)
+			}
+		}
+	}
+	process(reflect.TypeOf(i), reflect.ValueOf(i))
+}
+
 func (s *SchemaTestSuite) requireEncodeAndDecodeColumnNoError(c Column) {
 	buffer := bytes.Buffer{}
 	w := bufio.NewWriter(&buffer)
@@ -25,6 +59,9 @@ func (s *SchemaTestSuite) requireEncodeAndDecodeColumnNoError(c Column) {
 	c2 := Column{}
 	r := ioutil.NopCloser(bufio.NewReader(&buffer))
 	s.Require().NoError(rlp.Decode(r, &c2))
+
+	s.normalizeEmptySlice(&c.column)
+	s.normalizeEmptySlice(&c2.column)
 	s.Require().Equal(c, c2)
 }
 
