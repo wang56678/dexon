@@ -15,7 +15,6 @@ import (
 
 var (
 	bigIntOne = big.NewInt(1)
-	bigIntTen = big.NewInt(10)
 )
 
 // BoolValue represents a boolean value used by SQL three-valued logic.
@@ -304,15 +303,9 @@ func (dt DataType) GetMinMax() (decimal.Decimal, decimal.Decimal, bool) {
 	return pair.Min, pair.Max, ok
 }
 
-func decimalToBig(d decimal.Decimal) (b *big.Int) {
-	if exponent := int64(d.Exponent()); exponent >= 0 {
-		exp := new(big.Int).Exp(bigIntTen, big.NewInt(exponent), nil)
-		b = new(big.Int).Mul(d.Coefficient(), exp)
-	} else {
-		exp := new(big.Int).Exp(bigIntTen, big.NewInt(-exponent), nil)
-		b = new(big.Int).Div(d.Coefficient(), exp)
-	}
-	return
+func decimalToBig(d decimal.Decimal) *big.Int {
+	d = d.Rescale(0)
+	return d.Coefficient()
 }
 
 // Don't handle overflow here.

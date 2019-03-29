@@ -156,7 +156,7 @@ func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
 }
 
 func (s *TypesTestSuite) TestDataTypeGetMinMax() {
-	decAddressMax := decimal.New(2, 0).Pow(decimal.New(common.AddressLength*8, 0)).Sub(dec.One)
+	decAddressMax := decimal.Two.Pow(decimal.New(common.AddressLength*8, 0)).Sub(decimal.One)
 	testcases := []struct {
 		Name     string
 		In       DataType

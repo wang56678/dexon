@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/dexon-foundation/decimal"
@@ -106,12 +105,10 @@ func convertDecimalError(err error) errors.ErrorCode {
 	if err == nil {
 		return errors.ErrorCodeNil
 	}
-	errStr := err.Error()
-	if strings.HasSuffix(errStr, "decimal: fractional part too long") {
+	switch err.(type) {
+	case *decimal.ErrorExponentLimit:
 		return errors.ErrorCodeFractionalPartTooLong
-	} else if strings.HasSuffix(errStr, "decimal: exponent is not numeric") {
-		return errors.ErrorCodeInvalidNumberSyntax
-	} else if strings.HasSuffix(errStr, "decimal: too many .s") {
+	case *decimal.ErrorInvalidFormat:
 		return errors.ErrorCodeInvalidNumberSyntax
 	}
 	panic(fmt.Sprintf("unknown decimal error: %v", err))
