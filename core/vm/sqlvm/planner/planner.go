@@ -1,7 +1,7 @@
 package planner
 
 import (
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/common"
@@ -22,12 +22,9 @@ type planner struct {
 }
 
 func (planner *planner) planInsert(stmt *ast.InsertStmtNode) (PlanStep, error) {
-	tableIdx, ok := findTableIdxByName(planner.schema, stmt.Table.Name)
-	if !ok {
-		panic("Invalid table name.")
-	}
-	planner.tableRef = tableIdx
-	planner.table = &planner.schema[tableIdx]
+	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
+	planner.tableRef = tableDesc.Table
+	planner.table = &planner.schema[planner.tableRef]
 
 	plan := &InsertStep{}
 	plan.Table = planner.tableRef
@@ -36,11 +33,7 @@ func (planner *planner) planInsert(stmt *ast.InsertStmtNode) (PlanStep, error) {
 	case *ast.InsertWithColumnOptionNode:
 		plan.Columns = make([]schema.ColumnRef, len(node.Column))
 		for i, node := range node.Column {
-			columnIdx, ok := findColumnIdxByName(planner.table, node.Name)
-			if !ok {
-				panic("Invalid column name.")
-			}
-			plan.Columns[i] = columnIdx
+			plan.Columns[i] = node.Desc.(*schema.ColumnDescriptor).Column
 		}
 		plan.Values = node.Value
 	case *ast.InsertWithDefaultOptionNode:
@@ -67,10 +60,12 @@ func (planner *planner) mergeAndHashKeys(cl *clause) {
 	rightColMap := make([]int, len(cl.SubCls[1].ColumnSet))
 	for i, j, k := 0, 0, 0; k < colNum; {
 		switch {
-		case i < len(leftCols) && leftCols[i] == cl.ColumnSet[k]:
+		case i < len(leftCols) &&
+			compareColumn(leftCols[i], cl.ColumnSet[k]) == 0:
 			leftColMap[i] = k
 			i++
-		case j < len(rightCols) && rightCols[j] == cl.ColumnSet[k]:
+		case j < len(rightCols) &&
+			compareColumn(rightCols[j], cl.ColumnSet[k]) == 0:
 			rightColMap[j] = k
 			j++
 		default:
@@ -138,14 +133,15 @@ func (planner *planner) parseClause(node ast.ExprNode) (*clause, error) {
 	switch op := node.(type) {
 	case *ast.IdentifierNode:
 		// Column.
-		// TODO(yenlin): bool column is directly enumerable.
-		colIdx, ok := findColumnIdxByName(planner.table, op.Name)
-		if !ok {
+		switch desc := op.Desc.(type) {
+		case *schema.ColumnDescriptor:
+			cl.ColumnSet = []*schema.ColumnDescriptor{desc}
+		default:
 			// This is function name.
 			// TODO(yenlin): distinguish function name from column names.
 			break
 		}
-		cl.ColumnSet = []schema.ColumnRef{colIdx}
+		// TODO(yenlin): bool column is directly enumerable.
 		cl.Attr |= clauseAttrColumn
 	case ast.Valuer:
 		// Constant value.
@@ -272,8 +268,14 @@ func (planner *planner) planWhereclause(
 		for i, index := range planner.table.Indices {
 			var plan PlanStep
 
-			// NOTICE: we need the index.Columns in ascending order.
-			columnSet := (ColumnSet)(index.Columns)
+			var columnSet ColumnSet
+			columnSet = make([]*schema.ColumnDescriptor, len(index.Columns))
+			for i := range columnSet {
+				columnSet[i] = &schema.ColumnDescriptor{
+					Table:  planner.tableRef,
+					Column: index.Columns[i],
+				}
+			}
 			if clause.Attr&clauseAttrEnumerable != 0 &&
 				columnSet.Equal(clause.ColumnSet) {
 				// Values are known for hash.
@@ -363,12 +365,9 @@ func (planner *planner) planSelect(stmt *ast.SelectStmtNode) (PlanStep, error) {
 	if stmt.Table == nil {
 		return planner.planSelectWithoutTable(stmt)
 	}
-	tableIdx, ok := findTableIdxByName(planner.schema, stmt.Table.Name)
-	if !ok {
-		panic("Invalid table name.")
-	}
-	planner.tableRef = tableIdx
-	planner.table = &planner.schema[tableIdx]
+	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
+	planner.tableRef = tableDesc.Table
+	planner.table = &planner.schema[planner.tableRef]
 
 	wherePlan, err := planner.planWhere(stmt.Where)
 	if err != nil {
@@ -407,12 +406,9 @@ func (planner *planner) planSelect(stmt *ast.SelectStmtNode) (PlanStep, error) {
 }
 
 func (planner *planner) planUpdate(stmt *ast.UpdateStmtNode) (PlanStep, error) {
-	tableIdx, ok := findTableIdxByName(planner.schema, stmt.Table.Name)
-	if !ok {
-		panic("Invalid table name.")
-	}
-	planner.tableRef = tableIdx
-	planner.table = &planner.schema[tableIdx]
+	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
+	planner.tableRef = tableDesc.Table
+	planner.table = &planner.schema[planner.tableRef]
 
 	wherePlan, err := planner.planWhere(stmt.Where)
 	if err != nil {
@@ -428,10 +424,7 @@ func (planner *planner) planUpdate(stmt *ast.UpdateStmtNode) (PlanStep, error) {
 		if err != nil {
 			return nil, err
 		}
-		columnIdx, ok := findColumnIdxByName(planner.table, as.Column.Name)
-		if !ok {
-			panic("Invalid column name.")
-		}
+		columnIdx := as.Column.Desc.(*schema.ColumnDescriptor).Column
 		plan.Columns[i] = columnIdx
 		plan.Values[i] = as.Expr
 		plan.ColumnSet = plan.ColumnSet.Join(cl.ColumnSet)
@@ -441,12 +434,9 @@ func (planner *planner) planUpdate(stmt *ast.UpdateStmtNode) (PlanStep, error) {
 }
 
 func (planner *planner) planDelete(stmt *ast.DeleteStmtNode) (PlanStep, error) {
-	tableIdx, ok := findTableIdxByName(planner.schema, stmt.Table.Name)
-	if !ok {
-		panic("Invalid table name.")
-	}
-	planner.tableRef = tableIdx
-	planner.table = &planner.schema[tableIdx]
+	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
+	planner.tableRef = tableDesc.Table
+	planner.table = &planner.schema[planner.tableRef]
 
 	wherePlan, err := planner.planWhere(stmt.Where)
 	if err != nil {

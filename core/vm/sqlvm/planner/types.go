@@ -1,7 +1,7 @@
 package planner
 
 import (
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/schema"

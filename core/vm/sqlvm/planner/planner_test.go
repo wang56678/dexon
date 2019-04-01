@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/shopspring/decimal"
+	"github.com/dexon-foundation/decimal"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
@@ -77,11 +77,20 @@ func (s *PlannerTestSuite) TestBasic() {
 	}
 	{
 		stmt := &ast.InsertStmtNode{
-			Table: &ast.IdentifierNode{Name: []byte("table1")},
+			Table: &ast.IdentifierNode{
+				Name: []byte("table1"),
+				Desc: &schema.TableDescriptor{Table: 0},
+			},
 			Insert: &ast.InsertWithColumnOptionNode{
 				Column: []*ast.IdentifierNode{
-					&ast.IdentifierNode{Name: []byte("a")},
-					&ast.IdentifierNode{Name: []byte("b")},
+					&ast.IdentifierNode{
+						Name: []byte("a"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+					},
+					&ast.IdentifierNode{
+						Name: []byte("b"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+					},
 				},
 				Value: [][]ast.ExprNode{
 					[]ast.ExprNode{
@@ -109,24 +118,38 @@ func (s *PlannerTestSuite) TestBasic() {
 	{
 		expr := &ast.AddOperatorNode{
 			BinaryOperatorNode: ast.BinaryOperatorNode{
-				Object:  &ast.IdentifierNode{Name: []byte("b")},
-				Subject: &ast.IdentifierNode{Name: []byte("b")},
+				Object: &ast.IdentifierNode{
+					Name: []byte("b"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+				},
+				Subject: &ast.IdentifierNode{
+					Name: []byte("b"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+				},
 			},
 		}
 		stmt := &ast.UpdateStmtNode{
-			Table: &ast.IdentifierNode{Name: []byte("table1")},
+			Table: &ast.IdentifierNode{
+				Name: []byte("table1"),
+				Desc: &schema.TableDescriptor{Table: 0},
+			},
 			Assignment: []*ast.AssignOperatorNode{
 				&ast.AssignOperatorNode{
-					Column: &ast.IdentifierNode{Name: []byte("a")},
-					Expr:   expr,
+					Column: &ast.IdentifierNode{
+						Name: []byte("a"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+					},
+					Expr: expr,
 				},
 			},
 		}
 		expectedPlan := &UpdateStep{
-			Table:     0,
-			ColumnSet: ColumnSet{1},
-			Columns:   []schema.ColumnRef{0},
-			Values:    []ast.ExprNode{expr},
+			Table: 0,
+			ColumnSet: ColumnSet{
+				&schema.ColumnDescriptor{Table: 0, Column: 1},
+			},
+			Columns: []schema.ColumnRef{0},
+			Values:  []ast.ExprNode{expr},
 			// Children.
 			PlanStepBase: PlanStepBase{
 				Operands: []PlanStep{
@@ -149,21 +172,36 @@ func (s *PlannerTestSuite) TestBasic() {
 		offset := decimal.New(20, 0)
 		stmt := &ast.SelectStmtNode{
 			Column: []ast.ExprNode{
-				&ast.IdentifierNode{Name: []byte("a")},
-				&ast.IdentifierNode{Name: []byte("b")},
+				&ast.IdentifierNode{
+					Name: []byte("a"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+				},
+				&ast.IdentifierNode{
+					Name: []byte("b"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+				},
 			},
-			Table: &ast.IdentifierNode{Name: []byte("table1")},
+			Table: &ast.IdentifierNode{
+				Name: []byte("table1"),
+				Desc: &schema.TableDescriptor{Table: 0},
+			},
 			Where: &ast.WhereOptionNode{
 				Condition: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: &ast.BytesValueNode{V: []byte("valB")},
 					},
 				},
 			},
 			Order: []*ast.OrderOptionNode{
 				&ast.OrderOptionNode{
-					Expr: &ast.IdentifierNode{Name: []byte("c")},
+					Expr: &ast.IdentifierNode{
+						Name: []byte("c"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
 				},
 			},
 			Limit: &ast.LimitOptionNode{
@@ -178,15 +216,28 @@ func (s *PlannerTestSuite) TestBasic() {
 			},
 		}
 		expectedPlan := &SelectStep{
-			Table:     0,
-			ColumnSet: ColumnSet{0, 1, 2},
+			Table: 0,
+			ColumnSet: ColumnSet{
+				&schema.ColumnDescriptor{Table: 0, Column: 0},
+				&schema.ColumnDescriptor{Table: 0, Column: 1},
+				&schema.ColumnDescriptor{Table: 0, Column: 2},
+			},
 			Columns: []ast.ExprNode{
-				&ast.IdentifierNode{Name: []byte("a")},
-				&ast.IdentifierNode{Name: []byte("b")},
+				&ast.IdentifierNode{
+					Name: []byte("a"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+				},
+				&ast.IdentifierNode{
+					Name: []byte("b"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+				},
 			},
 			Order: []*ast.OrderOptionNode{
 				&ast.OrderOptionNode{
-					Expr: &ast.IdentifierNode{Name: []byte("c")},
+					Expr: &ast.IdentifierNode{
+						Name: []byte("c"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
 				},
 			},
 			Limit:  &limit,
@@ -277,11 +328,17 @@ func (s *PlannerTestSuite) TestBasic() {
 	}
 	{
 		stmt := &ast.DeleteStmtNode{
-			Table: &ast.IdentifierNode{Name: []byte("table1")},
+			Table: &ast.IdentifierNode{
+				Name: []byte("table1"),
+				Desc: &schema.TableDescriptor{Table: 0},
+			},
 			Where: &ast.WhereOptionNode{
 				Condition: &ast.GreaterOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: &ast.BytesValueNode{V: []byte("valB")},
 					},
 				},
@@ -297,7 +354,10 @@ func (s *PlannerTestSuite) TestBasic() {
 						Index: 1,
 						Condition: &ast.GreaterOperatorNode{
 							BinaryOperatorNode: ast.BinaryOperatorNode{
-								Object:  &ast.IdentifierNode{Name: []byte("b")},
+								Object: &ast.IdentifierNode{
+									Name: []byte("b"),
+									Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+								},
 								Subject: &ast.BytesValueNode{V: []byte("valB")},
 							},
 						},
@@ -368,12 +428,19 @@ func (s *PlannerTestSuite) TestHashKeys() {
 	{
 		// Test AND merge.
 		cl := &clause{
-			ColumnSet: []schema.ColumnRef{0, 1, 2},
-			Attr:      clauseAttrAnd | clauseAttrEnumerable,
+			ColumnSet: ColumnSet{
+				&schema.ColumnDescriptor{Table: 0, Column: 0},
+				&schema.ColumnDescriptor{Table: 0, Column: 1},
+				&schema.ColumnDescriptor{Table: 0, Column: 2},
+			},
+			Attr: clauseAttrAnd | clauseAttrEnumerable,
 			SubCls: []*clause{
 				&clause{
-					ColumnSet: []schema.ColumnRef{0, 2},
-					Attr:      clauseAttrEnumerable,
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 0},
+						&schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
+					Attr: clauseAttrEnumerable,
 					HashKeys: [][]ast.Valuer{
 						genCombination([]schema.ColumnRef{0, 2}, []int{0, 0}),
 						genCombination([]schema.ColumnRef{0, 2}, []int{1, 1}),
@@ -381,8 +448,10 @@ func (s *PlannerTestSuite) TestHashKeys() {
 					},
 				},
 				&clause{
-					ColumnSet: []schema.ColumnRef{1},
-					Attr:      clauseAttrEnumerable,
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 1},
+					},
+					Attr: clauseAttrEnumerable,
 					HashKeys: [][]ast.Valuer{
 						genCombination([]schema.ColumnRef{1}, []int{0}),
 						genCombination([]schema.ColumnRef{1}, []int{1}),
@@ -404,17 +473,26 @@ func (s *PlannerTestSuite) TestHashKeys() {
 	{
 		// Test AND merge boundary with one size empty.
 		cl := &clause{
-			ColumnSet: []schema.ColumnRef{0, 1, 2},
-			Attr:      clauseAttrAnd | clauseAttrEnumerable,
+			ColumnSet: ColumnSet{
+				&schema.ColumnDescriptor{Table: 0, Column: 0},
+				&schema.ColumnDescriptor{Table: 0, Column: 1},
+				&schema.ColumnDescriptor{Table: 0, Column: 2},
+			},
+			Attr: clauseAttrAnd | clauseAttrEnumerable,
 			SubCls: []*clause{
 				&clause{
-					ColumnSet: []schema.ColumnRef{0, 2},
-					Attr:      clauseAttrEnumerable,
-					HashKeys:  [][]ast.Valuer{},
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 0},
+						&schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
+					Attr:     clauseAttrEnumerable,
+					HashKeys: [][]ast.Valuer{},
 				},
 				&clause{
-					ColumnSet: []schema.ColumnRef{1},
-					Attr:      clauseAttrEnumerable,
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 1},
+					},
+					Attr: clauseAttrEnumerable,
 					HashKeys: [][]ast.Valuer{
 						genCombination([]schema.ColumnRef{1}, []int{0}),
 						genCombination([]schema.ColumnRef{1}, []int{1}),
@@ -426,12 +504,19 @@ func (s *PlannerTestSuite) TestHashKeys() {
 		expectedKeys := [][]ast.Valuer{}
 		s.Require().Equal(expectedKeys, cl.HashKeys)
 		cl = &clause{
-			ColumnSet: []schema.ColumnRef{0, 1, 2},
-			Attr:      clauseAttrAnd | clauseAttrEnumerable,
+			ColumnSet: ColumnSet{
+				&schema.ColumnDescriptor{Table: 0, Column: 0},
+				&schema.ColumnDescriptor{Table: 0, Column: 1},
+				&schema.ColumnDescriptor{Table: 0, Column: 2},
+			},
+			Attr: clauseAttrAnd | clauseAttrEnumerable,
 			SubCls: []*clause{
 				&clause{
-					ColumnSet: []schema.ColumnRef{0, 2},
-					Attr:      clauseAttrEnumerable,
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 0},
+						&schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
+					Attr: clauseAttrEnumerable,
 					HashKeys: [][]ast.Valuer{
 						genCombination([]schema.ColumnRef{0, 2}, []int{0, 0}),
 						genCombination([]schema.ColumnRef{0, 2}, []int{1, 1}),
@@ -439,9 +524,11 @@ func (s *PlannerTestSuite) TestHashKeys() {
 					},
 				},
 				&clause{
-					ColumnSet: []schema.ColumnRef{1},
-					Attr:      clauseAttrEnumerable,
-					HashKeys:  [][]ast.Valuer{},
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 1},
+					},
+					Attr:     clauseAttrEnumerable,
+					HashKeys: [][]ast.Valuer{},
 				},
 			},
 		}
@@ -452,20 +539,29 @@ func (s *PlannerTestSuite) TestHashKeys() {
 	{
 		// Test OR merge.
 		cl := &clause{
-			ColumnSet: []schema.ColumnRef{0, 2},
-			Attr:      clauseAttrOr | clauseAttrEnumerable,
+			ColumnSet: ColumnSet{
+				&schema.ColumnDescriptor{Table: 0, Column: 0},
+				&schema.ColumnDescriptor{Table: 0, Column: 2},
+			},
+			Attr: clauseAttrOr | clauseAttrEnumerable,
 			SubCls: []*clause{
 				&clause{
-					ColumnSet: []schema.ColumnRef{0, 2},
-					Attr:      clauseAttrEnumerable,
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 0},
+						&schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
+					Attr: clauseAttrEnumerable,
 					HashKeys: [][]ast.Valuer{
 						genCombination([]schema.ColumnRef{0, 2}, []int{0, 0}),
 						genCombination([]schema.ColumnRef{0, 2}, []int{1, 1}),
 					},
 				},
 				&clause{
-					ColumnSet: []schema.ColumnRef{0, 2},
-					Attr:      clauseAttrEnumerable,
+					ColumnSet: ColumnSet{
+						&schema.ColumnDescriptor{Table: 0, Column: 0},
+						&schema.ColumnDescriptor{Table: 0, Column: 2},
+					},
+					Attr: clauseAttrEnumerable,
 					HashKeys: [][]ast.Valuer{
 						genCombination([]schema.ColumnRef{0, 2}, []int{1, 2}),
 						genCombination([]schema.ColumnRef{0, 2}, []int{2, 1}),
@@ -487,7 +583,7 @@ func (s *PlannerTestSuite) TestHashKeys() {
 }
 
 func (s *PlannerTestSuite) TestClauseAttr() {
-	var schema schema.Schema = []schema.Table{
+	var dbSchema schema.Schema = []schema.Table{
 		s.createTable(
 			[]byte("table1"),
 			[][]byte{
@@ -503,16 +599,22 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		),
 	}
 	planner := planner{
-		schema: schema,
-		table:  &schema[0],
+		schema:   dbSchema,
+		table:    &dbSchema[0],
+		tableRef: 0,
 	}
 
 	{
-		node := &ast.IdentifierNode{Name: []byte("a")}
+		node := &ast.IdentifierNode{
+			Name: []byte("a"),
+			Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+		}
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrColumn, cl.Attr)
-		s.Require().Equal(ColumnSet{0}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+		}, cl.ColumnSet)
 		s.Require().Zero(cl.HashKeys)
 	}
 	{
@@ -527,27 +629,37 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		valA := &ast.BytesValueNode{V: []byte("valA")}
 		node := &ast.EqualOperatorNode{
 			BinaryOperatorNode: ast.BinaryOperatorNode{
-				Object:  &ast.IdentifierNode{Name: []byte("a")},
+				Object: &ast.IdentifierNode{
+					Name: []byte("a"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+				},
 				Subject: valA,
 			},
 		}
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrEnumerable, cl.Attr)
-		s.Require().Equal(ColumnSet{0}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+		}, cl.ColumnSet)
 		s.Require().Equal([][]ast.Valuer{[]ast.Valuer{valA}}, cl.HashKeys)
 	}
 	{
 		node := &ast.GreaterOrEqualOperatorNode{
 			BinaryOperatorNode: ast.BinaryOperatorNode{
-				Object:  &ast.IdentifierNode{Name: []byte("a")},
+				Object: &ast.IdentifierNode{
+					Name: []byte("a"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+				},
 				Subject: &ast.BytesValueNode{V: []byte("valA")},
 			},
 		}
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Zero(cl.Attr)
-		s.Require().Equal(ColumnSet{0}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+		}, cl.ColumnSet)
 		s.Require().Zero(cl.HashKeys)
 	}
 	{
@@ -557,13 +669,19 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 			BinaryOperatorNode: ast.BinaryOperatorNode{
 				Object: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: valB,
 					},
 				},
 				Subject: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("a")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("a"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+						},
 						Subject: valA,
 					},
 				},
@@ -572,7 +690,10 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrEnumerable|clauseAttrAnd, cl.Attr)
-		s.Require().Equal(ColumnSet{0, 1}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+			&schema.ColumnDescriptor{Table: 0, Column: 1},
+		}, cl.ColumnSet)
 		s.Require().Equal([][]ast.Valuer{
 			[]ast.Valuer{valA, valB},
 		}, cl.HashKeys)
@@ -582,13 +703,19 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 			BinaryOperatorNode: ast.BinaryOperatorNode{
 				Object: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("a")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("a"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+						},
 						Subject: &ast.BytesValueNode{V: []byte("valA")},
 					},
 				},
 				Subject: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: &ast.BytesValueNode{V: []byte("valB")},
 					},
 				},
@@ -597,7 +724,10 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrOr, cl.Attr)
-		s.Require().Equal(ColumnSet{0, 1}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+			&schema.ColumnDescriptor{Table: 0, Column: 1},
+		}, cl.ColumnSet)
 		s.Require().Zero(cl.HashKeys)
 	}
 	{
@@ -607,13 +737,19 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 			BinaryOperatorNode: ast.BinaryOperatorNode{
 				Object: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: valA,
 					},
 				},
 				Subject: &ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: valB,
 					},
 				},
@@ -622,7 +758,9 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrOr|clauseAttrEnumerable, cl.Attr)
-		s.Require().Equal(ColumnSet{1}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 1},
+		}, cl.ColumnSet)
 		s.Require().Equal([][]ast.Valuer{
 			[]ast.Valuer{valA},
 			[]ast.Valuer{valB},
@@ -634,14 +772,20 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		node := &ast.InOperatorNode{
 			Left: &ast.EqualOperatorNode{
 				BinaryOperatorNode: ast.BinaryOperatorNode{
-					Object:  &ast.IdentifierNode{Name: []byte("a")},
+					Object: &ast.IdentifierNode{
+						Name: []byte("a"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+					},
 					Subject: valA,
 				},
 			},
 			Right: []ast.ExprNode{
 				&ast.EqualOperatorNode{
 					BinaryOperatorNode: ast.BinaryOperatorNode{
-						Object:  &ast.IdentifierNode{Name: []byte("b")},
+						Object: &ast.IdentifierNode{
+							Name: []byte("b"),
+							Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+						},
 						Subject: valB,
 					},
 				},
@@ -650,14 +794,20 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Zero(cl.Attr)
-		s.Require().Equal(ColumnSet{0, 1}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+			&schema.ColumnDescriptor{Table: 0, Column: 1},
+		}, cl.ColumnSet)
 		s.Require().Zero(cl.HashKeys)
 	}
 	{
 		valA := &ast.BytesValueNode{V: []byte("valA")}
 		valB := &ast.BytesValueNode{V: []byte("valB")}
 		node := &ast.InOperatorNode{
-			Left: &ast.IdentifierNode{Name: []byte("a")},
+			Left: &ast.IdentifierNode{
+				Name: []byte("a"),
+				Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+			},
 			Right: []ast.ExprNode{
 				valA, valB,
 			},
@@ -665,7 +815,9 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrEnumerable, cl.Attr)
-		s.Require().Equal(ColumnSet{0}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+		}, cl.ColumnSet)
 		s.Require().Equal([][]ast.Valuer{
 			[]ast.Valuer{valA},
 			[]ast.Valuer{valB},
@@ -675,8 +827,14 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		node := &ast.CastOperatorNode{
 			SourceExpr: &ast.AddOperatorNode{
 				BinaryOperatorNode: ast.BinaryOperatorNode{
-					Object:  &ast.IdentifierNode{Name: []byte("a")},
-					Subject: &ast.IdentifierNode{Name: []byte("b")},
+					Object: &ast.IdentifierNode{
+						Name: []byte("a"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+					},
+					Subject: &ast.IdentifierNode{
+						Name: []byte("b"),
+						Desc: &schema.ColumnDescriptor{Table: 0, Column: 1},
+					},
 				},
 			},
 			TargetType: &ast.IntTypeNode{
@@ -687,13 +845,19 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Zero(cl.Attr)
-		s.Require().Equal(ColumnSet{0, 1}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+			&schema.ColumnDescriptor{Table: 0, Column: 1},
+		}, cl.ColumnSet)
 		s.Require().Zero(cl.HashKeys)
 	}
 	{
 		node := &ast.EqualOperatorNode{
 			BinaryOperatorNode: ast.BinaryOperatorNode{
-				Object: &ast.IdentifierNode{Name: []byte("a")},
+				Object: &ast.IdentifierNode{
+					Name: []byte("a"),
+					Desc: &schema.ColumnDescriptor{Table: 0, Column: 0},
+				},
 				Subject: &ast.FunctionOperatorNode{
 					Name: &ast.IdentifierNode{Name: []byte("RAND")},
 				},
@@ -702,7 +866,9 @@ func (s *PlannerTestSuite) TestClauseAttr() {
 		cl, err := planner.parseClause(node)
 		s.Require().Nil(err)
 		s.Require().Equal(clauseAttrForceScan, cl.Attr)
-		s.Require().Equal(ColumnSet{0}, cl.ColumnSet)
+		s.Require().Equal(ColumnSet{
+			&schema.ColumnDescriptor{Table: 0, Column: 0},
+		}, cl.ColumnSet)
 		s.Require().Zero(cl.HashKeys)
 	}
 }
