@@ -120,15 +120,6 @@ func (s *TypesTestSuite) TestEncodeAndDecodeDecimal() {
 		zero,
 		3)
 
-	s.requireEncodeAndDecodeDecimalNoError(
-		ComposeDataType(DataTypeMajorAddress, 0),
-		pos,
-		20)
-	s.requireEncodeAndDecodeDecimalNoError(
-		ComposeDataType(DataTypeMajorAddress, 0),
-		zero,
-		20)
-
 	pos = decimal.New(15, -2)
 	neg = decimal.New(-15, -2)
 

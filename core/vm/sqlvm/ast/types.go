@@ -358,11 +358,8 @@ func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
 	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorInt,
-		DataTypeMajorUint,
-		DataTypeMajorFixedBytes:
+		DataTypeMajorUint:
 		return decimalEncode(int(minor)+1, d), nil
-	case DataTypeMajorAddress:
-		return decimalEncode(common.AddressLength, d), nil
 	}
 	switch {
 	case major.IsFixedRange():
@@ -384,9 +381,7 @@ func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
 	switch major {
 	case DataTypeMajorInt:
 		return decimalDecode(true, b), nil
-	case DataTypeMajorUint,
-		DataTypeMajorFixedBytes,
-		DataTypeMajorAddress:
+	case DataTypeMajorUint:
 		return decimalDecode(false, b), nil
 	}
 	switch {

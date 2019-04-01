@@ -76,7 +76,6 @@ func setSlotDataInStateDB(head dexCommon.Hash, addr dexCommon.Address,
 		"0000000000000000000000000000000000000000000000000000000000000041",
 		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 	}
-	fByte20Dt := ast.ComposeDataType(ast.DataTypeMajorFixedBytes, ast.DataTypeMinor(9))
 	uInt256Dt := ast.ComposeDataType(ast.DataTypeMajorUint, ast.DataTypeMinor(31))
 
 	raws := []*raw{
@@ -111,8 +110,7 @@ func setSlotDataInStateDB(head dexCommon.Hash, addr dexCommon.Address,
 		},
 		{
 			Raw: Raw{
-				Value: hexToDec(slotHash[2][:20], fByte20Dt),
-				Bytes: nil,
+				Bytes: hexToBytes(slotHash[2][:20]),
 			},
 			slotShift: 2,
 			byteShift: 0,
@@ -175,6 +173,11 @@ func hexToDec(s string, dt ast.DataType) decimal.Decimal {
 	b, _ := hex.DecodeString(s)
 	d, _ := ast.DecimalDecode(dt, b)
 	return d
+}
+
+func hexToBytes(s string) []byte {
+	b, _ := hex.DecodeString(s)
+	return b
 }
 
 type decodeTestCase struct {

@@ -146,9 +146,9 @@ func decode(ctx *common.Context, dt ast.DataType, slot dexCommon.Hash, bytes []b
 	switch major {
 	case ast.DataTypeMajorDynamicBytes:
 		rVal.Bytes = ctx.Storage.DecodeDByteBySlot(ctx.Contract.Address(), slot)
-	case ast.DataTypeMajorFixedBytes, ast.DataTypeMajorBool,
-		ast.DataTypeMajorAddress, ast.DataTypeMajorInt,
-		ast.DataTypeMajorUint:
+	case ast.DataTypeMajorFixedBytes, ast.DataTypeMajorAddress:
+		rVal.Bytes = bytes
+	case ast.DataTypeMajorBool, ast.DataTypeMajorInt, ast.DataTypeMajorUint:
 		d, err := ast.DecimalDecode(dt, bytes)
 		if err != nil {
 			return nil, err
