@@ -179,16 +179,16 @@ func decode(ctx *common.Context, dt ast.DataType, slot dexCommon.Hash, bytes []b
 	case ast.DataTypeMajorFixedBytes, ast.DataTypeMajorAddress:
 		rVal.Bytes = bytes
 	case ast.DataTypeMajorBool, ast.DataTypeMajorInt, ast.DataTypeMajorUint:
-		d, err := ast.DecimalDecode(dt, bytes)
-		if err != nil {
-			return nil, err
+		d, ok := ast.DecimalDecode(dt, bytes)
+		if !ok {
+			panic(fmt.Sprintf("DecimalDecode does not handle %v", dt))
 		}
 		rVal.Value = d
 	}
 	if major.IsFixedRange() || major.IsUfixedRange() {
-		d, err := ast.DecimalDecode(dt, bytes)
-		if err != nil {
-			return nil, err
+		d, ok := ast.DecimalDecode(dt, bytes)
+		if !ok {
+			panic(fmt.Sprintf("DecimalDecode does not handle %v", dt))
 		}
 		rVal.Value = d
 	}
@@ -1598,16 +1598,16 @@ func (r *Raw) castValue(
 	ctx *common.Context,
 	origin, target ast.DataType,
 	l int, signed, rPadding bool) (err error) {
-	oBytes, err := ast.DecimalEncode(origin, r.Value)
-	if err != nil {
-		return
+	oBytes, ok := ast.DecimalEncode(origin, r.Value)
+	if !ok {
+		panic(fmt.Sprintf("DecimalEncode does not handle %v", origin))
 	}
 
 	bytes2 := r.shiftBytes(oBytes, l, signed, rPadding)
 
-	r.Value, err = ast.DecimalDecode(target, bytes2)
-	if err != nil {
-		return
+	r.Value, ok = ast.DecimalDecode(target, bytes2)
+	if !ok {
+		panic(fmt.Sprintf("DecimalDecode does not handle %v", target))
 	}
 
 	err = flowCheck(ctx, r.Value, target)
@@ -1635,9 +1635,10 @@ func (r *Raw) castInt(ctx *common.Context, origin, target ast.DataType) (err err
 			return
 		}
 
-		r.Bytes, err = ast.DecimalEncode(mockDt, r.Value)
-		if err != nil {
-			return
+		var ok bool
+		r.Bytes, ok = ast.DecimalEncode(mockDt, r.Value)
+		if !ok {
+			panic(fmt.Sprintf("DecimalEncode does not handle %v", origin))
 		}
 		r.Value = decimal.Zero
 	case ast.DataTypeMajorFixedBytes:
@@ -1645,9 +1646,10 @@ func (r *Raw) castInt(ctx *common.Context, origin, target ast.DataType) (err err
 			err = se.ErrorCodeInvalidCastType
 			return
 		}
-		r.Bytes, err = ast.DecimalEncode(origin, r.Value)
-		if err != nil {
-			return
+		var ok bool
+		r.Bytes, ok = ast.DecimalEncode(origin, r.Value)
+		if !ok {
+			panic(fmt.Sprintf("DecimalEncode does not handle %v", origin))
 		}
 		r.Value = decimal.Zero
 	case ast.DataTypeMajorBool:
@@ -1668,9 +1670,10 @@ func (r *Raw) castFixedBytes(ctx *common.Context, origin, target ast.DataType) (
 			err = se.ErrorCodeInvalidCastType
 			return
 		}
-		r.Value, err = ast.DecimalDecode(target, r.Bytes)
-		if err != nil {
-			return
+		var ok bool
+		r.Value, ok = ast.DecimalDecode(target, r.Bytes)
+		if !ok {
+			panic(fmt.Sprintf("DecimalDecode does not handle %v", target))
 		}
 		r.Bytes = nil
 	case ast.DataTypeMajorFixedBytes:
@@ -1692,12 +1695,13 @@ func (r *Raw) castAddress(ctx *common.Context, origin, target ast.DataType) (err
 	switch tMajor {
 	case ast.DataTypeMajorAddress:
 	case ast.DataTypeMajorInt, ast.DataTypeMajorUint:
-		r.Value, err = ast.DecimalDecode(
+		var ok bool
+		r.Value, ok = ast.DecimalDecode(
 			target,
 			r.shiftBytes(r.Bytes, int(tMinor)+1, false, false),
 		)
-		if err != nil {
-			return
+		if !ok {
+			panic(fmt.Sprintf("DecimalDecode does not handle %v", target))
 		}
 		err = flowCheck(ctx, r.Value, target)
 		if err != nil {

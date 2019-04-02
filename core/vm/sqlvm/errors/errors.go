@@ -108,8 +108,6 @@ const (
 	ErrorCodeInvalidUfixedSize
 	ErrorCodeInvalidFixedFractionalDigits
 	ErrorCodeInvalidUfixedFractionalDigits
-	ErrorCodeDecimalEncode
-	ErrorCodeDecimalDecode
 
 	// Runtime Error
 	ErrorCodeInvalidOperandNum
@@ -143,8 +141,6 @@ var errorCodeMap = [...]string{
 	ErrorCodeInvalidUfixedSize:             "invalid ufixed size",
 	ErrorCodeInvalidFixedFractionalDigits:  "invalid fixed fractional digits",
 	ErrorCodeInvalidUfixedFractionalDigits: "invalid ufixed fractional digits",
-	ErrorCodeDecimalEncode:                 "decimal encode failed",
-	ErrorCodeDecimalDecode:                 "decimal decode failed",
 	// Runtime Error
 	ErrorCodeInvalidOperandNum:  "invalid operand number",
 	ErrorCodeInvalidDataType:    "invalid data type",

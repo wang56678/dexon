@@ -16,11 +16,11 @@ type TypesTestSuite struct{ suite.Suite }
 
 func (s *TypesTestSuite) requireEncodeAndDecodeDecimalNoError(
 	d DataType, t decimal.Decimal, bs int) {
-	encode, err := DecimalEncode(d, t)
-	s.Require().NoError(err)
+	encode, ok := DecimalEncode(d, t)
+	s.Require().True(ok)
 	s.Require().Len(encode, bs)
-	decode, err := DecimalDecode(d, encode)
-	s.Require().NoError(err)
+	decode, ok := DecimalDecode(d, encode)
+	s.Require().True(ok)
 	s.Require().Equal(t.String(), decode.String())
 }
 

@@ -14,8 +14,10 @@ import (
 
 // Error defines for encode and decode.
 var (
-	ErrEncodeUnexpectedType = errors.New("encode unexpected type")
-	ErrDecodeUnexpectedType = errors.New("decode unexpected type")
+	ErrEncodeUnexpectedDataType    = errors.New("encode unexpected data type")
+	ErrEncodeUnexpectedDefaultType = errors.New("encode unexpected default type")
+	ErrDecodeUnexpectedDataType    = errors.New("decode unexpected data type")
+	ErrDecodeUnexpectedDefaultType = errors.New("decode unexpected default type")
 )
 
 // ColumnAttr defines bit flags for describing column attribute.
@@ -208,13 +210,13 @@ func (c Column) EncodeRLP(w io.Writer) error {
 		case []byte:
 			c.Rest = d
 		case decimal.Decimal:
-			var err error
-			c.Rest, err = ast.DecimalEncode(c.Type, d)
-			if err != nil {
-				return err
+			var ok bool
+			c.Rest, ok = ast.DecimalEncode(c.Type, d)
+			if !ok {
+				return ErrEncodeUnexpectedDataType
 			}
 		default:
-			return ErrEncodeUnexpectedType
+			return ErrEncodeUnexpectedDefaultType
 		}
 	} else {
 		c.Rest = nil
@@ -249,14 +251,14 @@ func (c *Column) DecodeRLP(s *rlp.Stream) error {
 		case ast.DataTypeMajorFixedBytes, ast.DataTypeMajorDynamicBytes:
 			c.Default = rest
 		default:
-			d, err := ast.DecimalDecode(c.Type, rest)
-			if err != nil {
-				return err
+			d, ok := ast.DecimalDecode(c.Type, rest)
+			if !ok {
+				return ErrDecodeUnexpectedDataType
 			}
 			c.Default = d
 		}
 	default:
-		return ErrDecodeUnexpectedType
+		return ErrDecodeUnexpectedDefaultType
 	}
 
 	return nil

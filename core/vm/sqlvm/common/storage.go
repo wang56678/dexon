@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/dexon-foundation/decimal"
@@ -42,7 +43,10 @@ func uint64ToBytes(id uint64) []byte {
 	bigIntID := new(big.Int).SetUint64(id)
 	decimalID := decimal.NewFromBigInt(bigIntID, 0)
 	dt := ast.ComposeDataType(ast.DataTypeMajorUint, 7)
-	byteID, _ := ast.DecimalEncode(dt, decimalID)
+	byteID, ok := ast.DecimalEncode(dt, decimalID)
+	if !ok {
+		panic(fmt.Sprintf("DecimalEncode does not handle %v", dt))
+	}
 	return byteID
 }
 

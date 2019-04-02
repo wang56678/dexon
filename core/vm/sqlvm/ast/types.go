@@ -356,49 +356,49 @@ func decimalDecode(signed bool, bs []byte) decimal.Decimal {
 }
 
 // DecimalEncode encodes decimal to bytes depend on data type.
-func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, error) {
+func DecimalEncode(dt DataType, d decimal.Decimal) ([]byte, bool) {
 	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorInt,
 		DataTypeMajorUint:
-		return decimalEncode(int(minor)+1, d), nil
+		return decimalEncode(int(minor)+1, d), true
 	}
 	switch {
 	case major.IsFixedRange():
 		return decimalEncode(
 			int(major-DataTypeMajorFixed)+1,
-			d.Shift(int32(minor))), nil
+			d.Shift(int32(minor))), true
 	case major.IsUfixedRange():
 		return decimalEncode(
 			int(major-DataTypeMajorUfixed)+1,
-			d.Shift(int32(minor))), nil
+			d.Shift(int32(minor))), true
 	}
 
-	return nil, se.ErrorCodeDecimalEncode
+	return nil, false
 }
 
 // DecimalDecode decodes decimal from bytes.
-func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
+func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, bool) {
 	major, minor := DecomposeDataType(dt)
 	switch major {
 	case DataTypeMajorInt:
-		return decimalDecode(true, b), nil
+		return decimalDecode(true, b), true
 	case DataTypeMajorUint:
-		return decimalDecode(false, b), nil
+		return decimalDecode(false, b), true
 	case DataTypeMajorBool:
 		if b[0] == 0 {
-			return dec.False, nil
+			return dec.False, true
 		}
-		return dec.True, nil
+		return dec.True, true
 	}
 	switch {
 	case major.IsFixedRange():
-		return decimalDecode(true, b).Shift(-int32(minor)), nil
+		return decimalDecode(true, b).Shift(-int32(minor)), true
 	case major.IsUfixedRange():
-		return decimalDecode(false, b).Shift(-int32(minor)), nil
+		return decimalDecode(false, b).Shift(-int32(minor)), true
 	}
 
-	return decimal.Zero, se.ErrorCodeDecimalDecode
+	return decimal.Zero, false
 }
 
 // DecimalToUint64 convert decimal to uint64.
