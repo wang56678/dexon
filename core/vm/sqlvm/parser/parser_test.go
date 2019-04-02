@@ -74,7 +74,7 @@ func (s *ParserTestSuite) TestParse() {
 
 	// Test create table.
 	s.requireParseNoError(`create table a (a int32 not null unique primary key default 0)`)
-	s.requireParseNoError(`create table "~!@#$%^&*()" ( a int32 references b ( a ) , b string primary key, c address not null default 1 + 1 )`)
+	s.requireParseNoError(`create table "~!@#$%^&*()" ( a int32 references b ( a ) , b bytes primary key, c address not null default 1 + 1 )`)
 
 	// Test create index.
 	s.requireParseNoError(`create unique index a on a (a)`)
@@ -160,7 +160,7 @@ func (s *ParserTestSuite) TestParseRules() {
 			C3 UINT256 DEFAULT 3 * 2 + 1,
 			C4 BYTES5 DEFAULT 'hello',
 			C5 INT24 UNIQUE NOT NULL,
-			C6 TEXT
+			C6 BYTES
 		);
 
 		CREATE TABLE T (
@@ -172,10 +172,8 @@ func (s *ParserTestSuite) TestParseRules() {
 			C6 BYTES1,
 			C7 BYTE,
 			C8 BYTES,
-			C9 TEXT,
-			C10 STRING,
-			C11 ADDRESS,
-			C12 BOOL
+			C9 ADDRESS,
+			C10 BOOL
 		);
 
 		CREATE INDEX I ON T (C1);

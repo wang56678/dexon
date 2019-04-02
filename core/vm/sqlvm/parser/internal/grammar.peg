@@ -850,10 +850,7 @@ FixedBytesType
 }
 
 DynamicBytesType
-	= ( "BYTES"i !NormalIdentifierRest
-		/ "STRING"i !NormalIdentifierRest
-		/ "TEXT"i !NormalIdentifierRest
-	)
+	= "BYTES"i !NormalIdentifierRest
 {
 	node := &ast.DynamicBytesTypeNode{}
 	node.SetPosition(uint32(c.pos.offset))
