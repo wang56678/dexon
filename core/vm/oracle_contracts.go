@@ -1350,6 +1350,14 @@ func (g *GovernanceContract) clearDKG() {
 }
 
 func (g *GovernanceContract) fineFailStopDKG(threshold int) {
+	fineNode := make(map[coreTypes.NodeID]struct{})
+	dkgSet := g.getNotarySet(g.state.DKGRound())
+	for id := range dkgSet {
+		if g.state.DKGMasterPublicKeyProposed(Bytes32(id.Hash)) {
+			continue
+		}
+		fineNode[id] = struct{}{}
+	}
 	complaintsByID := map[coreTypes.NodeID]map[coreTypes.NodeID]struct{}{}
 	for _, complaint := range g.state.DKGComplaints() {
 		comp := new(dkgTypes.Complaint)
@@ -1367,18 +1375,26 @@ func (g *GovernanceContract) fineFailStopDKG(threshold int) {
 	}
 	for id, complaints := range complaintsByID {
 		if len(complaints) >= threshold {
-			offset := g.state.NodesOffsetByNodeKeyAddress(IdToAddress(id))
-			// Node might have been unstaked.
-			if offset.Cmp(big.NewInt(0)) < 0 {
-				continue
-			}
-
-			node := g.state.Node(offset)
-			amount := g.state.FineValue(big.NewInt(FineTypeFailStopDKG))
-			node.Fined = new(big.Int).Add(node.Fined, amount)
-			g.state.UpdateNode(offset, node)
-			g.state.emitFined(node.Owner, amount)
+			fineNode[id] = struct{}{}
 		}
+	}
+	nodes := make(coreTypes.NodeIDs, 0, len(fineNode))
+	for id := range fineNode {
+		nodes = append(nodes, id)
+	}
+	sort.Sort(nodes)
+	for _, id := range nodes {
+		offset := g.state.NodesOffsetByNodeKeyAddress(IdToAddress(id))
+		// Node might have been unstaked.
+		if offset.Cmp(big.NewInt(0)) < 0 {
+			continue
+		}
+
+		node := g.state.Node(offset)
+		amount := g.state.FineValue(big.NewInt(FineTypeFailStopDKG))
+		node.Fined = new(big.Int).Add(node.Fined, amount)
+		g.state.UpdateNode(offset, node)
+		g.state.emitFined(node.Owner, amount)
 	}
 }
 
@@ -1591,7 +1607,7 @@ func (g *GovernanceContract) addDKGFinalize(finalize []byte) ([]byte, error) {
 
 	threshold := 2*g.configNotarySetSize(g.evm.Round).Uint64()/3 + 1
 
-	if g.state.DKGFinalizedsCount().Uint64() >= threshold {
+	if g.state.DKGFinalizedsCount().Uint64() == threshold {
 		tsigThreshold := coreUtils.GetDKGThreshold(&coreTypes.Config{
 			NotarySetSize: uint32(g.configNotarySetSize(g.evm.Round).Uint64())})
 		g.fineFailStopDKG(tsigThreshold)
