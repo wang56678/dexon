@@ -14,6 +14,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/common"
+	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/schema"
 	"github.com/dexon-foundation/dexon/crypto"
@@ -101,6 +102,16 @@ func setSlotDataInStateDB(head dexCommon.Hash, addr dexCommon.Address,
 		},
 		{
 			Raw: Raw{
+				Value: dec.False,
+				Bytes: nil,
+			},
+			slotShift: 0,
+			byteShift: 10,
+			major:     ast.DataTypeMajorBool,
+			minor:     ast.DataTypeMinor(0),
+		},
+		{
+			Raw: Raw{
 				Bytes: []byte("Hello, world!"),
 			},
 			slotShift: 1,
@@ -158,7 +169,7 @@ func setSlotDataInStateDB(head dexCommon.Hash, addr dexCommon.Address,
 	}
 
 	// set dynamic bytes data
-	longDBytesLoc := 5
+	longDBytesLoc := 6
 	longRaw := raws[longDBytesLoc]
 	hash.SetBytes(longRaw.Bytes)
 	ptr = storage.ShiftHashUint64(head, uint64(longRaw.slotShift))

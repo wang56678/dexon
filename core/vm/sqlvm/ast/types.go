@@ -385,6 +385,11 @@ func DecimalDecode(dt DataType, b []byte) (decimal.Decimal, error) {
 		return decimalDecode(true, b), nil
 	case DataTypeMajorUint:
 		return decimalDecode(false, b), nil
+	case DataTypeMajorBool:
+		if b[0] == 0 {
+			return dec.False, nil
+		}
+		return dec.True, nil
 	}
 	switch {
 	case major.IsFixedRange():
