@@ -21,9 +21,17 @@ type planner struct {
 	table    *schema.Table
 }
 
+func idNodeToTable(node *ast.IdentifierNode) schema.TableRef {
+	return node.Desc.(*schema.TableDescriptor).Table
+}
+
+func idNodeToColumn(node *ast.IdentifierNode) (schema.TableRef, schema.ColumnRef) {
+	desc := node.Desc.(*schema.ColumnDescriptor)
+	return desc.Table, desc.Column
+}
+
 func (planner *planner) planInsert(stmt *ast.InsertStmtNode) (PlanStep, error) {
-	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
-	planner.tableRef = tableDesc.Table
+	planner.tableRef = idNodeToTable(stmt.Table)
 	planner.table = &planner.schema[planner.tableRef]
 
 	plan := &InsertStep{}
@@ -33,7 +41,7 @@ func (planner *planner) planInsert(stmt *ast.InsertStmtNode) (PlanStep, error) {
 	case *ast.InsertWithColumnOptionNode:
 		plan.Columns = make([]schema.ColumnRef, len(node.Column))
 		for i, node := range node.Column {
-			plan.Columns[i] = node.Desc.(*schema.ColumnDescriptor).Column
+			_, plan.Columns[i] = idNodeToColumn(node)
 		}
 		plan.Values = node.Value
 	case *ast.InsertWithDefaultOptionNode:
@@ -365,8 +373,7 @@ func (planner *planner) planSelect(stmt *ast.SelectStmtNode) (PlanStep, error) {
 	if stmt.Table == nil {
 		return planner.planSelectWithoutTable(stmt)
 	}
-	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
-	planner.tableRef = tableDesc.Table
+	planner.tableRef = idNodeToTable(stmt.Table)
 	planner.table = &planner.schema[planner.tableRef]
 
 	wherePlan, err := planner.planWhere(stmt.Where)
@@ -406,8 +413,7 @@ func (planner *planner) planSelect(stmt *ast.SelectStmtNode) (PlanStep, error) {
 }
 
 func (planner *planner) planUpdate(stmt *ast.UpdateStmtNode) (PlanStep, error) {
-	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
-	planner.tableRef = tableDesc.Table
+	planner.tableRef = idNodeToTable(stmt.Table)
 	planner.table = &planner.schema[planner.tableRef]
 
 	wherePlan, err := planner.planWhere(stmt.Where)
@@ -424,8 +430,7 @@ func (planner *planner) planUpdate(stmt *ast.UpdateStmtNode) (PlanStep, error) {
 		if err != nil {
 			return nil, err
 		}
-		columnIdx := as.Column.Desc.(*schema.ColumnDescriptor).Column
-		plan.Columns[i] = columnIdx
+		_, plan.Columns[i] = idNodeToColumn(as.Column)
 		plan.Values[i] = as.Expr
 		plan.ColumnSet = plan.ColumnSet.Join(cl.ColumnSet)
 	}
@@ -434,8 +439,7 @@ func (planner *planner) planUpdate(stmt *ast.UpdateStmtNode) (PlanStep, error) {
 }
 
 func (planner *planner) planDelete(stmt *ast.DeleteStmtNode) (PlanStep, error) {
-	tableDesc := stmt.Table.Desc.(*schema.TableDescriptor)
-	planner.tableRef = tableDesc.Table
+	planner.tableRef = idNodeToTable(stmt.Table)
 	planner.table = &planner.schema[planner.tableRef]
 
 	wherePlan, err := planner.planWhere(stmt.Where)
