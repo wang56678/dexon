@@ -818,11 +818,17 @@ func (con *Consensus) prepare(initBlock *types.Block) (err error) {
 			return
 		}
 		if _, exist := curNotarySet[con.ID]; !exist {
+			con.logger.Debug("resetDKG: not in notary set",
+				"round", e.Round,
+				"ID", con.ID)
 			return
 		}
 		isDKGValid := func() bool {
 			nextConfig := utils.GetConfigWithPanic(con.gov, nextRound,
 				con.logger)
+			con.logger.Debug("resetDKG: checking is valid",
+				"round", nextRound,
+				"threshold", utils.GetDKGValidThreshold(nextConfig))
 			if !con.gov.IsDKGFinal(nextRound) {
 				con.logger.Error("Next DKG is not final, reset it",
 					"round", e.Round,
@@ -850,6 +856,7 @@ func (con *Consensus) prepare(initBlock *types.Block) (err error) {
 			if len(gpk.QualifyNodeIDs) < utils.GetDKGValidThreshold(nextConfig) {
 				return false
 			}
+			con.logger.Debug("resetDKG: DKG successful!", "round", nextRound)
 			return true
 		}
 		con.event.RegisterHeight(e.NextDKGResetHeight(), func(uint64) {
@@ -1258,8 +1265,13 @@ func (con *Consensus) deliverNetworkMsg() {
 
 func (con *Consensus) processMsg() {
 	defer con.waitGroup.Done()
+	ch := make(chan struct{})
+	go func() {
+		<-ch
+	}()
 MessageLoop:
 	for {
+		ch <- struct{}{}
 		select {
 		case <-con.ctx.Done():
 			return
@@ -1279,6 +1291,16 @@ MessageLoop:
 				return
 			}
 		}
+
+		start := time.Now()
+		go func(start time.Time, msg interface{}) {
+			<-ch
+			if time.Since(start) > 1*time.Millisecond {
+				con.logger.Debug("Consensus core handling message",
+					"time", time.Since(start),
+					"msg", msg)
+			}
+		}(start, msg)
 		switch val := msg.(type) {
 		case *selfAgreementResult:
 			con.baMgr.touchAgreementResult((*types.AgreementResult)(val))

@@ -302,8 +302,14 @@ func (g *Governance) IsDKGMPKReady(round uint64) bool {
 func (g *Governance) IsDKGFinal(round uint64) bool {
 	s := g.GetStateForDKGAtRound(round)
 	if s == nil {
+		log.Debug("resetDKG: failed to get state for IsDKGFinal",
+			"round", round)
 		return false
 	}
+	log.Debug("resetDKG: Check IsDKGFinal",
+		"round", round,
+		"count", s.DKGFinalizedsCount().Uint64(),
+	)
 	config := g.Configuration(round)
 	threshold := 2*uint64(config.NotarySetSize)/3 + 1
 	count := s.DKGFinalizedsCount().Uint64()
@@ -313,8 +319,14 @@ func (g *Governance) IsDKGFinal(round uint64) bool {
 func (g *Governance) IsDKGSuccess(round uint64) bool {
 	s := g.GetStateForDKGAtRound(round)
 	if s == nil {
+		log.Debug("resetDKG: failed to get state for IsDKGSuccess",
+			"round", round)
 		return false
 	}
+	log.Debug("resetDKG: Check IsDKGSuccess",
+		"round", round,
+		"count", s.DKGSuccessesCount().Uint64(),
+	)
 	return s.DKGSuccessesCount().Uint64() >=
 		uint64(coreUtils.GetDKGValidThreshold(g.Configuration(round)))
 }

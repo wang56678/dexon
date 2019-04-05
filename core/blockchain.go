@@ -1684,6 +1684,8 @@ func (bc *BlockChain) processBlock(
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
+	log.Debug("Processing block", "block", block)
+	defer log.Debug("Processed Block", "block", block)
 	bc.chainmu.Lock()
 	defer bc.chainmu.Unlock()
 
@@ -1707,6 +1709,7 @@ func (bc *BlockChain) processBlock(
 	if err := bc.Validator().ValidateWitnessData(witness.Height, witnessBlockHash); err != nil {
 		return nil, nil, nil, err
 	}
+	log.Debug("PB: validate witness", "height", witness.Height)
 
 	var (
 		receipts types.Receipts
@@ -1722,12 +1725,14 @@ func (bc *BlockChain) processBlock(
 	if parentBlock == nil {
 		return nil, nil, nil, fmt.Errorf("parent block %d not exist", block.NumberU64()-1)
 	}
+	log.Debug("PB: get parent block", "parent", parentBlock)
 
 	header.ParentHash = parentBlock.Hash()
 	currentState, err = state.New(parentBlock.Root(), bc.stateCache)
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	log.Debug("PB: get parent state", "parent", parentBlock)
 
 	// Iterate over and process the individual transactions.
 	for i, tx := range block.Transactions() {
@@ -1739,6 +1744,8 @@ func (bc *BlockChain) processBlock(
 		receipts = append(receipts, receipt)
 		log.Debug("Apply transaction", "tx.hash", tx.Hash(), "nonce", tx.Nonce(), "amount", tx.Value())
 	}
+	log.Debug("PB: process tx", "txs", len(block.Transactions()))
+
 	// Finalize the block, applying any consensus engine specific extras (e.g. block rewards)
 	header.GasUsed = *usedGas
 	newBlock, err := bc.engine.Finalize(bc, header, currentState, block.Transactions(), block.Uncles(), receipts)
@@ -1746,11 +1753,13 @@ func (bc *BlockChain) processBlock(
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("finalize error: %v", err)
 	}
+	log.Debug("PB: finalize", "block", newBlock)
 
 	if _, ok := bc.GetRoundHeight(newBlock.Round()); !ok {
 		bc.storeRoundHeight(newBlock.Round(), newBlock.NumberU64())
 	}
 	proctime := time.Since(bstart)
+	log.Debug("PB: store found height", "round", newBlock.Round())
 
 	chainBlock := bc.GetBlockByNumber(newBlock.NumberU64())
 	if chainBlock != nil {
@@ -1761,14 +1770,17 @@ func (bc *BlockChain) processBlock(
 			bc.reportBlock(newBlock, receipts, fmt.Errorf("%v (local delivered block)", err))
 			return nil, nil, nil, err
 		}
+		log.Debug("PB: chainBlock", "block", chainBlock)
 		return &root, nil, nil, nil
 	}
+	log.Debug("PB: nil chainBlock")
 
 	// Write the block to the chain and get the status.
 	status, err := bc.WriteBlockWithState(newBlock, receipts, currentState)
 	if err != nil {
 		return nil, events, coalescedLogs, fmt.Errorf("WriteBlockWithState error: %v", err)
 	}
+	log.Debug("PB: write block state", "block", newBlock)
 
 	switch status {
 	case CanonStatTy:
@@ -1794,6 +1806,7 @@ func (bc *BlockChain) processBlock(
 	stats.processed++
 	stats.usedGas += newBlock.GasUsed()
 
+	log.Debug("PB: report", "block", newBlock)
 	cache, _ := bc.stateCache.TrieDB().Size()
 	stats.report([]*types.Block{newBlock}, 0, cache)
 
@@ -1804,6 +1817,8 @@ func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error
 	bc.wg.Add(1)
 	defer bc.wg.Done()
 
+	log.Debug("Processing empty block", "block", block)
+	defer log.Debug("Processed Empty Block", "block", block)
 	bc.chainmu.Lock()
 	defer bc.chainmu.Unlock()
 
@@ -1818,14 +1833,17 @@ func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error
 	if parentBlock == nil {
 		return nil, fmt.Errorf("parent block %d not exist", block.NumberU64()-1)
 	}
+	log.Debug("PEB: get parent block", "block", parentBlock)
 
 	currentState, err = state.New(parentBlock.Root(), bc.stateCache)
 	if err != nil {
 		return nil, err
 	}
+	log.Debug("PEB: get state", "root", parentBlock.Root())
 
 	header.ParentHash = parentBlock.Hash()
 	newBlock, err := bc.engine.Finalize(bc, header, currentState, nil, nil, nil)
+	log.Debug("PEB: finalized", "block", newBlock)
 
 	root := newBlock.Root()
 	if _, ok := bc.GetRoundHeight(newBlock.Round()); !ok {
@@ -1836,6 +1854,7 @@ func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error
 		bc.storeRoundHeight(newBlock.Round(), newBlock.NumberU64())
 	}
 	proctime := time.Since(bstart)
+	log.Debug("PEB: store round height", "round", newBlock.Round())
 
 	chainBlock := bc.GetBlockByNumber(newBlock.NumberU64())
 	if chainBlock != nil {
@@ -1847,14 +1866,17 @@ func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error
 			return nil, err
 		}
 
+		log.Debug("PEB: chainBlock", "block", chainBlock)
 		return &root, nil
 	}
+	log.Debug("PEB: chainBlock nil")
 
 	// Write the block to the chain and get the status.
 	status, err := bc.WriteBlockWithState(newBlock, nil, currentState)
 	if err != nil {
 		return nil, fmt.Errorf("WriteBlockWithState error: %v", err)
 	}
+	log.Debug("PEB: write block state", "block", newBlock)
 
 	switch status {
 	case CanonStatTy:
@@ -1874,6 +1896,7 @@ func (bc *BlockChain) ProcessEmptyBlock(block *types.Block) (*common.Hash, error
 
 	cache, _ := bc.stateCache.TrieDB().Size()
 	stats.report([]*types.Block{newBlock}, 0, cache)
+	log.Debug("PEB: report state", "block", newBlock)
 
 	bc.PostChainEvents([]interface{}{ChainEvent{newBlock, newBlock.Hash(), nil},
 		ChainHeadEvent{newBlock}}, nil)
