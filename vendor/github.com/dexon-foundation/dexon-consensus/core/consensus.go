@@ -1227,8 +1227,13 @@ func (con *Consensus) deliverNetworkMsg() {
 
 func (con *Consensus) processMsg() {
 	defer con.waitGroup.Done()
+	ch := make(chan struct{})
+	go func() {
+		<-ch
+	}()
 MessageLoop:
 	for {
+		ch <- struct{}{}
 		select {
 		case <-con.ctx.Done():
 			return
@@ -1248,6 +1253,16 @@ MessageLoop:
 				return
 			}
 		}
+
+		start := time.Now()
+		go func(start time.Time, msg interface{}) {
+			<-ch
+			if time.Since(start) > 1*time.Millisecond {
+				con.logger.Debug("Consensus core handling message",
+					"time", time.Since(start),
+					"msg", msg)
+			}
+		}(start, msg)
 		switch val := msg.(type) {
 		case *selfAgreementResult:
 			con.baMgr.touchAgreementResult((*types.AgreementResult)(val))
