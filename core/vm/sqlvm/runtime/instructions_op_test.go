@@ -1321,6 +1321,86 @@ func (s *instructionSuite) TestOpMod() {
 	s.run(testcases, opMod)
 }
 
+func (s *instructionSuite) TestOpConcat() {
+	testcases := []opTestcase{
+		{
+			"Concat bytes",
+			Instruction{
+				Op: CONCAT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abc-1")}, &Raw{Bytes: []byte("xyz-1")}},
+							{&Raw{Bytes: []byte("abc-2")}, &Raw{Bytes: []byte("xyz-2")}},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("ABC-1")}, &Raw{Bytes: []byte("XYZ-1")}},
+							{&Raw{Bytes: []byte("ABC-2")}, &Raw{Bytes: []byte("XYZ-2")}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+				},
+				[]Tuple{
+					{&Raw{Bytes: []byte("abc-1ABC-1")}, &Raw{Bytes: []byte("xyz-1XYZ-1")}},
+					{&Raw{Bytes: []byte("abc-2ABC-2")}, &Raw{Bytes: []byte("xyz-2XYZ-2")}},
+				},
+			),
+			nil,
+		},
+		{
+			"Invalid concat",
+			Instruction{
+				Op: CONCAT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abc-1")}, rawTrue},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("ABC-1")}, rawFalse},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{},
+			),
+			errors.ErrorCodeInvalidDataType,
+		},
+	}
+
+	s.run(testcases, opConcat)
+}
+
 func (s *instructionSuite) TestOpLt() {
 	testcases := []opTestcase{
 		{

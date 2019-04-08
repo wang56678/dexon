@@ -359,6 +359,13 @@ func value2ColIdx(v decimal.Decimal) (idx uint16) {
 	return
 }
 
+func metaDynBytes(dType ast.DataType) bool {
+	dMajor, _ := ast.DecomposeDataType(dType)
+	return dMajor == ast.DataTypeMajorDynamicBytes
+}
+
+func metaAllDynBytes(op *Operand) bool { return metaAll(op, metaDynBytes) }
+
 func flowCheck(ctx *common.Context, v decimal.Decimal, dType ast.DataType) (err error) {
 	if !ctx.Opt.SafeMath {
 		return
@@ -1732,6 +1739,44 @@ func (r *Raw) shiftBytes(src []byte, l int, signed, rPadding bool) (tgr []byte) 
 		for i := 0; i < l-len(src); i++ {
 			tgr[i] = 0xff
 		}
+	}
+	return
+}
+
+func opConcat(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
+	if len(ops) != 2 {
+		err = se.ErrorCodeDataLengthNotMatch
+		return
+	}
+	op, op2 := ops[0], ops[1]
+
+	if !metaAllEq(op, op2) {
+		err = se.ErrorCodeInvalidDataType
+		return
+	}
+
+	if !metaAllDynBytes(op) {
+		err = se.ErrorCodeInvalidDataType
+		return
+	}
+
+	op3 := op.clone(true)
+	op3.Data = make([]Tuple, len(op.Data))
+
+	for i := 0; i < len(op.Data); i++ {
+		op3.Data[i] = op.Data[i].concat(op2.Data[i])
+	}
+
+	registers[output] = op3
+	return
+}
+
+func (t Tuple) concat(t2 Tuple) (t3 Tuple) {
+	t3 = make(Tuple, len(t))
+	for i := 0; i < len(t); i++ {
+		t3[i] = &Raw{Bytes: make([]byte, len(t[i].Bytes)+len(t2[i].Bytes))}
+		copy(t3[i].Bytes[:len(t[i].Bytes)], t[i].Bytes)
+		copy(t3[i].Bytes[len(t[i].Bytes):], t2[i].Bytes)
 	}
 	return
 }

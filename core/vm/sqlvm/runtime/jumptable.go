@@ -2,11 +2,12 @@ package runtime
 
 var jumpTable = [256]OpFunction{
 	// 0x10
-	ADD: opAdd,
-	MUL: opMul,
-	SUB: opSub,
-	DIV: opDiv,
-	MOD: opMod,
+	ADD:    opAdd,
+	MUL:    opMul,
+	SUB:    opSub,
+	DIV:    opDiv,
+	MOD:    opMod,
+	CONCAT: opConcat,
 
 	// 0x20
 	LT:    opLt,

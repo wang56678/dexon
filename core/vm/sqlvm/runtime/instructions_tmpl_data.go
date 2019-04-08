@@ -773,6 +773,74 @@ var testData = &tmplData{
 		},
 		// -- end of MOD
 		{
+			TestName: "OpConcat", OpFunc: "opConcat",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Concat bytes",
+					Error: "nil", OpCode: "CONCAT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abc-1", B: "xyz-1"}`,
+								`{B: "abc-2", B: "xyz-2"}`,
+							},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+							},
+							Data: []string{
+								`{B: "ABC-1", B: "XYZ-1"}`,
+								`{B: "ABC-2", B: "XYZ-2"}`,
+							},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "DynamicBytes", Minor: 0},
+							{Major: "DynamicBytes", Minor: 0},
+						},
+						Data: []string{
+							`{B: "abc-1ABC-1", B: "xyz-1XYZ-1"}`,
+							`{B: "abc-2ABC-2", B: "xyz-2XYZ-2"}`,
+						},
+					},
+				},
+				{
+					Name:  "Invalid concat",
+					Error: "errors.ErrorCodeInvalidDataType", OpCode: "CONCAT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{`{B: "abc-1", T}`},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{`{B: "ABC-1", F}`},
+						},
+					},
+					Output: &tmplOp{},
+				},
+			},
+		},
+		// -- end of CONCAT
+		{
 			TestName: "OpLt", OpFunc: "opLt",
 			Cases: []*tmplTestCase{
 				{

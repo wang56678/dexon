@@ -15,6 +15,7 @@ const (
 	SUB
 	DIV
 	MOD
+	CONCAT
 )
 
 // 0x20 range - comparison ops.
