@@ -58,7 +58,7 @@
 
 ## **Objective**
 
-The objective is to provide the programmers with a friendly SQL interface which they are familiar with.  SQLVM is implemented alongside with EVM, such that DEXON DApp developer can use SQL syntax to handle their data. It would support the subset of SQL operations.
+The objective is to provide the programmers with a friendly SQL interface which they are familiar with.  SQLVM is implemented alongside with EVM, such that DEXON DApp developer can use SQL syntax to handle their data. It would support a subset of SQL operations.
 
 ## **Background**
 
@@ -121,8 +121,8 @@ The owner can transfer the entire database to other owners.
 * Max table number: 256
 * Max column number: 256
 * Max foreign key number: 256
-* Max SELECT fields number: 65535
-* Max records number: Max(unit64)
+* Max SELECT fields number: 65536
+* Max records number: 2⁶⁴
 * Max index number in a table: 256
 * Max compound index field number: 256
 
@@ -514,7 +514,6 @@ type TableWriter struct {
 
 
 ### Query planning
-      * [**Detailed Design**](#detailed-design)
 
 The design of Ethereum state uses secure trie. Keys are first passed through Keccak256 to be converted to the actual key. This makes caching impossible, as the output of Keccak256 is proved to be randomized. We may want to consider bypassing secure tree for SQLVM's contract storage.
 
