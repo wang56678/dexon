@@ -3,6 +3,7 @@ package common
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -17,20 +18,27 @@ import (
 
 type StorageTestSuite struct{ suite.Suite }
 
-func (s *StorageTestSuite) TestGetPrimaryKeyHash() {
+func (s *StorageTestSuite) TestUint64ToBytes() {
+	testcases := []uint64{1, 65535, math.MaxUint64}
+	for _, i := range testcases {
+		s.Require().Equal(i, bytesToUint64(uint64ToBytes(i)))
+	}
+}
+
+func (s *StorageTestSuite) TestGetRowAddress() {
 	id := uint64(555666)
 	table := []byte("TABLE_A")
 	key := [][]byte{
 		[]byte("tables"),
 		table,
 		[]byte("primary"),
-		convertIDtoBytes(id),
+		uint64ToBytes(id),
 	}
 	hw := sha3.NewLegacyKeccak256()
 	rlp.Encode(hw, key)
 	bytes := hw.Sum(nil)
 	storage := Storage{}
-	result := storage.GetPrimaryKeyHash(table, id)
+	result := storage.GetRowPathHash(table, id)
 	s.Require().Equal(bytes, result[:])
 }
 
@@ -100,6 +108,112 @@ func SetDataToStateDB(head common.Hash, storage Storage, addr common.Address,
 		}
 	}
 	storage.Commit(false)
+}
+
+func (s *StorageTestSuite) TestOwner() {
+	db := ethdb.NewMemDatabase()
+	state, _ := state.New(common.Hash{}, state.NewDatabase(db))
+	storage := NewStorage(state)
+
+	contractA := common.BytesToAddress([]byte("I'm sad."))
+	ownerA := common.BytesToAddress([]byte{5, 5, 6, 6})
+	contractB := common.BytesToAddress([]byte{9, 5, 2, 7})
+	ownerB := common.BytesToAddress([]byte("Tong Pak-Fu"))
+
+	storage.StoreOwner(contractA, ownerA)
+	storage.StoreOwner(contractB, ownerB)
+	storage.Commit(false)
+	s.Require().Equal(ownerA, storage.LoadOwner(contractA))
+	s.Require().Equal(ownerB, storage.LoadOwner(contractB))
+
+	storage.StoreOwner(contractA, ownerB)
+	storage.Commit(false)
+	s.Require().Equal(ownerB, storage.LoadOwner(contractA))
+}
+
+func (s *StorageTestSuite) TestTableWriter() {
+	db := ethdb.NewMemDatabase()
+	state, _ := state.New(common.Hash{}, state.NewDatabase(db))
+	storage := NewStorage(state)
+
+	table1 := []byte("table1")
+	table2 := []byte("table2")
+	contractA := common.BytesToAddress([]byte("A"))
+	contractB := common.BytesToAddress([]byte("B"))
+	addrs := []common.Address{
+		common.BytesToAddress([]byte("addr1")),
+		common.BytesToAddress([]byte("addr2")),
+		common.BytesToAddress([]byte("addr3")),
+	}
+
+	// Genesis.
+	s.Require().Len(storage.LoadTableWriters(contractA, table1), 0)
+	s.Require().Len(storage.LoadTableWriters(contractB, table1), 0)
+
+	// Check writer list.
+	storage.InsertTableWriter(contractA, table1, addrs[0])
+	storage.InsertTableWriter(contractA, table1, addrs[1])
+	storage.InsertTableWriter(contractA, table1, addrs[2])
+	storage.InsertTableWriter(contractB, table2, addrs[0])
+	storage.Commit(false)
+	s.Require().Equal(addrs, storage.LoadTableWriters(contractA, table1))
+	s.Require().Len(storage.LoadTableWriters(contractA, table2), 0)
+	s.Require().Len(storage.LoadTableWriters(contractB, table1), 0)
+	s.Require().Equal([]common.Address{addrs[0]},
+		storage.LoadTableWriters(contractB, table2))
+
+	// Insert duplicate.
+	storage.InsertTableWriter(contractA, table1, addrs[0])
+	storage.InsertTableWriter(contractA, table1, addrs[1])
+	storage.InsertTableWriter(contractA, table1, addrs[2])
+	storage.Commit(false)
+	s.Require().Equal(addrs, storage.LoadTableWriters(contractA, table1))
+
+	// Delete some writer.
+	storage.DeleteTableWriter(contractA, table1, addrs[0])
+	storage.DeleteTableWriter(contractA, table2, addrs[0])
+	storage.DeleteTableWriter(contractB, table2, addrs[0])
+	storage.Commit(false)
+	s.Require().Equal([]common.Address{addrs[2], addrs[1]},
+		storage.LoadTableWriters(contractA, table1))
+	s.Require().Len(storage.LoadTableWriters(contractA, table2), 0)
+	s.Require().Len(storage.LoadTableWriters(contractB, table1), 0)
+	s.Require().Len(storage.LoadTableWriters(contractB, table2), 0)
+
+	// Delete again.
+	storage.DeleteTableWriter(contractA, table1, addrs[2])
+	storage.Commit(false)
+	s.Require().Equal([]common.Address{addrs[1]},
+		storage.LoadTableWriters(contractA, table1))
+
+	// Check writer.
+	s.Require().False(storage.IsTableWriter(contractA, table1, addrs[0]))
+	s.Require().True(storage.IsTableWriter(contractA, table1, addrs[1]))
+	s.Require().False(storage.IsTableWriter(contractA, table1, addrs[2]))
+	s.Require().False(storage.IsTableWriter(contractA, table2, addrs[0]))
+	s.Require().False(storage.IsTableWriter(contractB, table2, addrs[0]))
+}
+
+func (s *StorageTestSuite) TestSequence() {
+	db := ethdb.NewMemDatabase()
+	state, _ := state.New(common.Hash{}, state.NewDatabase(db))
+	storage := NewStorage(state)
+
+	table1 := []byte("table1")
+	table2 := []byte("table2")
+	contract := common.BytesToAddress([]byte("A"))
+
+	s.Require().Equal(uint64(0), storage.IncSequence(contract, table1, 0, 2))
+	s.Require().Equal(uint64(2), storage.IncSequence(contract, table1, 0, 1))
+	s.Require().Equal(uint64(3), storage.IncSequence(contract, table1, 0, 1))
+	// Repeat on another sequence.
+	s.Require().Equal(uint64(0), storage.IncSequence(contract, table1, 1, 1))
+	s.Require().Equal(uint64(1), storage.IncSequence(contract, table1, 1, 2))
+	s.Require().Equal(uint64(3), storage.IncSequence(contract, table1, 1, 3))
+	// Repeat on another table.
+	s.Require().Equal(uint64(0), storage.IncSequence(contract, table2, 0, 3))
+	s.Require().Equal(uint64(3), storage.IncSequence(contract, table2, 0, 4))
+	s.Require().Equal(uint64(7), storage.IncSequence(contract, table2, 0, 5))
 }
 
 func TestStorage(t *testing.T) {

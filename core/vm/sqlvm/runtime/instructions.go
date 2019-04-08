@@ -127,7 +127,7 @@ func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output 
 	}
 	for i, id := range ids {
 		slotDataCache := make(map[dexCommon.Hash]dexCommon.Hash)
-		head := ctx.Storage.GetPrimaryKeyHash(table.Name, id)
+		head := ctx.Storage.GetRowPathHash(table.Name, id)
 		for j := range fields {
 			col := table.Columns[int(fields[j])]
 			byteOffset := col.ByteOffset
