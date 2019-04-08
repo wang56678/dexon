@@ -19,7 +19,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
@@ -31,7 +31,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
@@ -46,7 +46,7 @@ func (s *instructionSuite) TestOpAdd() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(2)}, &Raw{Value: decimal.NewFromFloat(4)}},
@@ -65,7 +65,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -76,7 +76,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(-10)}},
@@ -88,7 +88,7 @@ func (s *instructionSuite) TestOpAdd() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(11)}, &Raw{Value: decimal.NewFromFloat(8)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -106,7 +106,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(-10)}},
@@ -115,7 +115,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -129,7 +129,7 @@ func (s *instructionSuite) TestOpAdd() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(11)}, &Raw{Value: decimal.NewFromFloat(8)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -147,7 +147,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(127)}},
@@ -158,7 +158,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -182,7 +182,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(126)}},
@@ -192,7 +192,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -217,7 +217,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-128)}},
@@ -228,7 +228,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-1)}},
@@ -252,7 +252,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-127)}},
@@ -262,7 +262,7 @@ func (s *instructionSuite) TestOpAdd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-1)}},
@@ -294,7 +294,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
@@ -306,7 +306,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
@@ -321,7 +321,7 @@ func (s *instructionSuite) TestOpSub() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -340,7 +340,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -351,7 +351,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(-10)}},
@@ -363,7 +363,7 @@ func (s *instructionSuite) TestOpSub() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(9)}, &Raw{Value: decimal.NewFromFloat(12)}, &Raw{Value: decimal.NewFromFloat(20)}},
@@ -381,7 +381,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(-10)}},
@@ -390,7 +390,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -404,7 +404,7 @@ func (s *instructionSuite) TestOpSub() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(-9)}, &Raw{Value: decimal.NewFromFloat(-12)}, &Raw{Value: decimal.NewFromFloat(-20)}},
@@ -422,7 +422,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(127)}},
@@ -433,7 +433,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-1)}},
@@ -457,7 +457,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(126)}},
@@ -467,7 +467,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-1)}},
@@ -492,7 +492,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-128)}},
@@ -503,7 +503,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -527,7 +527,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-127)}},
@@ -537,7 +537,7 @@ func (s *instructionSuite) TestOpSub() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -569,7 +569,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -581,7 +581,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -596,7 +596,7 @@ func (s *instructionSuite) TestOpMul() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -615,7 +615,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -625,7 +625,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -637,7 +637,7 @@ func (s *instructionSuite) TestOpMul() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(-20)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -654,7 +654,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -663,7 +663,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -676,7 +676,7 @@ func (s *instructionSuite) TestOpMul() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(-20)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -693,7 +693,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(127)}},
@@ -704,7 +704,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(2)}},
@@ -728,7 +728,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(126)}},
@@ -738,7 +738,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -763,7 +763,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-128)}},
@@ -774,7 +774,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(2)}},
@@ -798,7 +798,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-127)}},
@@ -808,7 +808,7 @@ func (s *instructionSuite) TestOpMul() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -840,7 +840,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -852,7 +852,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -867,7 +867,7 @@ func (s *instructionSuite) TestOpDiv() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -886,7 +886,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -899,7 +899,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(2)}, &Raw{Value: decimal.NewFromFloat(-2)}},
@@ -911,7 +911,7 @@ func (s *instructionSuite) TestOpDiv() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -931,7 +931,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(50)}, &Raw{Value: decimal.NewFromFloat(-50)}},
@@ -940,7 +940,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -955,7 +955,7 @@ func (s *instructionSuite) TestOpDiv() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(5)}, &Raw{Value: decimal.NewFromFloat(-5)}},
@@ -974,7 +974,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}},
@@ -985,7 +985,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}},
@@ -1009,7 +1009,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}},
@@ -1019,7 +1019,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1044,7 +1044,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1054,7 +1054,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1078,7 +1078,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-128)}},
@@ -1088,7 +1088,7 @@ func (s *instructionSuite) TestOpDiv() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1120,7 +1120,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -1132,7 +1132,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -1147,7 +1147,7 @@ func (s *instructionSuite) TestOpMod() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1166,7 +1166,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1179,7 +1179,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(3)}, &Raw{Value: decimal.NewFromFloat(-3)}},
@@ -1191,7 +1191,7 @@ func (s *instructionSuite) TestOpMod() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1211,7 +1211,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(31)}, &Raw{Value: decimal.NewFromFloat(-31)}},
@@ -1220,7 +1220,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}, &Raw{Value: decimal.NewFromFloat(10)}},
@@ -1235,7 +1235,7 @@ func (s *instructionSuite) TestOpMod() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1254,7 +1254,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}},
@@ -1265,7 +1265,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}},
@@ -1289,7 +1289,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(10)}},
@@ -1299,7 +1299,7 @@ func (s *instructionSuite) TestOpMod() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1331,7 +1331,7 @@ func (s *instructionSuite) TestOpLt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1342,7 +1342,7 @@ func (s *instructionSuite) TestOpLt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -1356,7 +1356,7 @@ func (s *instructionSuite) TestOpLt() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawTrue, rawTrue},
@@ -1374,7 +1374,7 @@ func (s *instructionSuite) TestOpLt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1383,7 +1383,7 @@ func (s *instructionSuite) TestOpLt() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1395,7 +1395,7 @@ func (s *instructionSuite) TestOpLt() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawFalse, rawTrue},
@@ -1411,7 +1411,7 @@ func (s *instructionSuite) TestOpLt() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1420,7 +1420,7 @@ func (s *instructionSuite) TestOpLt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1432,7 +1432,7 @@ func (s *instructionSuite) TestOpLt() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawTrue, rawFalse},
@@ -1455,7 +1455,7 @@ func (s *instructionSuite) TestOpGt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1466,7 +1466,7 @@ func (s *instructionSuite) TestOpGt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -1480,7 +1480,7 @@ func (s *instructionSuite) TestOpGt() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawFalse, rawFalse},
@@ -1498,7 +1498,7 @@ func (s *instructionSuite) TestOpGt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1507,7 +1507,7 @@ func (s *instructionSuite) TestOpGt() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1519,7 +1519,7 @@ func (s *instructionSuite) TestOpGt() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawTrue, rawFalse},
@@ -1535,7 +1535,7 @@ func (s *instructionSuite) TestOpGt() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1544,7 +1544,7 @@ func (s *instructionSuite) TestOpGt() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1556,7 +1556,7 @@ func (s *instructionSuite) TestOpGt() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawFalse, rawTrue},
@@ -1579,7 +1579,7 @@ func (s *instructionSuite) TestOpEq() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1589,7 +1589,7 @@ func (s *instructionSuite) TestOpEq() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(-1)}},
@@ -1602,7 +1602,7 @@ func (s *instructionSuite) TestOpEq() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawTrue, rawTrue},
@@ -1619,7 +1619,7 @@ func (s *instructionSuite) TestOpEq() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1629,7 +1629,7 @@ func (s *instructionSuite) TestOpEq() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -1641,7 +1641,7 @@ func (s *instructionSuite) TestOpEq() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawTrue, rawTrue},
@@ -1665,7 +1665,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1675,7 +1675,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -1688,7 +1688,7 @@ func (s *instructionSuite) TestOpAnd() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -1705,7 +1705,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1715,7 +1715,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -1727,7 +1727,7 @@ func (s *instructionSuite) TestOpAnd() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -1744,7 +1744,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -1753,7 +1753,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1766,7 +1766,7 @@ func (s *instructionSuite) TestOpAnd() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -1783,7 +1783,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1792,7 +1792,7 @@ func (s *instructionSuite) TestOpAnd() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1823,7 +1823,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1833,7 +1833,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -1846,7 +1846,7 @@ func (s *instructionSuite) TestOpOr() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawTrue},
@@ -1863,7 +1863,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1873,7 +1873,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -1885,7 +1885,7 @@ func (s *instructionSuite) TestOpOr() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawTrue},
@@ -1902,7 +1902,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -1911,7 +1911,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1924,7 +1924,7 @@ func (s *instructionSuite) TestOpOr() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawTrue},
@@ -1941,7 +1941,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1950,7 +1950,7 @@ func (s *instructionSuite) TestOpOr() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -1981,7 +1981,7 @@ func (s *instructionSuite) TestOpNot() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -1994,7 +1994,7 @@ func (s *instructionSuite) TestOpNot() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawTrue},
@@ -2011,7 +2011,7 @@ func (s *instructionSuite) TestOpNot() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}},
@@ -2042,7 +2042,7 @@ func (s *instructionSuite) TestOpUnion() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -2052,7 +2052,7 @@ func (s *instructionSuite) TestOpUnion() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -2065,7 +2065,7 @@ func (s *instructionSuite) TestOpUnion() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawFalse},
@@ -2091,7 +2091,7 @@ func (s *instructionSuite) TestOpIntxn() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -2103,7 +2103,7 @@ func (s *instructionSuite) TestOpIntxn() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawTrue},
@@ -2116,7 +2116,7 @@ func (s *instructionSuite) TestOpIntxn() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawFalse, rawFalse},
@@ -2140,7 +2140,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("a%bcdefg")}, &Raw{Bytes: []byte("gfedcba")}},
@@ -2149,7 +2149,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("%\\%b%")}},
@@ -2158,7 +2158,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("\\")}},
@@ -2170,7 +2170,7 @@ func (s *instructionSuite) TestOpLike() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -2186,7 +2186,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("a%bcdefg")}},
@@ -2196,7 +2196,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("%\\%b%")}},
@@ -2206,7 +2206,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("\\")}},
@@ -2219,7 +2219,7 @@ func (s *instructionSuite) TestOpLike() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue},
@@ -2236,7 +2236,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte{226, 40, 161, 228, 189, 160, 229, 165, 189}}, &Raw{Bytes: []byte("gfedcba")}},
@@ -2245,7 +2245,7 @@ func (s *instructionSuite) TestOpLike() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte{37, 228, 189, 160, 37}}},
@@ -2257,7 +2257,7 @@ func (s *instructionSuite) TestOpLike() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -2280,7 +2280,7 @@ func (s *instructionSuite) TestOpZip() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}},
@@ -2290,7 +2290,7 @@ func (s *instructionSuite) TestOpZip() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -2303,7 +2303,7 @@ func (s *instructionSuite) TestOpZip() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -2320,7 +2320,7 @@ func (s *instructionSuite) TestOpZip() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}},
@@ -2329,7 +2329,7 @@ func (s *instructionSuite) TestOpZip() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -2342,7 +2342,7 @@ func (s *instructionSuite) TestOpZip() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -2366,7 +2366,7 @@ func (s *instructionSuite) TestOpField() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -2376,7 +2376,7 @@ func (s *instructionSuite) TestOpField() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
@@ -2388,7 +2388,7 @@ func (s *instructionSuite) TestOpField() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -2412,7 +2412,7 @@ func (s *instructionSuite) TestOpPrune() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawFalse, rawTrue},
@@ -2422,7 +2422,7 @@ func (s *instructionSuite) TestOpPrune() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(3)}, &Raw{Value: decimal.NewFromFloat(4)}},
@@ -2434,7 +2434,7 @@ func (s *instructionSuite) TestOpPrune() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -2458,7 +2458,7 @@ func (s *instructionSuite) TestOpFilter() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue, rawFalse},
@@ -2470,7 +2470,7 @@ func (s *instructionSuite) TestOpFilter() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue},
@@ -2485,7 +2485,7 @@ func (s *instructionSuite) TestOpFilter() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -2509,7 +2509,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 1), ast.ComposeDataType(4, 1),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorInt, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(127)}, &Raw{Value: decimal.NewFromFloat(127)}},
@@ -2519,7 +2519,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 2),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 2),
 						},
 						[]Tuple{},
 					),
@@ -2529,7 +2529,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 0), ast.ComposeDataType(4, 2),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 2),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(127)}, &Raw{Value: decimal.NewFromFloat(127)}},
@@ -2546,7 +2546,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 1), ast.ComposeDataType(4, 1),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorInt, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(-32768)}},
@@ -2555,7 +2555,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 1), ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{},
 					),
@@ -2565,7 +2565,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(5, 1), ast.ComposeDataType(5, 1),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(32768)}},
@@ -2581,7 +2581,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 1), ast.ComposeDataType(4, 1),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorInt, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(-32768)}},
@@ -2591,7 +2591,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{},
 					),
@@ -2601,7 +2601,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawTrue},
@@ -2618,7 +2618,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 1), ast.ComposeDataType(4, 1),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorInt, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(-32768)}},
@@ -2627,7 +2627,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(6, 1), ast.ComposeDataType(3, 0),
+							ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1), ast.ComposeDataType(ast.DataTypeMajorAddress, 0),
 						},
 						[]Tuple{},
 					),
@@ -2637,7 +2637,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(6, 1), ast.ComposeDataType(3, 0),
+					ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1), ast.ComposeDataType(ast.DataTypeMajorAddress, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte{0x7f, 0xff}}, &Raw{Bytes: []byte{255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0x80, 0x00}}},
@@ -2653,7 +2653,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 1), ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(128)}, &Raw{Value: decimal.NewFromFloat(128)}},
@@ -2662,7 +2662,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 0), ast.ComposeDataType(5, 2),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 2),
 						},
 						[]Tuple{},
 					),
@@ -2672,7 +2672,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(5, 0), ast.ComposeDataType(5, 2),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 2),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(128)}, &Raw{Value: decimal.NewFromFloat(128)}},
@@ -2688,7 +2688,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 1), ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(32768)}},
@@ -2697,7 +2697,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 1), ast.ComposeDataType(6, 1),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 						},
 						[]Tuple{},
 					),
@@ -2707,7 +2707,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 1), ast.ComposeDataType(6, 1),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Bytes: []byte{0x80, 0x00}}},
@@ -2723,7 +2723,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 1), ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -2732,7 +2732,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{},
 					),
@@ -2742,7 +2742,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue, rawFalse},
@@ -2758,7 +2758,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 1), ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -2767,7 +2767,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(6, 1), ast.ComposeDataType(6, 1),
+							ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 						},
 						[]Tuple{},
 					),
@@ -2777,7 +2777,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(6, 1), ast.ComposeDataType(6, 1),
+					ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte{0x7f, 0xff}}, &Raw{Bytes: []byte{0x00, 0x00}}},
@@ -2793,7 +2793,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(32767)}},
@@ -2802,7 +2802,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(3, 1),
+							ast.ComposeDataType(ast.DataTypeMajorAddress, 1),
 						},
 						[]Tuple{},
 					),
@@ -2812,7 +2812,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(3, 1),
+					ast.ComposeDataType(ast.DataTypeMajorAddress, 1),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0xff}}},
@@ -2828,7 +2828,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(6, 1), ast.ComposeDataType(6, 1),
+							ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte{0xff, 0xff}}, &Raw{Bytes: []byte{0xff, 0xff}}},
@@ -2837,7 +2837,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(6, 0), ast.ComposeDataType(6, 2),
+							ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 2),
 						},
 						[]Tuple{},
 					),
@@ -2847,7 +2847,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(6, 0), ast.ComposeDataType(6, 2),
+					ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 2),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte{0xff}}, &Raw{Bytes: []byte{0xff, 0xff, 0x00}}},
@@ -2863,7 +2863,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(6, 1), ast.ComposeDataType(6, 1),
+							ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte{0x7f, 0xff}}, &Raw{Bytes: []byte{0x80, 0x00}}},
@@ -2872,7 +2872,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 1), ast.ComposeDataType(5, 1),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{},
 					),
@@ -2882,7 +2882,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(4, 1), ast.ComposeDataType(5, 1),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 				},
 				[]Tuple{
 					{&Raw{Value: decimal.NewFromFloat(32767)}, &Raw{Value: decimal.NewFromFloat(32768)}},
@@ -2898,7 +2898,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(6, 1),
+							ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 1),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte{0x7f, 0xff}}},
@@ -2907,7 +2907,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 1),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 1),
 						},
 						[]Tuple{},
 					),
@@ -2917,7 +2917,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 1),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 1),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte{0x7f, 0xff}}},
@@ -2933,7 +2933,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{rawTrue},
@@ -2942,7 +2942,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{},
 					),
@@ -2952,7 +2952,7 @@ func (s *instructionSuite) TestOpCast() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{rawTrue},
@@ -2968,7 +2968,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(4, 2),
+							ast.ComposeDataType(ast.DataTypeMajorInt, 2),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(-32768)}},
@@ -2977,7 +2977,7 @@ func (s *instructionSuite) TestOpCast() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
 						},
 						[]Tuple{},
 					),
@@ -3006,7 +3006,7 @@ func (s *instructionSuite) TestOpSort() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("c")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -3022,7 +3022,7 @@ func (s *instructionSuite) TestOpSort() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{rawFalse, &Raw{Value: decimal.NewFromFloat(1)}},
@@ -3036,7 +3036,7 @@ func (s *instructionSuite) TestOpSort() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte("c")}, &Raw{Value: decimal.NewFromFloat(3)}, rawFalse},
@@ -3059,7 +3059,7 @@ func (s *instructionSuite) TestOpSort() {
 					makeOperand(
 						false,
 						[]ast.DataType{
-							ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 						},
 						[]Tuple{
 							{&Raw{Bytes: []byte("c")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
@@ -3075,7 +3075,7 @@ func (s *instructionSuite) TestOpSort() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(2, 0), ast.ComposeDataType(4, 0),
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
 						},
 						[]Tuple{
 							{rawTrue, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -3089,7 +3089,7 @@ func (s *instructionSuite) TestOpSort() {
 			makeOperand(
 				false,
 				[]ast.DataType{
-					ast.ComposeDataType(7, 0), ast.ComposeDataType(4, 0), ast.ComposeDataType(2, 0),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
 				},
 				[]Tuple{
 					{&Raw{Bytes: []byte("a")}, &Raw{Value: decimal.NewFromFloat(1)}, rawFalse},
