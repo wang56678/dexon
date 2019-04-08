@@ -1508,7 +1508,7 @@ func (con *Consensus) deliveryGuard() {
 	// Node takes time to start.
 	select {
 	case <-con.ctx.Done():
-	case <-time.After(60 * time.Second):
+	case <-time.After(180 * time.Second):
 	}
 	for {
 		select {
