@@ -401,7 +401,7 @@ func (n *FixedTypeNode) GetType() (DataType, errors.ErrorCode, string) {
 		code := errors.ErrorCodeInvalidFixedSize
 		if n.Unsigned {
 			name = "ufixed"
-			code = errors.ErrorCodeInvalidFixedSize
+			code = errors.ErrorCodeInvalidUfixedSize
 		}
 		if !sizeIsMultiple {
 			return DataTypeBad, code, fmt.Sprintf(
