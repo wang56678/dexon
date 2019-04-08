@@ -2448,6 +2448,235 @@ func (s *instructionSuite) TestOpPrune() {
 	s.run(testcases, opPrune)
 }
 
+func (s *instructionSuite) TestOpCut() {
+	testcases := []opTestcase{
+		{
+			"Cut 2nd to 4th columns",
+			Instruction{
+				Op: CUT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawFalse, rawTrue},
+							{&Raw{Bytes: []byte("abcdefg-2")}, &Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawTrue, rawFalse},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(3)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+				},
+				[]Tuple{
+					{&Raw{Bytes: []byte("abcdefg-1")}, rawTrue},
+					{&Raw{Bytes: []byte("abcdefg-2")}, rawFalse},
+				},
+			),
+			nil,
+		},
+		{
+			"Cut 1st column",
+			Instruction{
+				Op: CUT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawFalse, rawTrue},
+							{&Raw{Bytes: []byte("abcdefg-2")}, &Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawTrue, rawFalse},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(0)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+				},
+				[]Tuple{
+					{&Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawFalse, rawTrue},
+					{&Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawTrue, rawFalse},
+				},
+			),
+			nil,
+		},
+		{
+			"Cut since 2nd column",
+			Instruction{
+				Op: CUT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
+							{&Raw{Bytes: []byte("abcdefg-2")}, &Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawFalse},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+				},
+				[]Tuple{
+					{&Raw{Bytes: []byte("abcdefg-1")}},
+					{&Raw{Bytes: []byte("abcdefg-2")}},
+				},
+			),
+			nil,
+		},
+		{
+			"Cut all columns",
+			Instruction{
+				Op: CUT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
+							{&Raw{Bytes: []byte("abcdefg-2")}, &Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawFalse},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(0)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{
+					{},
+					{},
+				},
+			),
+			nil,
+		},
+		{
+			"Cut error range - 1",
+			Instruction{
+				Op: CUT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
+							{&Raw{Bytes: []byte("abcdefg-2")}, &Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawFalse},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(5)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{},
+			),
+			errors.ErrorCodeIndexOutOfRange,
+		},
+		{
+			"Cut error range - 2",
+			Instruction{
+				Op: CUT,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abcdefg-1")}, &Raw{Bytes: []byte("gfedcba-1")}, &Raw{Value: decimal.NewFromFloat(1)}, rawTrue},
+							{&Raw{Bytes: []byte("abcdefg-2")}, &Raw{Bytes: []byte("gfedcba-2")}, &Raw{Value: decimal.NewFromFloat(2)}, rawFalse},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(15)}, &Raw{Value: decimal.NewFromFloat(17)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{},
+			),
+			errors.ErrorCodeIndexOutOfRange,
+		},
+	}
+
+	s.run(testcases, opCut)
+}
+
 func (s *instructionSuite) TestOpFilter() {
 	testcases := []opTestcase{
 		{

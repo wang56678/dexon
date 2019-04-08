@@ -1543,6 +1543,208 @@ var testData = &tmplData{
 		},
 		// -- end of PRUNE
 		{
+			TestName: "OpCut", OpFunc: "opCut",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Cut 2nd to 4th columns",
+					Error: "nil", OpCode: "CUT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Bool", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abcdefg-1", B: "gfedcba-1", V: 1, F, T}`,
+								`{B: "abcdefg-2", B: "gfedcba-2", V: 2, T, F}`,
+							},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{"{V: 1, V: 3}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "DynamicBytes", Minor: 0},
+							{Major: "Bool", Minor: 0},
+						},
+						Data: []string{
+							`{B: "abcdefg-1", T}`,
+							`{B: "abcdefg-2", F}`,
+						},
+					},
+				},
+				{
+					Name:  "Cut 1st column",
+					Error: "nil", OpCode: "CUT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Bool", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abcdefg-1", B: "gfedcba-1", V: 1, F, T}`,
+								`{B: "abcdefg-2", B: "gfedcba-2", V: 2, T, F}`,
+							},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{"{V: 0, V: 0}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "DynamicBytes", Minor: 0},
+							{Major: "Int", Minor: 0},
+							{Major: "Bool", Minor: 0},
+							{Major: "Bool", Minor: 0},
+						},
+						Data: []string{
+							`{B: "gfedcba-1", V: 1, F, T}`,
+							`{B: "gfedcba-2", V: 2, T, F}`,
+						},
+					},
+				},
+				{
+					Name:  "Cut since 2nd column",
+					Error: "nil", OpCode: "CUT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abcdefg-1", B: "gfedcba-1", V: 1, T}`,
+								`{B: "abcdefg-2", B: "gfedcba-2", V: 2, F}`,
+							},
+						},
+						{
+							Im:    true,
+							Metas: []*tmplOpMeta{{Major: "Int", Minor: 0}},
+							Data:  []string{"{V: 1}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "DynamicBytes", Minor: 0},
+						},
+						Data: []string{
+							`{B: "abcdefg-1"}`,
+							`{B: "abcdefg-2"}`,
+						},
+					},
+				},
+				{
+					Name:  "Cut all columns",
+					Error: "nil", OpCode: "CUT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abcdefg-1", B: "gfedcba-1", V: 1, T}`,
+								`{B: "abcdefg-2", B: "gfedcba-2", V: 2, F}`,
+							},
+						},
+						{
+							Im:    true,
+							Metas: []*tmplOpMeta{{Major: "Int", Minor: 0}},
+							Data:  []string{"{V: 0}"},
+						},
+					},
+					Output: &tmplOp{
+						Im:    false,
+						Metas: []*tmplOpMeta{},
+						Data:  []string{"{}", "{}"},
+					},
+				},
+				{
+					Name:  "Cut error range - 1",
+					Error: "errors.ErrorCodeIndexOutOfRange", OpCode: "CUT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abcdefg-1", B: "gfedcba-1", V: 1, T}`,
+								`{B: "abcdefg-2", B: "gfedcba-2", V: 2, F}`,
+							},
+						},
+						{
+							Im:    true,
+							Metas: []*tmplOpMeta{{Major: "Int", Minor: 0}},
+							Data:  []string{"{V: 5}"},
+						},
+					},
+					Output: &tmplOp{},
+				},
+				{
+					Name:  "Cut error range - 2",
+					Error: "errors.ErrorCodeIndexOutOfRange", OpCode: "CUT",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{
+								`{B: "abcdefg-1", B: "gfedcba-1", V: 1, T}`,
+								`{B: "abcdefg-2", B: "gfedcba-2", V: 2, F}`,
+							},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{"{V: 15, V: 17}"},
+						},
+					},
+					Output: &tmplOp{},
+				},
+			},
+		},
+		// -- end of CUT
+		{
 			TestName: "OpFilter", OpFunc: "opFilter",
 			Cases: []*tmplTestCase{
 				{

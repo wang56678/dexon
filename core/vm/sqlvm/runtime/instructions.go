@@ -1369,6 +1369,35 @@ func pruneTuple(t Tuple, prune []int) Tuple {
 }
 
 // in-place Op
+func opCut(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
+	if len(ops) != 2 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+	op, slice := ops[0], ops[1].Data[0]
+
+	maxL := uint16(len(op.Meta))
+	start, end := value2ColIdx(slice[0].Value), maxL
+	if len(slice) > 1 {
+		end = value2ColIdx(slice[1].Value) + 1
+	}
+
+	if start > maxL || end > maxL || start > end {
+		err = se.ErrorCodeIndexOutOfRange
+		return
+	}
+
+	op.Meta = append(op.Meta[:start], op.Meta[end:]...)
+
+	for i := 0; i < len(op.Data); i++ {
+		op.Data[i] = append(op.Data[i][:start], op.Data[i][end:]...)
+	}
+
+	registers[output] = op
+	return
+}
+
+// in-place Op
 func opSort(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
 	if len(ops) != 2 {
 		err = se.ErrorCodeInvalidOperandNum
