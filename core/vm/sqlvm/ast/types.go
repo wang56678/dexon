@@ -337,6 +337,8 @@ func decimalEncode(size int, d decimal.Decimal) []byte {
 func decimalDecode(signed bool, bs []byte) decimal.Decimal {
 	neg := false
 	if signed && (bs[0]&0x80 != 0) {
+		newbs := make([]byte, 0, len(bs))
+		bs = append(newbs, bs...)
 		neg = true
 		for idx := range bs {
 			bs[idx] = ^bs[idx]
