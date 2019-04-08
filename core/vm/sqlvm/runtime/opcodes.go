@@ -46,6 +46,7 @@ const (
 	FILTER
 	CAST
 	CUT
+	RANGE
 )
 
 // 0x60 range - storage ops

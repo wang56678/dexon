@@ -2330,5 +2330,125 @@ var testData = &tmplData{
 			},
 		},
 		// -- end of SORT
+		{
+			TestName: "OpRange", OpFunc: "opRange",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Range test limit 2 offset 1",
+					Error: "nil", OpCode: "RANGE",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{
+								`{V: 1}`, `{V: 2}`, `{V: 3}`, `{V: 4}`,
+								`{V: 5}`, `{V: 6}`, `{V: 7}`, `{V: 8}`,
+							},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 7},
+								{Major: "Uint", Minor: 7},
+							},
+							Data: []string{"{V: 1, V: 2}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Int", Minor: 0},
+						},
+						Data: []string{`{V: 2}`, `{V: 3}`},
+					},
+				},
+				{
+					Name:  "Range test limit 0 offset 1",
+					Error: "nil", OpCode: "RANGE",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{`{V: 1}`, `{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 7},
+								{Major: "Uint", Minor: 7},
+							},
+							Data: []string{"{V: 1, V: 0}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Int", Minor: 0},
+						},
+						Data: []string{},
+					},
+				},
+				{
+					Name:  "Range test offset 20",
+					Error: "nil", OpCode: "RANGE",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{`{V: 1}`, `{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 7},
+							},
+							Data: []string{"{V: 20}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Int", Minor: 0},
+						},
+						Data: []string{},
+					},
+				},
+				{
+					Name:  "Range test limit 10 offset 20",
+					Error: "nil", OpCode: "RANGE",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{`{V: 1}`, `{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 7},
+								{Major: "Uint", Minor: 7},
+							},
+							Data: []string{"{V: 20, V: 10}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Int", Minor: 0},
+						},
+						Data: []string{},
+					},
+				},
+			},
+		},
+		// -- end of RANGE
 	},
 }

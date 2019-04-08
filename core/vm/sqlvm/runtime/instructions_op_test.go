@@ -3337,3 +3337,163 @@ func (s *instructionSuite) TestOpSort() {
 
 	s.run(testcases, opSort)
 }
+
+func (s *instructionSuite) TestOpRange() {
+	testcases := []opTestcase{
+		{
+			"Range test limit 2 offset 1",
+			Instruction{
+				Op: RANGE,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}},
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+							{&Raw{Value: decimal.NewFromFloat(3)}},
+							{&Raw{Value: decimal.NewFromFloat(4)}},
+							{&Raw{Value: decimal.NewFromFloat(5)}},
+							{&Raw{Value: decimal.NewFromFloat(6)}},
+							{&Raw{Value: decimal.NewFromFloat(7)}},
+							{&Raw{Value: decimal.NewFromFloat(8)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+				},
+				[]Tuple{
+					{&Raw{Value: decimal.NewFromFloat(2)}},
+					{&Raw{Value: decimal.NewFromFloat(3)}},
+				},
+			),
+			nil,
+		},
+		{
+			"Range test limit 0 offset 1",
+			Instruction{
+				Op: RANGE,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}},
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+				},
+				[]Tuple{},
+			),
+			nil,
+		},
+		{
+			"Range test offset 20",
+			Instruction{
+				Op: RANGE,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}},
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(20)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+				},
+				[]Tuple{},
+			),
+			nil,
+		},
+		{
+			"Range test limit 10 offset 20",
+			Instruction{
+				Op: RANGE,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}},
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(20)}, &Raw{Value: decimal.NewFromFloat(10)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+				},
+				[]Tuple{},
+			),
+			nil,
+		},
+	}
+
+	s.run(testcases, opRange)
+}

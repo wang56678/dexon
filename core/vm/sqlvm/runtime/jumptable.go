@@ -27,6 +27,7 @@ var jumpTable = [256]OpFunction{
 	FILTER: opFilter,
 	CAST:   opCast,
 	CUT:    opCut,
+	RANGE:  opRange,
 
 	// 0x60
 	LOAD: opLoad,

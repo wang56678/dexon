@@ -1398,6 +1398,42 @@ func opCut(ctx *common.Context, ops, registers []*Operand, output uint) (err err
 }
 
 // in-place Op
+func opRange(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
+	if len(ops) != 2 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+	op, slice := ops[0], ops[1].Data[0]
+
+	offset, err := ast.DecimalToUint64(slice[0].Value)
+	if err != nil {
+		return
+	}
+
+	if offset < uint64(len(op.Data)) {
+		op.Data = op.Data[offset:]
+	} else {
+		op.Data = op.Data[:0]
+	}
+
+	if len(slice) > 1 && len(op.Data) > 0 {
+		var limit uint64
+
+		limit, err = ast.DecimalToUint64(slice[1].Value)
+		if err != nil {
+			return
+		}
+
+		if limit < uint64(len(op.Data)) {
+			op.Data = op.Data[:limit]
+		}
+	}
+
+	registers[output] = op
+	return
+}
+
+// in-place Op
 func opSort(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
 	if len(ops) != 2 {
 		err = se.ErrorCodeInvalidOperandNum
