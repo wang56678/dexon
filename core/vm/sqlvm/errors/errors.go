@@ -116,6 +116,7 @@ const (
 	// Planner Error
 	ErrorCodePlanner
 	// Runtime Error
+	ErrorCodeInvalidOperandNum
 	ErrorCodeInvalidDataType
 	ErrorCodeOverflow
 	ErrorCodeUnderflow
@@ -123,6 +124,9 @@ const (
 	ErrorCodeInvalidCastType
 	ErrorCodeDividedByZero
 	ErrorCodeNegDecimalToUint64
+	ErrorCodeDataLengthNotMatch
+	ErrorCodeMultipleEscapeByte
+	ErrorCodePendingEscapeByte
 )
 
 var errorCodeMap = [...]string{
@@ -149,6 +153,7 @@ var errorCodeMap = [...]string{
 	// Planner Error
 	ErrorCodePlanner: "planner failure", // TODO: fix the message.
 	// Runtime Error
+	ErrorCodeInvalidOperandNum:  "invalid operand number",
 	ErrorCodeInvalidDataType:    "invalid data type",
 	ErrorCodeOverflow:           "overflow",
 	ErrorCodeUnderflow:          "underflow",
@@ -156,6 +161,9 @@ var errorCodeMap = [...]string{
 	ErrorCodeInvalidCastType:    "invalid cast type",
 	ErrorCodeDividedByZero:      "divide by zero",
 	ErrorCodeNegDecimalToUint64: "negative deciaml to uint64",
+	ErrorCodeDataLengthNotMatch: "data length not match",
+	ErrorCodeMultipleEscapeByte: "multiple escape byte",
+	ErrorCodePendingEscapeByte:  "pending escape byte",
 }
 
 func (c ErrorCode) Error() string {

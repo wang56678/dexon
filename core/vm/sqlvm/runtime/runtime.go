@@ -3,32 +3,27 @@ package runtime
 import (
 	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/common"
-	"github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
+	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
 )
 
 // Run is runtime entrypoint.
 func Run(stateDB vm.StateDB, ins []Instruction, registers []*Operand) (ret []byte, err error) {
 	for _, in := range ins {
-		opFunc := jumpTable[in.Op]
-		loadRegister(in.Input, registers)
-		errCode := opFunc(&common.Context{}, in.Input, registers, in.Output)
+		for i := 0; i < len(in.Input); i++ {
+			if !in.Input[i].IsImmediate {
+				in.Input[i] = registers[in.Input[i].RegisterIndex]
+			}
+		}
+		errCode := jumpTable[in.Op](&common.Context{}, in.Input, registers, in.Output)
 		if errCode != nil {
-			err = errors.Error{
+			err = se.Error{
 				Position: in.Position,
-				Code:     errCode.(errors.ErrorCode),
-				Category: errors.ErrorCategoryRuntime,
+				Code:     errCode.(se.ErrorCode),
+				Category: se.ErrorCategoryRuntime,
 			}
 			return nil, err
 		}
 	}
 	// TODO: ret = ABIEncode(ins[len(ins)-1].Output)
 	return
-}
-
-func loadRegister(input, registers []*Operand) {
-	for i, operand := range input {
-		if operand != nil && !operand.IsImmediate {
-			input[i] = registers[operand.RegisterIndex]
-		}
-	}
 }
