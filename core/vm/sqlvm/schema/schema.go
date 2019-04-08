@@ -163,8 +163,8 @@ type column struct {
 	Attr        ColumnAttr
 	ForeignKeys []ColumnDescriptor
 	Sequence    SequenceRef
-	SlotOffset  uint8
-	ByteOffset  uint8
+	SlotOffset  uint8 `rlp:"-"`
+	ByteOffset  uint8 `rlp:"-"`
 	// Rest is a special field reserved for use in EncodeRLP. The value stored
 	// in it will be overwritten every time EncodeRLP is called.
 	Rest interface{}
