@@ -366,6 +366,17 @@ func metaDynBytes(dType ast.DataType) bool {
 
 func metaAllDynBytes(op *Operand) bool { return metaAll(op, metaDynBytes) }
 
+func metaSignedNumeric(dType ast.DataType) bool {
+	major, _ := ast.DecomposeDataType(dType)
+	if major == ast.DataTypeMajorInt ||
+		major == ast.DataTypeMajorFixed {
+		return true
+	}
+	return false
+}
+
+func metaAllSignedNumeric(op *Operand) bool { return metaAll(op, metaSignedNumeric) }
+
 func flowCheck(ctx *common.Context, v decimal.Decimal, dType ast.DataType) (err error) {
 	if !ctx.Opt.SafeMath {
 		return
@@ -1777,6 +1788,45 @@ func (t Tuple) concat(t2 Tuple) (t3 Tuple) {
 		t3[i] = &Raw{Bytes: make([]byte, len(t[i].Bytes)+len(t2[i].Bytes))}
 		copy(t3[i].Bytes[:len(t[i].Bytes)], t[i].Bytes)
 		copy(t3[i].Bytes[len(t[i].Bytes):], t2[i].Bytes)
+	}
+	return
+}
+
+func opNeg(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
+	if len(ops) != 1 {
+		err = se.ErrorCodeDataLengthNotMatch
+		return
+	}
+	op := ops[0]
+
+	if !metaAllSignedNumeric(op) {
+		err = se.ErrorCodeInvalidDataType
+		return
+	}
+
+	op2 := op.clone(true)
+	op2.Data = make([]Tuple, len(op.Data))
+
+	for i := 0; i < len(op.Data); i++ {
+		op2.Data[i], err = op.Data[i].neg(ctx, op2.Meta)
+		if err != nil {
+			return
+		}
+	}
+
+	registers[output] = op2
+	return
+}
+
+func (t Tuple) neg(ctx *common.Context, meta []ast.DataType) (t2 Tuple, err error) {
+	t2 = make(Tuple, len(t))
+	for i := 0; i < len(t); i++ {
+		t2[i] = &Raw{Value: t[i].Value.Neg()}
+
+		err = flowCheck(ctx, t2[i].Value, meta[i])
+		if err != nil {
+			return
+		}
 	}
 	return
 }

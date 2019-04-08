@@ -1401,6 +1401,122 @@ func (s *instructionSuite) TestOpConcat() {
 	s.run(testcases, opConcat)
 }
 
+func (s *instructionSuite) TestOpNeg() {
+	testcases := []opTestcase{
+		{
+			"Neg unary",
+			Instruction{
+				Op: NEG,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(-1)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+				},
+				[]Tuple{
+					{&Raw{Value: decimal.NewFromFloat(-1)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}},
+				},
+			),
+			nil,
+		},
+		{
+			"Overflow Neg",
+			Instruction{
+				Op: NEG,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(-128)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{},
+			),
+			errors.ErrorCodeOverflow,
+		},
+		{
+			"Invalid Neg",
+			Instruction{
+				Op: NEG,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abc-1")}, rawTrue},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{},
+			),
+			errors.ErrorCodeInvalidDataType,
+		},
+		{
+			"Invalid Neg",
+			Instruction{
+				Op: NEG,
+				Input: []*Operand{
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorBool, 0),
+						},
+						[]Tuple{
+							{rawTrue},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte("abc-1")}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{},
+				[]Tuple{},
+			),
+			errors.ErrorCodeDataLengthNotMatch,
+		},
+	}
+
+	s.run(testcases, opNeg)
+}
+
 func (s *instructionSuite) TestOpLt() {
 	testcases := []opTestcase{
 		{

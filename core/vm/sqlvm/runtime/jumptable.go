@@ -8,6 +8,7 @@ var jumpTable = [256]OpFunction{
 	DIV:    opDiv,
 	MOD:    opMod,
 	CONCAT: opConcat,
+	NEG:    opNeg,
 
 	// 0x20
 	LT:    opLt,

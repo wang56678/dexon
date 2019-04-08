@@ -841,6 +841,86 @@ var testData = &tmplData{
 		},
 		// -- end of CONCAT
 		{
+			TestName: "OpNeg", OpFunc: "opNeg",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Neg unary",
+					Error: "nil", OpCode: "NEG",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{`{V: 1, V: 0, V: -1}`},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Int", Minor: 0},
+							{Major: "Int", Minor: 0},
+							{Major: "Int", Minor: 0},
+						},
+						Data: []string{`{V: -1, V: 0, V: 1}`},
+					},
+				},
+				{
+					Name:  "Overflow Neg",
+					Error: "errors.ErrorCodeOverflow", OpCode: "NEG",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Int", Minor: 0},
+							},
+							Data: []string{`{V: -128}`},
+						},
+					},
+					Output: &tmplOp{},
+				},
+				{
+					Name:  "Invalid Neg",
+					Error: "errors.ErrorCodeInvalidDataType", OpCode: "NEG",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{`{B: "abc-1", T}`},
+						},
+					},
+					Output: &tmplOp{},
+				},
+				{
+					Name:  "Invalid Neg",
+					Error: "errors.ErrorCodeDataLengthNotMatch", OpCode: "NEG",
+					Inputs: []*tmplOp{
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Bool", Minor: 0},
+							},
+							Data: []string{`{T}`},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+							},
+							Data: []string{`{B: "abc-1"}`},
+						},
+					},
+					Output: &tmplOp{},
+				},
+			},
+		},
+		// -- end of NEG
+		{
 			TestName: "OpLt", OpFunc: "opLt",
 			Cases: []*tmplTestCase{
 				{
