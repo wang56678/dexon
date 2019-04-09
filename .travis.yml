@@ -5,6 +5,7 @@ branches:
   only:
   - dev
   - master
+  - dev-test
 matrix:
   include:
     - os: linux
