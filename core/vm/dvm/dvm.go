@@ -137,12 +137,14 @@ func (dvm *DVM) StateDB() vm.StateDB {
 	return dvm.statedb
 }
 
-func (dvm *DVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *big.Int, in vm.Interpreter) ([]byte, common.Address, uint64, error) {
-	contractAddr := crypto.CreateAddress(caller.Address(), in.(*DVM).statedb.GetNonce(caller.Address()))
-	return in.(*DVM).create(caller, &vm.CodeAndHash{Code: code}, gas, value, contractAddr)
+func (_ *DVM) Create(caller vm.ContractRef, code []byte, gas uint64, value *big.Int, in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+	dvm := in.(*DVM)
+	contractAddr := crypto.CreateAddress(caller.Address(), dvm.statedb.GetNonce(caller.Address()))
+	return dvm.create(caller, &vm.CodeAndHash{Code: code}, gas, value, contractAddr)
 }
 
-func (dvm *DVM) Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int, in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+func (_ *DVM) Create2(caller vm.ContractRef, code []byte, gas uint64, endowment *big.Int, salt *big.Int, in vm.Interpreter) ([]byte, common.Address, uint64, error) {
+	dvm := in.(*DVM)
 	codeAndHash := &vm.CodeAndHash{Code: code}
 	contractAddr := crypto.CreateAddress2(caller.Address(), common.BigToHash(salt), codeAndHash.Hash().Bytes())
 	return dvm.create(caller, codeAndHash, gas, endowment, contractAddr)
@@ -152,38 +154,39 @@ func (dvm *DVM) Create2(caller vm.ContractRef, code []byte, gas uint64, endowmen
 // parameters. It also handles any necessary value transfer required and takes
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
-func (dvm *DVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int, in vm.Interpreter) ([]byte, uint64, error) {
+func (_ *DVM) Call(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int, in vm.Interpreter) ([]byte, uint64, error) {
+	dvm := in.(*DVM)
 	// TODO: do we need these checks?
 	// 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 	// 		return nil, gas, nil
 	// 	}
 
 	// Fail if we're trying to execute above the call depth limit
-	if in.(*DVM).depth > int(params.CallCreateDepth) {
+	if dvm.depth > int(params.CallCreateDepth) {
 		return nil, gas, vm.ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
-	if !in.(*DVM).Context.CanTransfer(in.(*DVM).StateDB(), caller.Address(), value) {
+	if !dvm.Context.CanTransfer(dvm.StateDB(), caller.Address(), value) {
 		return nil, gas, vm.ErrInsufficientBalance
 	}
 
 	var (
 		to       = vm.AccountRef(addr)
-		snapshot = in.(*DVM).StateDB().Snapshot()
+		snapshot = dvm.StateDB().Snapshot()
 	)
-	if !in.(*DVM).StateDB().Exist(addr) {
+	if !dvm.StateDB().Exist(addr) {
 		precompiles := vm.PrecompiledContractsByzantium
 		if precompiles[addr] == nil && value.Sign() == 0 {
 			return nil, gas, nil
 		}
-		in.(*DVM).StateDB().CreateAccount(addr)
+		dvm.StateDB().CreateAccount(addr)
 	}
-	in.(*DVM).Transfer(in.(*DVM).StateDB(), caller.Address(), to.Address(), value)
+	dvm.Transfer(dvm.StateDB(), caller.Address(), to.Address(), value)
 
 	// Initialise a new contract and set the code that is to be used by the EVM.
 	// The contract is a scoped environment for this execution context only.
 	contract := vm.NewContract(caller, to, value, gas)
-	code := in.(*DVM).StateDB().GetCode(addr)
+	code := dvm.StateDB().GetCode(addr)
 	if len(code) > 0 && code[0] == vm.DVM && vm.MULTIVM {
 		code = code[1:]
 	}
@@ -191,13 +194,13 @@ func (dvm *DVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 	contract.SetCodeOptionalHash(&addr, &codeAndHash)
 
 	// Even if the account has no code, we need to continue because it might be a precompile
-	ret, err := in.(*DVM).run(contract, input, false)
+	ret, err := dvm.run(contract, input, false)
 
 	// When an error was returned by the DVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
 	if err != nil {
-		in.(*DVM).StateDB().RevertToSnapshot(snapshot)
+		dvm.StateDB().RevertToSnapshot(snapshot)
 		if err != errExecutionReverted {
 			contract.UseGas(contract.Gas)
 		}
@@ -212,7 +215,8 @@ func (dvm *DVM) Call(caller vm.ContractRef, addr common.Address, input []byte, g
 //
 // CallCode differs from Call in the sense that it executes the given address'
 // code with the caller as context.
-func (dvm *DVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int, in vm.Interpreter) ([]byte, uint64, error) {
+func (_ *DVM) CallCode(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int, in vm.Interpreter) ([]byte, uint64, error) {
+	dvm := in.(*DVM)
 	// TODO: do we need these checks?
 	// 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 	// 		return nil, gas, nil
@@ -258,7 +262,8 @@ func (dvm *DVM) CallCode(caller vm.ContractRef, addr common.Address, input []byt
 //
 // DelegateCall differs from CallCode in the sense that it executes the given address'
 // code with the caller as context and the caller is set to the caller of the caller.
-func (dvm *DVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, in vm.Interpreter) ([]byte, uint64, error) {
+func (_ *DVM) DelegateCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, in vm.Interpreter) ([]byte, uint64, error) {
+	dvm := in.(*DVM)
 	// TODO: do we need these checks?
 	// 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 	// 		return nil, gas, nil
@@ -297,7 +302,8 @@ func (dvm *DVM) DelegateCall(caller vm.ContractRef, addr common.Address, input [
 // as parameters while disallowing any modifications to the state during the call.
 // Opcodes that attempt to perform such modifications will result in exceptions
 // instead of performing the modifications.
-func (dvm *DVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, in vm.Interpreter) ([]byte, uint64, error) {
+func (_ *DVM) StaticCall(caller vm.ContractRef, addr common.Address, input []byte, gas uint64, in vm.Interpreter) ([]byte, uint64, error) {
+	dvm := in.(*DVM)
 	// TODO: do we need these checks?
 	// 	if evm.vmConfig.NoRecursion && evm.depth > 0 {
 	// 		return nil, gas, nil
