@@ -90,6 +90,9 @@ type DVM struct {
 	meteringContract   *vm.Contract
 	meteringModule     *wasm.Module
 	meteringStartIndex int64
+
+	moduleCache map[common.Hash]*wasm.Module
+	vmCache     map[common.Hash]*exec.VM
 }
 
 type Config struct {
@@ -107,9 +110,11 @@ func NewDVM(statedb vm.StateDB, config Config) *DVM {
 		Transfer:    core.Transfer,
 	}
 	dvm := &DVM{
-		Context:  ctx,
-		statedb:  statedb,
-		metering: config.Metering,
+		Context:     ctx,
+		statedb:     statedb,
+		metering:    config.Metering,
+		moduleCache: make(map[common.Hash]*wasm.Module),
+		vmCache:     make(map[common.Hash]*exec.VM),
 	}
 
 	if dvm.metering {
@@ -448,18 +453,31 @@ func (dvm *DVM) run(contract *vm.Contract, input []byte, ro bool) ([]byte, error
 	dvm.contract = contract
 	dvm.contract.Input = input
 
-	module, err := wasm.ReadModule(bytes.NewReader(contract.Code), WrappedModuleResolver(dvm))
-	if err != nil {
-		dvm.terminationType = TerminateInvalid
-		return nil, fmt.Errorf("Error decoding module at address %s: %v", contract.Address().Hex(), err)
+	module, ok := dvm.moduleCache[contract.CodeHash]
+	if !ok {
+		var err error
+		module, err = wasm.ReadModule(bytes.NewReader(contract.Code), WrappedModuleResolver(dvm))
+		if err != nil {
+			dvm.terminationType = TerminateInvalid
+			return nil, fmt.Errorf("Error decoding module at address %s: %v", contract.Address().Hex(), err)
+		}
+		dvm.moduleCache[contract.CodeHash] = module
+	}
+	wavm, ok := dvm.vmCache[contract.CodeHash]
+	if !ok {
+		var err error
+		wavm, err = exec.NewVM(module)
+		if err != nil {
+			dvm.terminationType = TerminateInvalid
+			return nil, fmt.Errorf("could not create the vm: %v", err)
+		}
+		wavm.RecoverPanic = true
+		dvm.vmCache[contract.CodeHash] = wavm
+	} else {
+		// reset memory if cache hit
+		copy(wavm.Memory(), module.LinearMemoryIndexSpace[0])
 	}
 
-	wavm, err := exec.NewVM(module)
-	if err != nil {
-		dvm.terminationType = TerminateInvalid
-		return nil, fmt.Errorf("could not create the vm: %v", err)
-	}
-	wavm.RecoverPanic = true
 	dvm.vm = wavm
 
 	mainIndex, err := validateModule(module)

@@ -296,6 +296,7 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (rtrn interface{}, err err
 	vm.ctx.pc = 0
 	vm.ctx.code = compiled.code
 	vm.ctx.curFunc = fnIndex
+	vm.abort = false
 
 	for i, arg := range args {
 		vm.ctx.locals[i] = arg
