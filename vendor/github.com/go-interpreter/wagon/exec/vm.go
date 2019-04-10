@@ -160,6 +160,18 @@ func NewVM(module *wasm.Module) (*VM, error) {
 	return &vm, nil
 }
 
+func (vm *VM) ResetVM() error {
+	vm.abort = false
+	if vm.module.Memory != nil && len(vm.module.Memory.Entries) != 0 {
+		if len(vm.module.Memory.Entries) > 1 {
+			return ErrMultipleLinearMemories
+		}
+		vm.memory = make([]byte, uint(vm.module.Memory.Entries[0].Limits.Initial)*wasmPageSize)
+		copy(vm.memory, vm.module.LinearMemoryIndexSpace[0])
+	}
+	return nil
+}
+
 // Memory returns the linear memory space for the VM.
 func (vm *VM) Memory() []byte {
 	return vm.memory
@@ -296,7 +308,6 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (rtrn interface{}, err err
 	vm.ctx.pc = 0
 	vm.ctx.code = compiled.code
 	vm.ctx.curFunc = fnIndex
-	vm.abort = false
 
 	for i, arg := range args {
 		vm.ctx.locals[i] = arg

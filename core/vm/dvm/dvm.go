@@ -474,8 +474,10 @@ func (dvm *DVM) run(contract *vm.Contract, input []byte, ro bool) ([]byte, error
 		wavm.RecoverPanic = true
 		dvm.vmCache[contract.CodeHash] = wavm
 	} else {
-		// reset memory if cache hit
-		copy(wavm.Memory(), module.LinearMemoryIndexSpace[0])
+		err := wavm.ResetVM()
+		if err != nil {
+			return nil, fmt.Errorf("could not reset the vm: %v", err)
+		}
 	}
 
 	dvm.vm = wavm
