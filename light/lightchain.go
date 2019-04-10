@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru"
+
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/consensus"
 	"github.com/dexon-foundation/dexon/core"
@@ -35,7 +37,6 @@ import (
 	"github.com/dexon-foundation/dexon/log"
 	"github.com/dexon-foundation/dexon/params"
 	"github.com/dexon-foundation/dexon/rlp"
-	"github.com/hashicorp/golang-lru"
 )
 
 var (

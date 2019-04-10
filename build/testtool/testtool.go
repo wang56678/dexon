@@ -56,7 +56,7 @@ func getBlockNumber(client *ethclient.Client, round int) *big.Int {
 		log.Fatalf("pack input fail: %v", err)
 	}
 
-	result, err := client.CallContract(context.Background(), ethereum.CallMsg{
+	result, err := client.CallContract(context.Background(), dexon.CallMsg{
 		To:   &vm.GovernanceContractAddress,
 		Data: input,
 	}, nil)
@@ -102,7 +102,7 @@ func doVerifyGovCRS(args []string) {
 		log.Fatalf("pack input fail: %v", err)
 	}
 
-	result, err := client.CallContract(context.Background(), ethereum.CallMsg{
+	result, err := client.CallContract(context.Background(), dexon.CallMsg{
 		To:   &vm.GovernanceContractAddress,
 		Data: input,
 	}, blockNumber)
@@ -152,7 +152,7 @@ func doVerifyGovMPK(args []string) {
 		log.Fatalf("pack input fail: %v", err)
 	}
 
-	result, err := client.CallContract(context.Background(), ethereum.CallMsg{
+	result, err := client.CallContract(context.Background(), dexon.CallMsg{
 		To:   &vm.GovernanceContractAddress,
 		Data: input,
 	}, blockNumber)

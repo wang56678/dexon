@@ -30,6 +30,7 @@ import (
 	dexCore "github.com/dexon-foundation/dexon-consensus/core"
 	coreCrypto "github.com/dexon-foundation/dexon-consensus/core/crypto"
 	coreTypes "github.com/dexon-foundation/dexon-consensus/core/types"
+	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/consensus"
@@ -43,7 +44,6 @@ import (
 	"github.com/dexon-foundation/dexon/params"
 	"github.com/dexon-foundation/dexon/rlp"
 	"github.com/dexon-foundation/dexon/trie"
-	"github.com/hashicorp/golang-lru"
 )
 
 const (

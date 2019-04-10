@@ -30,7 +30,7 @@ import (
 
 	dexCore "github.com/dexon-foundation/dexon-consensus/core"
 	coreTypes "github.com/dexon-foundation/dexon-consensus/core/types"
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/common/math"
