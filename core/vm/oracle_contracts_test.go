@@ -977,7 +977,7 @@ func (g *OracleContractsTestSuite) TestResetDKG() {
 
 			// Clear DKG states for next round.
 			dkgSet := dkgSets[round-1]
-			g.s.ClearDKGMasterPublicKeyProposed()
+			g.s.ClearDKGMasterPublicKeyOffset()
 			g.s.ClearDKGMasterPublicKeys()
 			g.s.ClearDKGComplaintProposed()
 			g.s.ClearDKGComplaints()
@@ -1003,6 +1003,7 @@ func (g *OracleContractsTestSuite) TestResetDKG() {
 		g.Require().Len(dkgSet, int(g.config.NotarySetSize))
 		dkgSets[round] = dkgSet
 
+		i := 0
 		for id := range dkgSet {
 			offset := g.s.NodesOffsetByNodeKeyAddress(IdToAddress(id))
 			if offset.Cmp(big.NewInt(0)) < 0 {
@@ -1016,7 +1017,7 @@ func (g *OracleContractsTestSuite) TestResetDKG() {
 				panic(err)
 			}
 			g.s.PushDKGMasterPublicKey(b)
-			g.s.PutDKGMasterPublicKeyProposed(Bytes32(id.Hash), true)
+			g.s.PutDKGMasterPublicKeyOffset(Bytes32(id.Hash), big.NewInt(int64(i)))
 			// Prepare Complaint.
 			y := dkgTypes.Complaint{}
 			b, err = rlp.EncodeToBytes(&y)
@@ -1034,6 +1035,7 @@ func (g *OracleContractsTestSuite) TestResetDKG() {
 				g.s.PutDKGFinalized(addr, true)
 				g.s.IncDKGFinalizedsCount()
 			}
+			i += 1
 		}
 		dkgSetSize := len(dkgSet)
 		g.Require().Len(g.s.DKGMasterPublicKeys(), dkgSetSize)
