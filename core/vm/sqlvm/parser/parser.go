@@ -131,6 +131,7 @@ func Parse(b []byte) ([]ast.StmtNode, error) {
 					Length:   0,
 					Category: errors.ErrorCategoryLimit,
 					Code:     errors.ErrorCodeDepthLimitReached,
+					Severity: errors.ErrorSeverityError,
 					Prefix:   "",
 					Message: fmt.Sprintf("reach syntax tree depth limit %d",
 						ast.DepthLimit),

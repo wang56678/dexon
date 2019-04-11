@@ -18,8 +18,9 @@ type Error struct {
 	// These keys are only used for debugging purposes and not included in ABI.
 	// Values stored in these fields are not guaranteed to be stable, so they
 	// MUST NOT be returned to the contract caller.
-	Prefix  string // Prefix identified the cause of the error.
-	Message string // Message provides detailed the error message.
+	Severity ErrorSeverity
+	Prefix   string // Prefix identified the cause of the error.
+	Message  string // Message provides detailed the error message.
 }
 
 func (e Error) Error() string {
@@ -33,16 +34,22 @@ func (e Error) Error() string {
 			b.WriteString(fmt.Sprintf(", length %d", e.Length))
 		}
 	} else {
-		b.WriteString("unknown location")
+		b.WriteString("no location")
 	}
-	b.WriteString(fmt.Sprintf(", category %d (%s), code %d (%s)",
-		e.Category, e.Category, e.Code, e.Code))
+	if e.Category > 0 {
+		b.WriteString(fmt.Sprintf(", category %d (%s)", e.Category, e.Category))
+	}
+	if e.Code > 0 {
+		b.WriteString(fmt.Sprintf(", code %d (%s)", e.Code, e.Code))
+	}
 	if e.Prefix != "" {
-		b.WriteString(", hint ")
+		b.WriteString(", prefix ")
 		b.WriteString(strconv.Quote(e.Prefix))
 	}
 	if e.Message != "" {
-		b.WriteString(", message: ")
+		b.WriteString(", ")
+		b.WriteString(e.Severity.String())
+		b.WriteString(": ")
 		b.WriteString(e.Message)
 	}
 	return b.String()
@@ -157,4 +164,26 @@ var errorCodeMap = [...]string{
 
 func (c ErrorCode) Error() string {
 	return errorCodeMap[c]
+}
+
+// ErrorSeverity describes the severity of the error.
+type ErrorSeverity uint8
+
+// Error severity starts from 0. Zero value indicates an error which causes an
+// operation to be aborted. Other values are used for messages which are just
+// informative and do not affect operations.
+const (
+	ErrorSeverityError ErrorSeverity = iota
+	ErrorSeverityWarning
+	ErrorSeverityNote
+)
+
+var errorSeverityMap = [...]string{
+	ErrorSeverityError:   "error",
+	ErrorSeverityWarning: "warning",
+	ErrorSeverityNote:    "note",
+}
+
+func (s ErrorSeverity) String() string {
+	return errorSeverityMap[s]
 }

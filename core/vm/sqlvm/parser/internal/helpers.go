@@ -304,6 +304,7 @@ func (p *parserError) SQLVMError() errors.Error {
 		Length:   0,
 		Category: errors.ErrorCategoryGrammar,
 		Code:     errors.ErrorCodeParser,
+		Severity: errors.ErrorSeverityError,
 		Prefix:   p.prefix,
 		Message:  p.Inner.Error(),
 	}

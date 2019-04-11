@@ -715,6 +715,7 @@ UIntType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "UIntType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
 		}
@@ -738,6 +739,7 @@ IntType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "IntType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
 		}
@@ -761,6 +763,7 @@ UFixedType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "UFixedType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
 		}
@@ -773,6 +776,7 @@ UFixedType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "UFixedType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", t, code),
 		}
@@ -797,6 +801,7 @@ FixedType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "FixedType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
 		}
@@ -809,6 +814,7 @@ FixedType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "FixedType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", t, code),
 		}
@@ -832,6 +838,7 @@ FixedBytesType
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "FixedBytesType",
 			Message:  fmt.Sprintf("cannot parse %s as uint32: %v", s, code),
 		}
@@ -950,6 +957,7 @@ IntegerLiteral
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "IntegerLiteral",
 			Message:  fmt.Sprintf("cannot parse %s as decimal: %v", c.text, code),
 		}
@@ -984,6 +992,7 @@ Decimal
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "Decimal",
 			Message:  fmt.Sprintf("cannot parse %s as decimal: %v", c.text, code),
 		}
@@ -1048,6 +1057,7 @@ NormalString
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "NormalString",
 			Message:  msg,
 		}
@@ -1265,6 +1275,7 @@ StringIdentifier
 			Length:   uint32(len(c.text)),
 			Category: se.ErrorCategoryGrammar,
 			Code:     code,
+			Severity: se.ErrorSeverityError,
 			Prefix:   "StringIdentifier",
 			Message:  msg,
 		}

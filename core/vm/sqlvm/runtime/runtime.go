@@ -19,6 +19,7 @@ func Run(stateDB vm.StateDB, ins []Instruction, registers []*Operand) (ret []byt
 			err = se.Error{
 				Position: in.Position,
 				Code:     errCode.(se.ErrorCode),
+				Severity: se.ErrorSeverityError,
 				Category: se.ErrorCategoryRuntime,
 			}
 			return nil, err
