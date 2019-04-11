@@ -76,6 +76,11 @@ func Parse(b []byte) ([]ast.StmtNode, error) {
 	options := []internal.Option{internal.Recover(false)}
 	root, pigeonErr := internal.Parse("", eb, options...)
 
+	// Copy the input text. We will put references to the source code on AST
+	// nodes, so we have to make our own copy to prevent the AST from being
+	// broken by the caller if the input byte slice was modified afterwards.
+	b = append([]byte{}, b...)
+
 	// Process the AST.
 	var stmts []ast.StmtNode
 	if root != nil {
@@ -117,6 +122,7 @@ func Parse(b []byte) ([]ast.StmtNode, error) {
 			}
 			n.SetPosition(fixedBegin)
 			n.SetLength(fixedEnd - fixedBegin)
+			n.SetToken(b[fixedBegin:fixedEnd])
 		})
 		if !r {
 			return nil, errors.ErrorList{

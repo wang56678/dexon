@@ -35,8 +35,8 @@ func formatString(s string) string {
 	return fmt.Sprintf("%v", []byte(s))
 }
 
-func printAST(w io.Writer, n interface{}, s []byte, prefix string,
-	detail bool, depth int) (int, error) {
+func printAST(w io.Writer, n interface{}, prefix string, detail bool,
+	depth int) (int, error) {
 
 	indent := strings.Repeat(prefix, depth)
 	indentLong := strings.Repeat(prefix, depth+1)
@@ -80,7 +80,7 @@ func printAST(w io.Writer, n interface{}, s []byte, prefix string,
 		}
 		for i := 0; i < l; i++ {
 			v := valueOf.Index(i)
-			b, err = printAST(w, v.Interface(), s, prefix, detail, depth+1)
+			b, err = printAST(w, v.Interface(), prefix, detail, depth+1)
 			bytesWritten += b
 			if err != nil {
 				return bytesWritten, err
@@ -124,7 +124,7 @@ func printAST(w io.Writer, n interface{}, s []byte, prefix string,
 			length := node.GetLength()
 			if node.HasPosition() {
 				end := begin + length - 1
-				token := s[begin : begin+length]
+				token := node.GetToken()
 				position = fmt.Sprintf("%d-%d %s",
 					begin, end, strconv.Quote(string(token)))
 			} else {
@@ -154,7 +154,7 @@ func printAST(w io.Writer, n interface{}, s []byte, prefix string,
 			if err != nil {
 				return bytesWritten, err
 			}
-			b, err = printAST(w, fields[i].value, s, prefix, detail, depth+2)
+			b, err = printAST(w, fields[i].value, prefix, detail, depth+2)
 			bytesWritten += b
 			if err != nil {
 				return bytesWritten, err
@@ -168,8 +168,8 @@ func printAST(w io.Writer, n interface{}, s []byte, prefix string,
 }
 
 // PrintAST prints AST for debugging.
-func PrintAST(output io.Writer, node interface{}, source []byte,
-	indent string, detail bool) (int, error) {
+func PrintAST(output io.Writer, node interface{}, indent string, detail bool) (
+	int, error) {
 
-	return printAST(output, node, source, indent, detail, 0)
+	return printAST(output, node, indent, detail, 0)
 }

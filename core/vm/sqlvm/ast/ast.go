@@ -19,6 +19,8 @@ type Node interface {
 	SetPosition(uint32)
 	GetLength() uint32
 	SetLength(uint32)
+	GetToken() []byte
+	SetToken([]byte)
 	GetChildren() []Node
 }
 
@@ -26,6 +28,7 @@ type Node interface {
 type NodeBase struct {
 	Position uint32 `print:"-"`
 	Length   uint32 `print:"-"`
+	Token    []byte `print:"-"`
 }
 
 // HasPosition returns whether the position is set.
@@ -53,16 +56,14 @@ func (n *NodeBase) SetLength(length uint32) {
 	n.Length = length
 }
 
-// UpdatePosition sets the position of the destination node from two source
-// nodes. It is assumed that the destination node consists of multiple tokens
-// which can be mapped to child nodes of the destination node. srcLeft should
-// be the node representing the left-most token of the destination node, and
-// srcRight should represent the right-most token of the destination node.
-func UpdatePosition(dest, srcLeft, srcRight Node) {
-	begin := srcLeft.GetPosition()
-	end := srcRight.GetPosition() + srcRight.GetLength()
-	dest.SetPosition(begin)
-	dest.SetLength(end - begin)
+// GetToken returns the corresponding token of the node.
+func (n *NodeBase) GetToken() []byte {
+	return n.Token
+}
+
+// SetToken sets the corresponding token of the node.
+func (n *NodeBase) SetToken(token []byte) {
+	n.Token = token
 }
 
 // ---------------------------------------------------------------------------

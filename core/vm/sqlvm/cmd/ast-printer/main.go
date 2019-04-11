@@ -18,7 +18,7 @@ func main() {
 	fmt.Fprintf(os.Stderr, "detail: %t\n", detail)
 	s := []byte(flag.Arg(0))
 	n, parseErr := parser.Parse(s)
-	b, printErr := ast.PrintAST(os.Stdout, n, s, "  ", detail)
+	b, printErr := ast.PrintAST(os.Stdout, n, "  ", detail)
 	if parseErr != nil {
 		fmt.Fprintf(os.Stderr, "Parse error:\n%+v\n", parseErr)
 	}
