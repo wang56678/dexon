@@ -196,6 +196,43 @@ func BenchmarkWasmERC20Transfer(b *testing.B) {
 	b.StopTimer()
 }
 
+func BenchmarkWasmERC20TransferSimulation(b *testing.B) {
+	// void _main() {
+	//     i32 mem[1024];
+	//     i32 size = getCallDataSize();
+	//     callDataCopy(mem, 0, 4);
+	//     callDataCopy(mem, 4, 64);
+	//     getCaller(mem);
+	//     storageLoad(0, mem);
+	//     storageLoad(0, mem);
+	//     storageStore(mem, 0);
+	//     storageStore(mem, 0);
+	//     finish(mem, 32);
+	// }
+
+	// create contract
+	code := "020061736d0100000001090260027f7f0060000002130108657468657265756d0666696e6973680000030201010503010001071102046d61696e0001066d656d6f727902000a0b010900410041a10210000b0ba902010041000ba202020061736d010000000117056000017f60017f0060037f7f7f0060027f7f00600000028a010608657468657265756d0b73746f726167654c6f6164000308657468657265756d0c63616c6c44617461436f7079000208657468657265756d0c73746f7261676553746f7265000308657468657265756d0967657443616c6c6572000108657468657265756d0f67657443616c6c4461746153697a65000008657468657265756d0666696e69736800030302010405030100010607017f014180160b071102066d656d6f72790200046d61696e00060a4c014a01017f2300210023004180206a240010041a20004100410410012000410441c000100120001003410020001000410020001000200041001002200041001002200041201005200024000b"
+	binary := common.Hex2Bytes(code)
+	caller := getRandomAddress()
+	statedb, err := state.New(common.Hash{}, state.NewDatabase(ethdb.NewMemDatabase()))
+	config := Config{Metering: false}
+	gas := uint64(900000000)
+	value := big.NewInt(0)
+	myDVM := NewDVM(statedb, config)
+	_, addr, _, err := vm.Create(vm.AccountRef(caller), binary, gas, value, myDVM)
+	assert.NoError(b, err)
+
+	// transfer token:
+	toAccountAddr := "000000000000000000000000ACCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+	transferTokenValue := "0000000000000000000000000000000000000000000000000000000000000001"
+	input := common.Hex2Bytes("a9059cbb" + toAccountAddr + transferTokenValue)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		vm.Call(vm.AccountRef(caller), addr, input, gas, value, myDVM)
+	}
+	b.StopTimer()
+}
+
 func getRandomAddress() common.Address {
 	randomBytes := make([]byte, common.HashLength)
 	rand.Read(randomBytes)
