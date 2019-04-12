@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"github.com/dexon-foundation/dexon/common"
-	"github.com/dexon-foundation/dexon/core/state"
+	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/schema"
 	"github.com/dexon-foundation/dexon/crypto"
@@ -27,13 +27,13 @@ var (
 
 // Storage holds SQLVM required data and method.
 type Storage struct {
-	state.StateDB
+	vm.StateDB
 	Schema schema.Schema
 }
 
 // NewStorage return Storage instance.
-func NewStorage(state *state.StateDB) Storage {
-	s := Storage{*state, schema.Schema{}}
+func NewStorage(state vm.StateDB) *Storage {
+	s := &Storage{state, schema.Schema{}}
 	return s
 }
 
@@ -62,7 +62,7 @@ func addressToHash(addr common.Address) common.Hash {
 	return common.BytesToHash(addr.Bytes())
 }
 
-func (s Storage) hashPathKey(key [][]byte) (h common.Hash) {
+func (s *Storage) hashPathKey(key [][]byte) (h common.Hash) {
 	hw := sha3.NewLegacyKeccak256()
 	rlp.Encode(hw, key)
 	// length of common.Hash is 256bit,
@@ -72,7 +72,7 @@ func (s Storage) hashPathKey(key [][]byte) (h common.Hash) {
 }
 
 // GetRowPathHash return primary key hash which points to row data.
-func (s Storage) GetRowPathHash(tableName []byte, rowID uint64) common.Hash {
+func (s *Storage) GetRowPathHash(tableName []byte, rowID uint64) common.Hash {
 	// PathKey(["tables", "{table_name}", "primary", uint64({row_id})])
 	key := [][]byte{
 		pathCompTables,
@@ -85,7 +85,7 @@ func (s Storage) GetRowPathHash(tableName []byte, rowID uint64) common.Hash {
 
 // GetIndexValuesPathHash return the hash address to IndexValues structure
 // which contains all possible values.
-func (s Storage) GetIndexValuesPathHash(
+func (s *Storage) GetIndexValuesPathHash(
 	tableName, indexName []byte,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "indices", "{index_name}"])
@@ -100,7 +100,7 @@ func (s Storage) GetIndexValuesPathHash(
 
 // GetIndexEntryPathHash return the hash address to IndexEntry structure for a
 // given value.
-func (s Storage) GetIndexEntryPathHash(
+func (s *Storage) GetIndexEntryPathHash(
 	tableName, indexName []byte,
 	values ...[]byte,
 ) common.Hash {
@@ -113,7 +113,7 @@ func (s Storage) GetIndexEntryPathHash(
 
 // GetReverseIndexPathHash return the hash address to IndexRev structure for a
 // row in a table.
-func (s Storage) GetReverseIndexPathHash(
+func (s *Storage) GetReverseIndexPathHash(
 	tableName []byte,
 	rowID uint64,
 ) common.Hash {
@@ -128,7 +128,7 @@ func (s Storage) GetReverseIndexPathHash(
 }
 
 // getSequencePathHash return the hash address of a sequence.
-func (s Storage) getSequencePathHash(
+func (s *Storage) getSequencePathHash(
 	tableName []byte, seqIdx uint8,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "sequence", uint8(sequence_idx)])
@@ -141,13 +141,13 @@ func (s Storage) getSequencePathHash(
 	return s.hashPathKey(key)
 }
 
-func (s Storage) getOwnerPathHash() common.Hash {
+func (s *Storage) getOwnerPathHash() common.Hash {
 	// PathKey(["owner"])
 	key := [][]byte{pathCompOwner}
 	return s.hashPathKey(key)
 }
 
-func (s Storage) getTableWritersPathHash(tableName []byte) common.Hash {
+func (s *Storage) getTableWritersPathHash(tableName []byte) common.Hash {
 	// PathKey(["tables", "{table_name}", "writers"])
 	key := [][]byte{
 		pathCompTables,
@@ -157,7 +157,7 @@ func (s Storage) getTableWritersPathHash(tableName []byte) common.Hash {
 	return s.hashPathKey(key)
 }
 
-func (s Storage) getTableWriterRevIdxPathHash(
+func (s *Storage) getTableWriterRevIdxPathHash(
 	tableName []byte,
 	account common.Address,
 ) common.Hash {
@@ -172,14 +172,14 @@ func (s Storage) getTableWriterRevIdxPathHash(
 }
 
 // ShiftHashUint64 shift hash in uint64.
-func (s Storage) ShiftHashUint64(hash common.Hash, shift uint64) common.Hash {
+func (s *Storage) ShiftHashUint64(hash common.Hash, shift uint64) common.Hash {
 	bigIntOffset := new(big.Int)
 	bigIntOffset.SetUint64(shift)
 	return s.ShiftHashBigInt(hash, bigIntOffset)
 }
 
 // ShiftHashBigInt shift hash in big.Int
-func (s Storage) ShiftHashBigInt(hash common.Hash, shift *big.Int) common.Hash {
+func (s *Storage) ShiftHashBigInt(hash common.Hash, shift *big.Int) common.Hash {
 	head := hash.Big()
 	head.Add(head, shift)
 	return common.BytesToHash(head.Bytes())
@@ -187,7 +187,7 @@ func (s Storage) ShiftHashBigInt(hash common.Hash, shift *big.Int) common.Hash {
 
 // ShiftHashListEntry shift hash from the head of a list to the hash of
 // idx-th entry.
-func (s Storage) ShiftHashListEntry(
+func (s *Storage) ShiftHashListEntry(
 	base common.Hash,
 	headerSize uint64,
 	entrySize uint64,
@@ -215,7 +215,7 @@ func getDByteSize(data common.Hash) uint64 {
 }
 
 // DecodeDByteBySlot given contract address and slot return the dynamic bytes data.
-func (s Storage) DecodeDByteBySlot(address common.Address, slot common.Hash) []byte {
+func (s *Storage) DecodeDByteBySlot(address common.Address, slot common.Hash) []byte {
 	data := s.GetState(address, slot)
 	length := getDByteSize(data)
 	if length < common.HashLength {
@@ -255,7 +255,7 @@ type IndexEntry struct {
 }
 
 // LoadIndexValues load IndexValues struct of a given index.
-func (s Storage) LoadIndexValues(
+func (s *Storage) LoadIndexValues(
 	contract common.Address,
 	tableName, indexName []byte,
 	onlyHeader bool,
@@ -277,7 +277,7 @@ func (s Storage) LoadIndexValues(
 }
 
 // LoadIndexEntry load IndexEntry struct of a given value key on an index.
-func (s Storage) LoadIndexEntry(
+func (s *Storage) LoadIndexEntry(
 	contract common.Address,
 	tableName, indexName []byte,
 	onlyHeader bool,
@@ -337,7 +337,7 @@ func (c *tableWriterRevIdx) Valid() bool {
 	return c.IndexToValuesOffset != 0
 }
 
-func (s Storage) loadTableWriterRevIdx(
+func (s *Storage) loadTableWriterRevIdx(
 	contract common.Address,
 	path common.Hash,
 ) *tableWriterRevIdx {
@@ -347,7 +347,7 @@ func (s Storage) loadTableWriterRevIdx(
 	return ret
 }
 
-func (s Storage) storeTableWriterRevIdx(
+func (s *Storage) storeTableWriterRevIdx(
 	contract common.Address,
 	path common.Hash,
 	rev *tableWriterRevIdx,
@@ -357,7 +357,7 @@ func (s Storage) storeTableWriterRevIdx(
 	s.SetState(contract, path, data)
 }
 
-func (s Storage) loadTableWriters(
+func (s *Storage) loadTableWriters(
 	contract common.Address,
 	pathHash common.Hash,
 	onlyHeader bool,
@@ -375,7 +375,7 @@ func (s Storage) loadTableWriters(
 	return ret
 }
 
-func (s Storage) storeTableWritersHeader(
+func (s *Storage) storeTableWritersHeader(
 	contract common.Address,
 	pathHash common.Hash,
 	w *tableWriters,
@@ -385,14 +385,14 @@ func (s Storage) storeTableWritersHeader(
 	s.SetState(contract, pathHash, header)
 }
 
-func (s Storage) shiftTableWriterList(
+func (s *Storage) shiftTableWriterList(
 	base common.Hash,
 	idx uint64,
 ) common.Hash {
 	return s.ShiftHashListEntry(base, 1, 1, idx)
 }
 
-func (s Storage) loadSingleTableWriter(
+func (s *Storage) loadSingleTableWriter(
 	contract common.Address,
 	writersPathHash common.Hash,
 	idx uint64,
@@ -402,7 +402,7 @@ func (s Storage) loadSingleTableWriter(
 	return hashToAddress(acc)
 }
 
-func (s Storage) storeSingleTableWriter(
+func (s *Storage) storeSingleTableWriter(
 	contract common.Address,
 	writersPathHash common.Hash,
 	idx uint64,
@@ -413,7 +413,7 @@ func (s Storage) storeSingleTableWriter(
 }
 
 // IsTableWriter check if an account is writer to the table.
-func (s Storage) IsTableWriter(
+func (s *Storage) IsTableWriter(
 	contract common.Address,
 	tableName []byte,
 	account common.Address,
@@ -424,7 +424,7 @@ func (s Storage) IsTableWriter(
 }
 
 // LoadTableWriters load writers of a table.
-func (s Storage) LoadTableWriters(
+func (s *Storage) LoadTableWriters(
 	contract common.Address,
 	tableName []byte,
 ) (ret []common.Address) {
@@ -434,7 +434,7 @@ func (s Storage) LoadTableWriters(
 }
 
 // InsertTableWriter insert an account into writer list of the table.
-func (s Storage) InsertTableWriter(
+func (s *Storage) InsertTableWriter(
 	contract common.Address,
 	tableName []byte,
 	account common.Address,
@@ -457,7 +457,7 @@ func (s Storage) InsertTableWriter(
 }
 
 // DeleteTableWriter delete an account from writer list of the table.
-func (s Storage) DeleteTableWriter(
+func (s *Storage) DeleteTableWriter(
 	contract common.Address,
 	tableName []byte,
 	account common.Address,
@@ -487,7 +487,7 @@ func (s Storage) DeleteTableWriter(
 }
 
 // IncSequence increment value of sequence by inc and return the old value.
-func (s Storage) IncSequence(
+func (s *Storage) IncSequence(
 	contract common.Address,
 	tableName []byte,
 	seqIdx uint8,

@@ -37,7 +37,7 @@ func (s *StorageTestSuite) TestGetRowAddress() {
 	hw := sha3.NewLegacyKeccak256()
 	rlp.Encode(hw, key)
 	bytes := hw.Sum(nil)
-	storage := Storage{}
+	storage := &Storage{}
 	result := storage.GetRowPathHash(table, id)
 	s.Require().Equal(bytes, result[:])
 }
@@ -76,7 +76,7 @@ func (s *StorageTestSuite) TestDecodeDByte() {
 			result:   []byte(""),
 		},
 	}
-	SetDataToStateDB(head, storage, address, testcase)
+	SetDataToStorage(head, storage, address, testcase)
 	for i, t := range testcase {
 		slot := storage.ShiftHashUint64(head, uint64(i))
 		result := storage.DecodeDByteBySlot(address, slot)
@@ -84,7 +84,7 @@ func (s *StorageTestSuite) TestDecodeDByte() {
 	}
 }
 
-func SetDataToStateDB(head common.Hash, storage Storage, addr common.Address,
+func SetDataToStorage(head common.Hash, storage *Storage, addr common.Address,
 	testcase []decodeTestCase) {
 	for i, t := range testcase {
 		slot := storage.ShiftHashUint64(head, uint64(i))
@@ -107,7 +107,6 @@ func SetDataToStateDB(head common.Hash, storage Storage, addr common.Address,
 			}
 		}
 	}
-	storage.Commit(false)
 }
 
 func (s *StorageTestSuite) TestOwner() {
@@ -122,12 +121,10 @@ func (s *StorageTestSuite) TestOwner() {
 
 	storage.StoreOwner(contractA, ownerA)
 	storage.StoreOwner(contractB, ownerB)
-	storage.Commit(false)
 	s.Require().Equal(ownerA, storage.LoadOwner(contractA))
 	s.Require().Equal(ownerB, storage.LoadOwner(contractB))
 
 	storage.StoreOwner(contractA, ownerB)
-	storage.Commit(false)
 	s.Require().Equal(ownerB, storage.LoadOwner(contractA))
 }
 
@@ -155,7 +152,6 @@ func (s *StorageTestSuite) TestTableWriter() {
 	storage.InsertTableWriter(contractA, table1, addrs[1])
 	storage.InsertTableWriter(contractA, table1, addrs[2])
 	storage.InsertTableWriter(contractB, table2, addrs[0])
-	storage.Commit(false)
 	s.Require().Equal(addrs, storage.LoadTableWriters(contractA, table1))
 	s.Require().Len(storage.LoadTableWriters(contractA, table2), 0)
 	s.Require().Len(storage.LoadTableWriters(contractB, table1), 0)
@@ -166,14 +162,12 @@ func (s *StorageTestSuite) TestTableWriter() {
 	storage.InsertTableWriter(contractA, table1, addrs[0])
 	storage.InsertTableWriter(contractA, table1, addrs[1])
 	storage.InsertTableWriter(contractA, table1, addrs[2])
-	storage.Commit(false)
 	s.Require().Equal(addrs, storage.LoadTableWriters(contractA, table1))
 
 	// Delete some writer.
 	storage.DeleteTableWriter(contractA, table1, addrs[0])
 	storage.DeleteTableWriter(contractA, table2, addrs[0])
 	storage.DeleteTableWriter(contractB, table2, addrs[0])
-	storage.Commit(false)
 	s.Require().Equal([]common.Address{addrs[2], addrs[1]},
 		storage.LoadTableWriters(contractA, table1))
 	s.Require().Len(storage.LoadTableWriters(contractA, table2), 0)
@@ -182,7 +176,6 @@ func (s *StorageTestSuite) TestTableWriter() {
 
 	// Delete again.
 	storage.DeleteTableWriter(contractA, table1, addrs[2])
-	storage.Commit(false)
 	s.Require().Equal([]common.Address{addrs[1]},
 		storage.LoadTableWriters(contractA, table1))
 

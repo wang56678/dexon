@@ -59,13 +59,12 @@ func createSchema(storage *common.Storage, raws []*raw) {
 		)
 	}
 	storage.Schema.SetupColumnOffset()
-	storage.Commit(false)
 }
 
 // setSlotDataInStateDB store data in StateDB, and
 // return corresponding slot hash and raw slice.
 func setSlotDataInStateDB(head dexCommon.Hash, addr dexCommon.Address,
-	storage common.Storage) ([]dexCommon.Hash, []*raw) {
+	storage *common.Storage) ([]dexCommon.Hash, []*raw) {
 
 	hash := dexCommon.Hash{}
 	var b []byte
@@ -176,7 +175,6 @@ func setSlotDataInStateDB(head dexCommon.Hash, addr dexCommon.Address,
 	ptr = crypto.Keccak256Hash(ptr.Bytes())
 	storage.SetState(addr, ptr, hash)
 
-	storage.Commit(false)
 	return hData, raws
 }
 
@@ -219,7 +217,7 @@ func (s *opLoadSuite) SetupTest() {
 	s.ctx.Contract = vm.NewContract(vm.AccountRef(s.address),
 		vm.AccountRef(s.address), new(big.Int), 0)
 	s.slotHash, s.raws = setSlotDataInStateDB(s.headHash, s.address, s.ctx.Storage)
-	createSchema(&s.ctx.Storage, s.raws)
+	createSchema(s.ctx.Storage, s.raws)
 	s.setColData("Table_B", 654321)
 }
 
@@ -285,10 +283,10 @@ func (s *opLoadSuite) getOKCaseFields(raws []*raw) []uint8 {
 }
 
 func (s *opLoadSuite) getDecodeTestCases(headHash dexCommon.Hash,
-	address dexCommon.Address, storage common.Storage) []decodeTestCase {
+	address dexCommon.Address, storage *common.Storage) []decodeTestCase {
 
 	slotHash, raws := setSlotDataInStateDB(headHash, address, storage)
-	createSchema(&storage, raws)
+	createSchema(storage, raws)
 	testCases := make([]decodeTestCase, len(raws))
 
 	for i := range testCases {
@@ -375,7 +373,7 @@ func newFieldsOperand(fields []uint8) *Operand {
 	return o
 }
 
-func (s *opLoadSuite) newStorage() common.Storage {
+func (s *opLoadSuite) newStorage() *common.Storage {
 	db := ethdb.NewMemDatabase()
 	state, _ := state.New(dexCommon.Hash{}, state.NewDatabase(db))
 	storage := common.NewStorage(state)

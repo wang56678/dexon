@@ -34,7 +34,6 @@ func (s *StorageRWTestSuite) TestRW() {
 		s.Require().Equal(v, n)
 		cursor += v
 	}
-	storage.Commit(false)
 
 	// Read and check.
 	reader := NewStorageReader(storage, contract, start)

@@ -10,7 +10,7 @@ import (
 // Notice that we have cache in Reader, so it become invalid after any writes
 // to Storage or StateDB.
 type StorageReader struct {
-	storage  Storage
+	storage  *Storage
 	contract common.Address
 	cursor   common.Hash
 	buffer   []byte
@@ -21,7 +21,7 @@ var _ io.Reader = (*StorageReader)(nil)
 
 // NewStorageReader create a Reader on Storage.
 func NewStorageReader(
-	storage Storage,
+	storage *Storage,
 	contract common.Address,
 	startPos common.Hash,
 ) *StorageReader {
@@ -57,7 +57,7 @@ func (r *StorageReader) Read(p []byte) (n int, err error) {
 
 // StorageWriter implements io.Writer on Storage.
 type StorageWriter struct {
-	storage   Storage
+	storage   *Storage
 	contract  common.Address
 	cursor    common.Hash
 	byteShift int // bytes already written in last slot. value: 0 ~ 31
@@ -68,7 +68,7 @@ var _ io.Writer = (*StorageWriter)(nil)
 
 // NewStorageWriter create a Writer on Storage.
 func NewStorageWriter(
-	storage Storage,
+	storage *Storage,
 	contract common.Address,
 	startPos common.Hash,
 ) *StorageWriter {

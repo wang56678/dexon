@@ -11,7 +11,7 @@ type Option struct {
 type Context struct {
 	vm.Context
 
-	Storage  Storage
+	Storage  *Storage
 	Contract *vm.Contract
 
 	Opt Option
