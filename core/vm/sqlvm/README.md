@@ -92,7 +92,7 @@ BLOCKNUMBER() uint256
 NOW() / BLOCKTIMESTAMP() uint256
 BLOCKHASH(uint256) bytes32
 BLOCKCOINBASE() address
-BLOCKGASLIMIT() uint64
+BLOCKGASLIMIT() uint256
 MSGSENDER() address
 MSGDATA() bytes
 TXORIGIN() address
@@ -352,7 +352,7 @@ CODE_SECTION = RLPEncode(Schema)
 
 Key
 ```
-PathKey(["tables", "{table_name}", "primary"])
+PathKey(["tables", uint8(table_idx), "primary"])
 ```
 
 Value
@@ -385,7 +385,7 @@ Bitmap:
 ##### Actual data
 Key
 ```
-PathKey(["tables", "{table_name}", "primary", uint64({row_id})])
+PathKey(["tables", uint8(table_idx), "primary", uint64({row_id})])
 ```
 
 Value
@@ -400,7 +400,7 @@ Dynamic bytes follow Solidity ABI encoding.
 ##### List of keys
 Key
 ```
-PathKey(["tables", "{table_name}", "indices", "{index_name}"])
+PathKey(["tables", uint8(table_idx), "indices", uint8(index_idx)])
 ```
 
 Value
@@ -421,7 +421,7 @@ type PossibleValues struct {
 ##### Actual data
 Key
 ```
-PathKey(["tables", "table_name", "indices", "{index_name}", field_1, field_2, field_3, ...])
+PathKey(["tables", uint8(table_idx), "indices", uint8(index_idx), field_1, field_2, field_3, ...])
 ```
 Value
 ```golang
@@ -445,7 +445,7 @@ type IndexKeys struct {
 #### Sequence(auto increment)
 Key
 ```
-PathKey(["tables", "{table_name}", "sequence", uint8(sequence_idx)])
+PathKey(["tables", uint8(table_idx), "sequence", uint8(sequence_idx)])
 ```
 
 Value
@@ -477,7 +477,7 @@ address
 
 Key
 ```
-PathKey(["tables", "{table_name}", "writers"])
+PathKey(["tables", uint8(table_idx), "writers"])
 ```
 
 Value
@@ -499,7 +499,7 @@ type PossibleValues struct {
 ##### Actual data
 Key
 ```
-PathKey(["tables", "{table_name}", "writers", "addr"])
+PathKey(["tables", uint8(table_idx), "writers", "addr"])
 ```
 Value
 ```golang
