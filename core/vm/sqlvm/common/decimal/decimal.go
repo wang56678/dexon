@@ -1,16 +1,22 @@
 package decimal
 
-import "github.com/dexon-foundation/decimal"
+import (
+	"fmt"
+	"math"
+
+	"github.com/dexon-foundation/decimal"
+)
 
 // Shared vars.
 var (
 	False = decimal.New(0, 0)
 	True  = decimal.New(1, 0)
 
-	Int64Max = decimal.New(1, 63).Sub(decimal.One)
-	Int64Min = decimal.New(1, 63).Neg()
+	MaxInt64 = decimal.New(math.MaxInt64, 0)
+	MinInt64 = decimal.New(math.MinInt64, 0)
 
-	UInt16Max = decimal.New(1, 16).Sub(decimal.One)
+	MaxUint16 = decimal.New(math.MaxUint16, 0)
+	MaxUint64 = decimal.RequireFromString(fmt.Sprint(uint64(math.MaxUint64)))
 )
 
 // Val2Bool convert value to boolean definition.

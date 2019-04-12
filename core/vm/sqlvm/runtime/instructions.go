@@ -347,7 +347,7 @@ func bool2Raw(b bool) (r *Raw) {
 }
 
 func value2ColIdx(v decimal.Decimal) (idx uint16) {
-	if v.GreaterThan(dec.UInt16Max) {
+	if v.GreaterThan(dec.MaxUint16) {
 		panic(errors.New("field index greater than uint16 max"))
 	} else if v.LessThan(decimal.Zero) {
 		panic(errors.New("field index less than 0"))
