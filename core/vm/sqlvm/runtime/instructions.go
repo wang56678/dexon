@@ -1830,3 +1830,39 @@ func (t Tuple) neg(ctx *common.Context, meta []ast.DataType) (t2 Tuple, err erro
 	}
 	return
 }
+
+func opFunc(ctx *common.Context, ops, registers []*Operand, output uint) (err error) {
+	if len(ops) < 2 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+
+	var (
+		op, funcID = ops[0], ops[1]
+		op2        *Operand
+		length     uint64
+	)
+
+	if op.IsImmediate {
+		length, err = ast.DecimalToUint64(op.Data[0][0].Value)
+		if err != nil {
+			return
+		}
+	} else {
+		length = uint64(len(op.Data))
+	}
+
+	fn, ok := fnTable[string(funcID.Data[0][0].Bytes)]
+	if !ok {
+		err = se.ErrorCodeNoSuchFunction
+		return
+	}
+
+	result, err = fnTable[id](ctx, ops[2:], length)
+	if err != nil {
+		return
+	}
+
+	registers[output] = op2
+	return
+}

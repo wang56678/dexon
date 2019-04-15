@@ -31,6 +31,9 @@ var jumpTable = [256]OpFunction{
 	CUT:    opCut,
 	RANGE:  opRange,
 
+	// 0x50
+	FUNC: opFunc,
+
 	// 0x60
 	LOAD: opLoad,
 }

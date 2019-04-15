@@ -51,6 +51,11 @@ const (
 	RANGE
 )
 
+// 0x50 range - function ops
+const (
+	FUNC = iota + 0x50
+)
+
 // 0x60 range - storage ops
 const (
 	INSERT = iota + 0x60

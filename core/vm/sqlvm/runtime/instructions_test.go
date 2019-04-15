@@ -210,7 +210,7 @@ type opLoadTestCase struct {
 
 func (s *opLoadSuite) SetupTest() {
 	s.ctx = &common.Context{}
-	s.ctx.Storage = s.newStorage()
+	s.ctx.Storage = newStorage()
 	targetTableRef := schema.TableRef(1)
 	s.headHash = s.ctx.Storage.GetRowPathHash(targetTableRef, uint64(123456))
 	s.address = dexCommon.HexToAddress("0x6655")
@@ -374,7 +374,7 @@ func newFieldsOperand(fields []uint8) *Operand {
 	return o
 }
 
-func (s *opLoadSuite) newStorage() *common.Storage {
+func newStorage() *common.Storage {
 	db := ethdb.NewMemDatabase()
 	state, _ := state.New(dexCommon.Hash{}, state.NewDatabase(db))
 	storage := common.NewStorage(state)

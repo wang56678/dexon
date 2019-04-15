@@ -123,6 +123,7 @@ const (
 	ErrorCodeDataLengthNotMatch
 	ErrorCodeMultipleEscapeByte
 	ErrorCodePendingEscapeByte
+	ErrorCodeNoSuchFunction
 )
 
 var errorCodeMap = [...]string{
@@ -157,6 +158,7 @@ var errorCodeMap = [...]string{
 	ErrorCodeDataLengthNotMatch: "data length not match",
 	ErrorCodeMultipleEscapeByte: "multiple escape byte",
 	ErrorCodePendingEscapeByte:  "pending escape byte",
+	ErrorCodeNoSuchFunction:     "no such function",
 }
 
 func (c ErrorCode) Error() string {
