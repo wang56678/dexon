@@ -97,8 +97,8 @@ MSGSENDER() address
 MSGDATA() bytes
 TXORIGIN() address
 RAND() uint256
-BITAND(a,b T), T ∈ {uintX, intX, bytesX}
-BITOR(a,b T), T ∈ {uintX, intX, bytesX}
+BITAND(a, b T), T ∈ {uintX, intX, bytesX}
+BITOR(a, b T), T ∈ {uintX, intX, bytesX}
 BITNOT(a T), T ∈ {uintX, intX, bytesX}
 BITXOR(a, b T), T ∈ {uintX, intX, bytesX}
 OCTET_LENGTH(a T) N, T ∈ {bytes, bytesX}, N ∈ {uintX, intX}
@@ -323,23 +323,14 @@ type ColumnDescriptor struct {
 	Column ColumnRef
 }
 
-type column struct {
+// Column defines sqlvm index struct.
+type Column struct {
 	Name        []byte
 	Type        ast.DataType
 	Attr        ColumnAttr
 	ForeignKeys []ColumnDescriptor
 	Sequence    SequenceRef
-	SlotOffset  uint8
-	ByteOffset  uint8
-	// Rest is a special field reserved for use in EncodeRLP. The value stored
-	// in it will be overwritten every time EncodeRLP is called.
-	Rest interface{}
-}
-
-// Column defines sqlvm index struct.
-type Column struct {
-	column
-	Default interface{} // decimal.Decimal, bool, []byte
+	Default     []byte // serialized default value
 }
 
 // All metadata are encoded with RLPEncode.
