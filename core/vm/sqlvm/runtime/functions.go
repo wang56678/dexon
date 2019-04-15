@@ -20,6 +20,7 @@ const (
 	BLOCKCOINBASE  = "BLOCK_COINBASE"
 	BLOCKGASLIMIT  = "BLOCK_GAS_LIMIT"
 	MSGSENDER      = "MSG_SENDER"
+	MSGDATA        = "MSG_DATA"
 	NOW            = "NOW"
 )
 
@@ -34,6 +35,7 @@ var (
 		BLOCKCOINBASE:  fnBlockCoinBase,
 		BLOCKGASLIMIT:  fnBlockGasLimit,
 		MSGSENDER:      fnMsgSender,
+		MSGDATA:        fnMsgData,
 	}
 )
 
@@ -138,6 +140,15 @@ func fnMsgSender(ctx *common.Context, ops []*Operand, length uint64) (result *Op
 	r := &Raw{Bytes: ctx.Contract.CallerAddress.Bytes()}
 	result = assignFuncResult(
 		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorAddress, 0)},
+		r.clone, length,
+	)
+	return
+}
+
+func fnMsgData(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	r := &Raw{Bytes: ctx.Contract.Input}
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0)},
 		r.clone, length,
 	)
 	return
