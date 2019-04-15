@@ -305,3 +305,57 @@ func (s *FunctionSuite) TestFnGasLimit() {
 		}
 	}
 }
+
+func (s *FunctionSuite) TestFnMsgSender() {
+	type txMsgSenderCase struct {
+		Name    string
+		Address dexCommon.Address
+		Length  uint64
+		Res     []byte
+		Err     error
+	}
+
+	res := []byte{
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0x01, 0x23, 0x45, 0x67}
+	address := dexCommon.BytesToAddress(res)
+
+	testcases := []txMsgSenderCase{
+		{"address with length 1", address, 1, res, nil},
+		{"address with length 10", address, 10, res, nil},
+		{"address with length 0", address, 0, res, nil},
+	}
+
+	callFn := func(c txMsgSenderCase) (*Operand, error) {
+		return fnMsgSender(
+			&common.Context{
+				Contract: &vm.Contract{CallerAddress: c.Address},
+			},
+			nil,
+			c.Length)
+	}
+
+	meta := []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorAddress, 0)}
+
+	for idx, tCase := range testcases {
+		r, err := callFn(tCase)
+		s.Require().Equal(
+			tCase.Err, err,
+			"Index: %v. Error not expected: %v != %v", idx, tCase.Err, err)
+		s.Require().Equal(
+			meta, r.Meta,
+			"Index: %v. Meta not equal: %v != %v", idx, meta, r.Meta)
+		s.Require().Equal(
+			uint64(len(r.Data)), tCase.Length,
+			"Index: %v. Length not equal: %v != %v", idx, len(r.Data), tCase.Length)
+
+		for i := 0; i < len(r.Data); i++ {
+			s.Require().Equal(
+				tCase.Res, r.Data[i][0].Bytes,
+				"Index: %v. Data Index: %v. Value not equal: %v != %v",
+				idx, i, tCase.Res, r.Data[i][0].Bytes)
+		}
+	}
+}
+
