@@ -463,3 +463,62 @@ func (s *FunctionSuite) TestFnTxOrigin() {
 	}
 }
 
+func (s *FunctionSuite) TestFnRand() {
+	type blockRandCase struct {
+		Name   string
+		Origin dexCommon.Address
+		Length uint64
+		Err    error
+	}
+
+	res := []byte{
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+		0x01, 0x23, 0x45, 0x67}
+	address := dexCommon.BytesToAddress(res)
+
+	testcases := []blockRandCase{
+		{"address with length 100", address, 100, nil},
+		{"address with length 0", address, 0, nil},
+	}
+
+	callFn := func(c blockRandCase) (*Operand, error) {
+		return fnRand(
+			&common.Context{
+				Context: vm.Context{Origin: c.Origin, Randomness: res},
+				Storage: newStorage(),
+			},
+			nil,
+			c.Length)
+	}
+
+	meta := []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 31)}
+
+	for idx, tCase := range testcases {
+		r, err := callFn(tCase)
+		s.Require().Equal(
+			tCase.Err, err,
+			"Index: %v. Error not expected: %v != %v", idx, tCase.Err, err)
+		s.Require().Equal(
+			meta, r.Meta,
+			"Index: %v. Meta not equal: %v != %v", idx, meta, r.Meta)
+		s.Require().Equal(
+			uint64(len(r.Data)), tCase.Length,
+			"Index: %v. Length not equal: %v != %v", idx, len(r.Data), tCase.Length)
+
+		var (
+			fmap = make(map[string]struct{})
+			ok   bool
+			key  string
+		)
+
+		for i := 0; i < len(r.Data); i++ {
+			key = r.Data[i].String()
+			_, ok = fmap[key]
+			s.Require().False(
+				ok,
+				"Duplicate rand: %v\nmap: %v\ndata: %v", key, fmap, r.Data)
+			fmap[key] = struct{}{}
+		}
+	}
+}

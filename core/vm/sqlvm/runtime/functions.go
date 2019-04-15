@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/common"
 	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
+	"github.com/dexon-foundation/dexon/crypto"
 )
 
 // function identifier
@@ -23,6 +25,7 @@ const (
 	MSGDATA        = "MSG_DATA"
 	TXORIGIN       = "TX_ORIGIN"
 	NOW            = "NOW"
+	RAND           = "RAND"
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
@@ -38,6 +41,7 @@ var (
 		MSGSENDER:      fnMsgSender,
 		MSGDATA:        fnMsgData,
 		TXORIGIN:       fnTxOrigin,
+		RAND:           fnRand,
 	}
 )
 
@@ -165,3 +169,31 @@ func fnTxOrigin(ctx *common.Context, ops []*Operand, length uint64) (result *Ope
 	return
 }
 
+func fnRand(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	binaryOriginNonce := make([]byte, binary.MaxVarintLen64)
+	binary.PutUvarint(binaryOriginNonce, ctx.Storage.GetNonce(ctx.Origin))
+
+	binaryUsedIndex := make([]byte, binary.MaxVarintLen64)
+	vType := ast.ComposeDataType(ast.DataTypeMajorUint, 31)
+
+	fn := func() *Raw {
+		binary.PutUvarint(binaryUsedIndex, ctx.RandCallIndex)
+		ctx.RandCallIndex++
+
+		hash := crypto.Keccak256(
+			ctx.Randomness,
+			ctx.Origin.Bytes(),
+			binaryOriginNonce,
+			binaryUsedIndex)
+
+		v, _ := ast.DecimalDecode(vType, hash)
+		return &Raw{Value: v}
+	}
+
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 31)},
+		fn, length,
+	)
+	return
+
+}
