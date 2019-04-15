@@ -56,6 +56,17 @@ func (r *Raw) String() string {
 func (r *Raw) isTrue() bool  { return dec.IsTrue(r.Value) }
 func (r *Raw) isFalse() bool { return dec.IsFalse(r.Value) }
 
+func (r *Raw) clone() *Raw {
+	r2 := &Raw{}
+	if len(r.Bytes) != 0 {
+		r2.Bytes = make([]byte, len(r.Bytes))
+		copy(r2.Bytes, r.Bytes)
+	} else {
+		r2.Value = r.Value
+	}
+	return r2
+}
+
 // Tuple is collection of Raw.
 type Tuple []*Raw
 

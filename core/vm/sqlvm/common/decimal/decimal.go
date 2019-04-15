@@ -17,6 +17,8 @@ var (
 
 	MaxUint16 = decimal.New(math.MaxUint16, 0)
 	MaxUint64 = decimal.RequireFromString(fmt.Sprint(uint64(math.MaxUint64)))
+
+	Dec257 = decimal.New(257, 0)
 )
 
 // Val2Bool convert value to boolean definition.
