@@ -11,14 +11,16 @@ import (
 
 // function identifier
 const (
-	BLOCKHASH = "BLOCK_HASH"
+	BLOCKHASH   = "BLOCK_HASH"
+	BLOCKNUMBER = "BLOCK_NUMBER"
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
 
 var (
 	fnTable = map[string]fn{
-		BLOCKHASH: fnBlockHash,
+		BLOCKHASH:   fnBlockHash,
+		BLOCKNUMBER: fnBlockNumber,
 	}
 )
 
@@ -72,5 +74,14 @@ func fnBlockHash(ctx *common.Context, ops []*Operand, length uint64) (result *Op
 			result.Data[i] = Tuple{r}
 		}
 	}
+	return
+}
+
+func fnBlockNumber(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	r := &Raw{Value: decimal.NewFromBigInt(ctx.BlockNumber, 0)}
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 31)},
+		r.clone, length,
+	)
 	return
 }
