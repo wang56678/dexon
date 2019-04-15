@@ -1,6 +1,9 @@
 package runtime
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/dexon-foundation/decimal"
 
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
@@ -15,6 +18,7 @@ const (
 	BLOCKNUMBER    = "BLOCK_NUMBER"
 	BLOCKTIMESTAMP = "BLOCK_TIMESTAMP"
 	BLOCKCOINBASE  = "BLOCK_COINBASE"
+	BLOCKGASLIMIT  = "BLOCK_GAS_LIMIT"
 	NOW            = "NOW"
 )
 
@@ -27,6 +31,7 @@ var (
 		BLOCKTIMESTAMP: fnBlockTimestamp,
 		NOW:            fnBlockTimestamp,
 		BLOCKCOINBASE:  fnBlockCoinBase,
+		BLOCKGASLIMIT:  fnBlockGasLimit,
 	}
 )
 
@@ -110,3 +115,19 @@ func fnBlockCoinBase(ctx *common.Context, ops []*Operand, length uint64) (result
 	return
 }
 
+func fnBlockGasLimit(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	r := &Raw{}
+	if ctx.GasLimit > uint64(math.MaxInt64) {
+		r.Value, err = decimal.NewFromString(fmt.Sprint(ctx.GasLimit))
+		if err != nil {
+			return
+		}
+	} else {
+		r.Value = decimal.New(int64(ctx.GasLimit), 0)
+	}
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 7)},
+		r.clone, length,
+	)
+	return
+}

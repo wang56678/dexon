@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"math"
 	"math/big"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/ast"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/common"
+	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 )
 
 func TestFunction(t *testing.T) {
@@ -258,3 +260,48 @@ func (s *FunctionSuite) TestFnCoinBase() {
 	}
 }
 
+func (s *FunctionSuite) TestFnGasLimit() {
+	type blockGasLimitCase struct {
+		Name   string
+		Limit  uint64
+		Length uint64
+		Res    decimal.Decimal
+		Err    error
+	}
+	testcases := []blockGasLimitCase{
+		{"max int64 with length 1", uint64(math.MaxInt64), 1, dec.MaxInt64, nil},
+		{"max uint64 with length 1", math.MaxUint64, 10, dec.MaxUint64, nil},
+		{"address with length 0", math.MaxUint64, 0, decimal.Zero, nil},
+	}
+
+	callFn := func(c blockGasLimitCase) (*Operand, error) {
+		return fnBlockGasLimit(
+			&common.Context{
+				Context: vm.Context{GasLimit: c.Limit},
+			},
+			nil,
+			c.Length)
+	}
+
+	meta := []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 7)}
+
+	for idx, tCase := range testcases {
+		r, err := callFn(tCase)
+		s.Require().Equal(
+			tCase.Err, err,
+			"Index: %v. Error not expected: %v != %v", idx, tCase.Err, err)
+		s.Require().Equal(
+			meta, r.Meta,
+			"Index: %v. Meta not equal: %v != %v", idx, meta, r.Meta)
+		s.Require().Equal(
+			uint64(len(r.Data)), tCase.Length,
+			"Index: %v. Length not equal: %v != %v", idx, len(r.Data), tCase.Length)
+
+		for i := 0; i < len(r.Data); i++ {
+			s.Require().True(
+				tCase.Res.Equal(r.Data[i][0].Value),
+				"Index: %v. Data Index: %v. Value not equal: %v != %v",
+				idx, i, tCase.Res, r.Data[i][0].Value)
+		}
+	}
+}
