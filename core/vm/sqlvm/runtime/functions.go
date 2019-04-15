@@ -11,16 +11,20 @@ import (
 
 // function identifier
 const (
-	BLOCKHASH   = "BLOCK_HASH"
-	BLOCKNUMBER = "BLOCK_NUMBER"
+	BLOCKHASH      = "BLOCK_HASH"
+	BLOCKNUMBER    = "BLOCK_NUMBER"
+	BLOCKTIMESTAMP = "BLOCK_TIMESTAMP"
+	NOW            = "NOW"
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
 
 var (
 	fnTable = map[string]fn{
-		BLOCKHASH:   fnBlockHash,
-		BLOCKNUMBER: fnBlockNumber,
+		BLOCKHASH:      fnBlockHash,
+		BLOCKNUMBER:    fnBlockNumber,
+		BLOCKTIMESTAMP: fnBlockTimestamp,
+		NOW:            fnBlockTimestamp,
 	}
 )
 
@@ -85,3 +89,13 @@ func fnBlockNumber(ctx *common.Context, ops []*Operand, length uint64) (result *
 	)
 	return
 }
+
+func fnBlockTimestamp(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	r := &Raw{Value: decimal.NewFromBigInt(ctx.Time, 0)}
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 31)},
+		r.clone, length,
+	)
+	return
+}
+

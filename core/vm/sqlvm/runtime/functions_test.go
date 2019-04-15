@@ -149,3 +149,59 @@ func (s *FunctionSuite) TestFnBlockNumber() {
 	}
 }
 
+func (s *FunctionSuite) TestFnBlockTimestamp() {
+	type blockTimestampCase struct {
+		Name       string
+		Timestamp  *big.Int
+		Length     uint64
+		Res        decimal.Decimal
+		Err        error
+		AsserPanic bool
+	}
+
+	testcases := []blockTimestampCase{
+		{"number 1 with length 1", big.NewInt(1), 1, decimal.New(1, 0), nil, false},
+		{"number 10 with length 10", big.NewInt(10), 10, decimal.New(10, 0), nil, false},
+		{"number 1 with length 0", big.NewInt(1), 0, decimal.New(1, 0), nil, false},
+		{"panic on invalid context", nil, 0, decimal.New(1, 0), nil, true},
+	}
+
+	callFn := func(c blockTimestampCase) (*Operand, error) {
+		return fnBlockTimestamp(
+			&common.Context{
+				Context: vm.Context{Time: c.Timestamp},
+			},
+			nil,
+			c.Length)
+	}
+
+	meta := []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 31)}
+
+	for idx, tCase := range testcases {
+		if tCase.AsserPanic {
+			s.Require().Panicsf(
+				func() { callFn(tCase) },
+				"Index: %v. Not Panic on '%v'", idx, tCase.Name,
+			)
+		} else {
+			r, err := callFn(tCase)
+			s.Require().Equal(
+				tCase.Err, err,
+				"Index: %v. Error not expected: %v != %v", idx, tCase.Err, err)
+			s.Require().Equal(
+				meta, r.Meta,
+				"Index: %v. Meta not equal: %v != %v", idx, meta, r.Meta)
+			s.Require().Equal(
+				uint64(len(r.Data)), tCase.Length,
+				"Index: %v. Length not equal: %v != %v", idx, len(r.Data), tCase.Length)
+
+			for i := 0; i < len(r.Data); i++ {
+				s.Require().True(
+					tCase.Res.Equal(r.Data[i][0].Value),
+					"Index: %v. Data Index: %v. Value not equal: %v != %v",
+					idx, i, tCase.Res, r.Data[i][0].Value)
+			}
+		}
+	}
+}
+
