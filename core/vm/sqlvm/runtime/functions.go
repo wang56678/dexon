@@ -21,6 +21,7 @@ const (
 	BLOCKGASLIMIT  = "BLOCK_GAS_LIMIT"
 	MSGSENDER      = "MSG_SENDER"
 	MSGDATA        = "MSG_DATA"
+	TXORIGIN       = "TX_ORIGIN"
 	NOW            = "NOW"
 )
 
@@ -36,6 +37,7 @@ var (
 		BLOCKGASLIMIT:  fnBlockGasLimit,
 		MSGSENDER:      fnMsgSender,
 		MSGDATA:        fnMsgData,
+		TXORIGIN:       fnTxOrigin,
 	}
 )
 
@@ -149,6 +151,15 @@ func fnMsgData(ctx *common.Context, ops []*Operand, length uint64) (result *Oper
 	r := &Raw{Bytes: ctx.Contract.Input}
 	result = assignFuncResult(
 		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0)},
+		r.clone, length,
+	)
+	return
+}
+
+func fnTxOrigin(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	r := &Raw{Bytes: ctx.Origin.Bytes()}
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorAddress, 0)},
 		r.clone, length,
 	)
 	return
