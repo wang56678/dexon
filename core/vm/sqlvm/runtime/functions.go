@@ -14,6 +14,7 @@ const (
 	BLOCKHASH      = "BLOCK_HASH"
 	BLOCKNUMBER    = "BLOCK_NUMBER"
 	BLOCKTIMESTAMP = "BLOCK_TIMESTAMP"
+	BLOCKCOINBASE  = "BLOCK_COINBASE"
 	NOW            = "NOW"
 )
 
@@ -25,6 +26,7 @@ var (
 		BLOCKNUMBER:    fnBlockNumber,
 		BLOCKTIMESTAMP: fnBlockTimestamp,
 		NOW:            fnBlockTimestamp,
+		BLOCKCOINBASE:  fnBlockCoinBase,
 	}
 )
 
@@ -94,6 +96,15 @@ func fnBlockTimestamp(ctx *common.Context, ops []*Operand, length uint64) (resul
 	r := &Raw{Value: decimal.NewFromBigInt(ctx.Time, 0)}
 	result = assignFuncResult(
 		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 31)},
+		r.clone, length,
+	)
+	return
+}
+
+func fnBlockCoinBase(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	r := &Raw{Bytes: ctx.Coinbase.Bytes()}
+	result = assignFuncResult(
+		[]ast.DataType{ast.ComposeDataType(ast.DataTypeMajorAddress, 0)},
 		r.clone, length,
 	)
 	return
