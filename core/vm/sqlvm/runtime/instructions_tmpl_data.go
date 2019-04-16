@@ -2784,5 +2784,55 @@ var testData = &tmplData{
 			},
 		},
 		// -- end of FUNC BITXOR
+		{
+			TestName: "OpFuncBitNot", OpFunc: "opFunc",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Func BitNot",
+					Error: "nil", OpCode: "FUNC",
+					Inputs: []*tmplOp{
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+							},
+							Data: []string{`{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 1},
+							},
+							Data: []string{`{V: 13}`},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+								{Major: "Uint", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "FixedBytes", Minor: 0},
+								{Major: "FixedBytes", Minor: 0},
+							},
+							Data: []string{"{V: 128, V: 0, V: -1, V: -128, B: {0x12, 0x34}, B: {0xff, 0x00}}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Uint", Minor: 0},
+							{Major: "Uint", Minor: 0},
+							{Major: "Int", Minor: 0},
+							{Major: "Int", Minor: 0},
+							{Major: "FixedBytes", Minor: 0},
+							{Major: "FixedBytes", Minor: 0},
+						},
+						Data: []string{`{V: 127, V: 255, V: 0, V: 127, B: {0xed, 0xcb}, B: {0x00, 0xff}}`},
+					},
+				},
+			},
+		},
+		// -- end of FUNC BITNOT
 	},
 }

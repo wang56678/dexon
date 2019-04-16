@@ -29,6 +29,7 @@ const (
 	BITAND
 	BITOR
 	BITXOR
+	BITNOT
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
@@ -48,6 +49,7 @@ var (
 		BITAND:         fnBitAnd,
 		BITOR:          fnBitOr,
 		BITXOR:         fnBitXor,
+		BITNOT:         fnBitNot,
 	}
 )
 
@@ -354,5 +356,52 @@ func fnBitXor(ctx *common.Context, ops []*Operand, length uint64) (result *Opera
 			func(b1, b2 byte) byte { return b1 ^ b2 },
 		)
 	}
+	return
+}
+
+type bitUnFunc func(b byte) byte
+
+func fnBitNot(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	if len(ops) < 2 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+
+	op := ops[1]
+	if !metaAllBitOp(op) {
+		err = se.ErrorCodeInvalidDataType
+		return
+	}
+
+	result = op.clone(true)
+	result.Data = make([]Tuple, len(op.Data))
+	for i := 0; i < len(op.Data); i++ {
+		result.Data[i] = op.Data[i].bitUnOp(
+			op.Meta,
+			func(b byte) byte { return ^b },
+		)
+	}
+	return
+}
+
+func (t Tuple) bitUnOp(meta []ast.DataType, bFn bitUnFunc) (t2 Tuple) {
+	t2 = make(Tuple, len(t))
+	for i := 0; i < len(t); i++ {
+		t2[i] = t[i].bitUnOp(meta[i], bFn)
+	}
+	return
+}
+
+func (r *Raw) bitUnOp(dType ast.DataType, bFn bitUnFunc) (r2 *Raw) {
+	bytes := r.toBytes(dType)
+
+	n := len(bytes)
+	bytes2 := make([]byte, n)
+	for i := 0; i < n; i++ {
+		bytes2[i] = bFn(bytes[i])
+	}
+
+	r2 = &Raw{}
+	r2.fromBytes(bytes2, dType)
 	return
 }

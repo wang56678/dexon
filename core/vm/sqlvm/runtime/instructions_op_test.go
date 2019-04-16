@@ -3879,3 +3879,56 @@ func (s *instructionSuite) TestOpFuncBitXor() {
 
 	s.run(testcases, opFunc)
 }
+
+func (s *instructionSuite) TestOpFuncBitNot() {
+	testcases := []opTestcase{
+		{
+			"Func BitNot",
+			Instruction{
+				Op: FUNC,
+				Input: []*Operand{
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(13)}},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(128)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(-1)}, &Raw{Value: decimal.NewFromFloat(-128)}, &Raw{Bytes: []byte{0x12, 0x34}}, &Raw{Bytes: []byte{0xff, 0x00}}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0),
+				},
+				[]Tuple{
+					{&Raw{Value: decimal.NewFromFloat(127)}, &Raw{Value: decimal.NewFromFloat(255)}, &Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(127)}, &Raw{Bytes: []byte{0xed, 0xcb}}, &Raw{Bytes: []byte{0x00, 0xff}}},
+				},
+			),
+			nil,
+		},
+	}
+
+	s.run(testcases, opFunc)
+}
