@@ -423,12 +423,12 @@ type IndexKeys struct {
 	ForeignKeyReferenceCount    uint64
 	<unused>                    uint64
 	// Slot 2.
-	RowID1 uint64
-	RowID2 uint64
-	RowID3 uint64
-	RowID4 uint64
+	RowID1                      uint64
+	RowID2                      uint64
+	RowID3                      uint64
+	RowID4                      uint64
 	// Slot 3.
-	RowID5 uint64
+	RowID5                      uint64
 	...
 }
 ```
@@ -480,9 +480,11 @@ type PossibleValues struct {
 	<unused>        uint64
 	<unused>        uint64
 	// Slot 2.
-	Addr1           uint256
+	Addr1           uint160
+	<unused>        12 bytes
 	// Slot 3.
-	Addr2           uint256
+	Addr2           uint160
+	<unused>        12 bytes
 	...
 }
 ```
@@ -666,12 +668,12 @@ const (
 	// ZIP([f1, f2, f3], [c1, c2, c3]) = [(f1, c1), (f2, c2), (f3, c3)]
 	// ZIP(
 	//    [(f1, c1), (f2, c2), (f3, c3)],
-	//    [(x1, (y1)), (x2, (y2)), (x3, (y3))]
-	// ) = [(f1, c1, x1, (y1)), (f2, c2, x2, (y2)), (f3, c3, x3, (y3))]
+	//    [(x1, y1), (x2, y2), (x3, y3)]
+	// ) = [(f1, c1, x1, y1), (f2, c2, x2, y2), (f3, c3, x3, y3)]
 	FILED
 	// FIELD(src, fields) = res
 	// FIELD(
-	//    [(r1f0, r1f1, r1f2), (r2f0, r2f1, r2f2),...], [1, 2]
+	//    [(r1f0, r1f1, r1f2), (r2f0, r2f1, r2f2),...], [(1, 2)]
 	// ) = [(r1f1, r1f2), (r2f1, r2f2), ...]
 	PRUNE // in-place op
 	// PRUNE(src, fields) = res
@@ -807,8 +809,8 @@ const (
 ###### INSERT
 
 Row steps:
-1. Acquire ids from generator
-1. Add new id to pk
+1. Acquire IDs from generator
+1. Add new ID to pk
 1. Update auto increment field if in need
 1. Update default field if in need
 1. Check foreign key exists
@@ -824,8 +826,8 @@ Row steps:
 ###### UPDATE
 
 Row steps:
-1. Get old data by id
-1. Iterate ids
+1. Get old data by ID
+1. Iterate IDs
 	1. Check foreign key exists
 		1. Increase target reference count
 		1. Decrease old target reference count
@@ -839,8 +841,8 @@ Row steps:
 ###### DELETE
 
 Row steps:
-1. Get old data by ids
-1. Iterate ids
+1. Get old data by IDs
+1. Iterate IDs
     1. Iterate indices
         1. If index contains more than 1 keys, remove from list
         1. If index contains only key
@@ -886,25 +888,25 @@ This section contains some corner cases found in design stage. Can be used for t
     * CAST fixBytes to DynamciByte and Dynamicbyte to fixBytes
     * `fixBytes5Data [=|>|<] fixBytesData5`
     * `fixByte5Data bitwise op fixBytes5Data`
-        *   `op: AND, OR, XOR, NOT`
+        *   `op: BITAND, BITOR, BITXOR, BITNOT`
 * Fixed bytes do not supports:
     * `SUBSTRING`
     * `… WHERE fixBytesData LIKE XXX`
-      *`Do not support it. It should cast to dynamic bytes before LIKE
+      * Do not support it. It should cast to dynamic bytes before LIKE
     * `SELECT fixBytes5Data [+|-|*|/] fixBytes5Data`
-        * Solidity does not support arithmetic op for fix bytes directly. User should cast to uint to do arithmetic op.
+        * Solidity does not support arithmetic op for fixed bytes directly. User should cast to uint to do arithmetic op.
 
 * Uint/Int support
     * `Bitwise op function`
-* LIKE escape can only use byte1.
+* LIKE escape can only use bytes1.
 
 ## **TODO list**
 *   Support(temporary save data) like join, subquery, streaming
 *   Aggregation
     *   COUNT()
     *   DISTINCT
-    *   SUM
-    *   MIN/MAX
+    *   SUM()
+    *   MIN()/MAX()
 
 ## **Authors**
 * [Wei-Ning Huang](https://github.com/aitjcize)
