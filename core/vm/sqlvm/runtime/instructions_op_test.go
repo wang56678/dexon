@@ -3693,3 +3693,65 @@ func (s *instructionSuite) TestOpRange() {
 
 	s.run(testcases, opRange)
 }
+
+func (s *instructionSuite) TestOpFuncBitAnd() {
+	testcases := []opTestcase{
+		{
+			"Func BitAnd",
+			Instruction{
+				Op: FUNC,
+				Input: []*Operand{
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(10)}},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}, &Raw{Value: decimal.NewFromFloat(-1)}, &Raw{Value: decimal.NewFromFloat(-128)}, &Raw{Bytes: []byte{0x12, 0x34}}, &Raw{Bytes: []byte{0x56, 0x78}}},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(5)}, &Raw{Value: decimal.NewFromFloat(6)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Bytes: []byte{0xff, 0xff}}, &Raw{Bytes: []byte{0x00, 0x00}}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorUint, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorInt, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0), ast.ComposeDataType(ast.DataTypeMajorFixedBytes, 0),
+				},
+				[]Tuple{
+					{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}, &Raw{Value: decimal.NewFromFloat(-2)}, &Raw{Value: decimal.NewFromFloat(-128)}, &Raw{Bytes: []byte{0x12, 0x34}}, &Raw{Bytes: []byte{0x00, 0x00}}},
+				},
+			),
+			nil,
+		},
+	}
+
+	s.run(testcases, opFunc)
+}

@@ -2598,5 +2598,67 @@ var testData = &tmplData{
 			},
 		},
 		// -- end of RANGE
+		{
+			TestName: "OpFuncBitAnd", OpFunc: "opFunc",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Func BitAnd",
+					Error: "nil", OpCode: "FUNC",
+					Inputs: []*tmplOp{
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+							},
+							Data: []string{`{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 1},
+							},
+							Data: []string{`{V: 10}`},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+								{Major: "Uint", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "FixedBytes", Minor: 0},
+								{Major: "FixedBytes", Minor: 0},
+							},
+							Data: []string{"{V: 1, V: 2, V: -1, V: -128, B: {0x12, 0x34}, B: {0x56, 0x78}}"},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+								{Major: "Uint", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "Int", Minor: 0},
+								{Major: "FixedBytes", Minor: 0},
+								{Major: "FixedBytes", Minor: 0},
+							},
+							Data: []string{"{V: 5, V: 6, V: -2, V: -2, B: {0xff, 0xff}, B:{0x00, 0x00}}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Uint", Minor: 0},
+							{Major: "Uint", Minor: 0},
+							{Major: "Int", Minor: 0},
+							{Major: "Int", Minor: 0},
+							{Major: "FixedBytes", Minor: 0},
+							{Major: "FixedBytes", Minor: 0},
+						},
+						Data: []string{`{V: 1, V: 2, V: -2, V: -128, B: {0x12, 0x34}, B: {0x00, 0x00}}`},
+					},
+				},
+			},
+		},
+		// -- end of FUNC BITAND
 	},
 }

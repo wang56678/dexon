@@ -26,6 +26,7 @@ const (
 	TXORIGIN
 	NOW
 	RAND
+	BITAND
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
@@ -42,6 +43,7 @@ var (
 		MSGDATA:        fnMsgData,
 		TXORIGIN:       fnTxOrigin,
 		RAND:           fnRand,
+		BITAND:         fnBitAnd,
 	}
 )
 
@@ -195,5 +197,122 @@ func fnRand(ctx *common.Context, ops []*Operand, length uint64) (result *Operand
 		fn, length,
 	)
 	return
+}
 
+func metaBitOp(dType ast.DataType) bool {
+	dMajor, _ := ast.DecomposeDataType(dType)
+	switch dMajor {
+	case ast.DataTypeMajorUint,
+		ast.DataTypeMajorInt,
+		ast.DataTypeMajorFixedBytes:
+		return true
+	}
+	return false
+}
+
+func metaAllBitOp(op *Operand) bool { return metaAll(op, metaBitOp) }
+
+func extractOps(ops []*Operand) (n int, op1, op2 *Operand, err error) {
+	if len(ops) < 2 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+
+	n, err = findMaxDataLength(ops)
+	if err != nil {
+		return
+	}
+
+	op1, op2 = ops[0], ops[1]
+
+	if !metaAllEq(op1, op2) || !metaAllBitOp(op1) {
+		err = se.ErrorCodeInvalidDataType
+	}
+	return
+}
+
+func (r *Raw) toBytes(dType ast.DataType) []byte {
+	dMajor, _ := ast.DecomposeDataType(dType)
+	switch dMajor {
+	case ast.DataTypeMajorFixedBytes,
+		ast.DataTypeMajorAddress,
+		ast.DataTypeMajorDynamicBytes:
+		return r.Bytes
+	case ast.DataTypeMajorUint,
+		ast.DataTypeMajorInt,
+		ast.DataTypeMajorFixed:
+		bytes, err := ast.DecimalEncode(dType, r.Value)
+		if err != nil {
+			panic(err)
+		}
+		return bytes
+	default:
+		panic(fmt.Errorf("unrecognized data type: %v", dType))
+	}
+}
+
+func (r *Raw) fromBytes(bytes []byte, dType ast.DataType) {
+	dMajor, _ := ast.DecomposeDataType(dType)
+	switch dMajor {
+	case ast.DataTypeMajorFixedBytes,
+		ast.DataTypeMajorAddress,
+		ast.DataTypeMajorDynamicBytes:
+		r.Bytes = bytes
+	case ast.DataTypeMajorUint,
+		ast.DataTypeMajorInt,
+		ast.DataTypeMajorFixed:
+		var err error
+		r.Value, err = ast.DecimalDecode(dType, bytes)
+		if err != nil {
+			panic(err)
+		}
+	default:
+		panic(fmt.Errorf("unrecognized data type: %v", dType))
+	}
+}
+
+type bitBinFunc func(b1, b2 byte) byte
+
+func fnBitAnd(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	n, op1, op2, err := extractOps(ops)
+	if err != nil {
+		return
+	}
+
+	result = op1.clone(true)
+	result.Data = make([]Tuple, n)
+	for i := 0; i < n; i++ {
+		result.Data[i] = op1.Data[i].bitBinOp(
+			op2.Data[i],
+			op1.Meta,
+			func(b1, b2 byte) byte { return b1 & b2 },
+		)
+	}
+	return
+}
+
+func (t Tuple) bitBinOp(t2 Tuple, meta []ast.DataType, bFn bitBinFunc) (t3 Tuple) {
+	t3 = make(Tuple, len(t))
+	for i := 0; i < len(t); i++ {
+		t3[i] = t[i].bitBinOp(t2[i], meta[i], bFn)
+	}
+	return
+}
+
+func (r *Raw) bitBinOp(r2 *Raw, dType ast.DataType, bFn bitBinFunc) (r3 *Raw) {
+	bytes1, bytes2 := r.toBytes(dType), r2.toBytes(dType)
+
+	if len(bytes1) != len(bytes2) {
+		panic(fmt.Errorf("bitwise operand on differnt length bits"))
+	}
+
+	n := len(bytes1)
+	bytes3 := make([]byte, n)
+	for i := 0; i < n; i++ {
+		bytes3[i] = bFn(bytes1[i], bytes2[i])
+	}
+
+	r3 = &Raw{}
+	r3.fromBytes(bytes3, dType)
+	return
 }
