@@ -1018,8 +1018,12 @@ func (con *Consensus) prepare(initBlock *types.Block) (err error) {
 					"reset", e.Reset)
 				nextConfig := utils.GetConfigWithPanic(con.gov, nextRound,
 					con.logger)
-				con.cfgModule.registerDKG(con.ctx, nextRound, e.Reset,
-					utils.GetDKGThreshold(nextConfig))
+				if nextRound%2 == 0 && e.Reset == 0 {
+					con.logger.Info("Skip DKG", "round", nextRound, "reset", e.Reset)
+				} else {
+					con.cfgModule.registerDKG(con.ctx, nextRound, e.Reset,
+						utils.GetDKGThreshold(nextConfig))
+				}
 				con.event.RegisterHeight(e.NextDKGPreparationHeight(),
 					func(h uint64) {
 						func() {
