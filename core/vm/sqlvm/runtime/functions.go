@@ -27,6 +27,7 @@ const (
 	NOW
 	RAND
 	BITAND
+	BITOR
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
@@ -44,6 +45,7 @@ var (
 		TXORIGIN:       fnTxOrigin,
 		RAND:           fnRand,
 		BITAND:         fnBitAnd,
+		BITOR:          fnBitOr,
 	}
 )
 
@@ -314,5 +316,23 @@ func (r *Raw) bitBinOp(r2 *Raw, dType ast.DataType, bFn bitBinFunc) (r3 *Raw) {
 
 	r3 = &Raw{}
 	r3.fromBytes(bytes3, dType)
+	return
+}
+
+func fnBitOr(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	n, op1, op2, err := extractOps(ops)
+	if err != nil {
+		return
+	}
+
+	result = op1.clone(true)
+	result.Data = make([]Tuple, n)
+	for i := 0; i < n; i++ {
+		result.Data[i] = op1.Data[i].bitBinOp(
+			op2.Data[i],
+			op1.Meta,
+			func(b1, b2 byte) byte { return b1 | b2 },
+		)
+	}
 	return
 }
