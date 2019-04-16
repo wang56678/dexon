@@ -45,7 +45,12 @@ SelectStmt
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	node.SetVerb(v.([]byte))
-	node.Column = assertExprSlice(prepend(f, assertSlice(fs)))
+	columnSlice := assertSlice(fs)
+	node.Column = make([]ast.ExprWithAnyNode, len(columnSlice)+1)
+	node.Column[0] = f.(ast.ExprWithAnyNode)
+	for idx := range columnSlice {
+		node.Column[idx+1] = columnSlice[idx].(ast.ExprWithAnyNode)
+	}
 	if table != nil {
 		node.Table = table.(*ast.IdentifierNode)
 	}
@@ -126,7 +131,7 @@ InsertStmt
 	node.SetVerb(bytes.Join([][]byte{
 		v1.([]byte), v2.([]byte), v3.([]byte)}, nil))
 	node.Table = table.(*ast.IdentifierNode)
-	switch i := insert.(type) {
+	switch i := insert.(ast.InsertOptionNode).(type) {
 	case *ast.InsertWithColumnOptionNode:
 		node.Insert = i
 	case *ast.InsertWithDefaultOptionNode:
@@ -177,9 +182,9 @@ ColumnSchema
 	node.Column = i.(*ast.IdentifierNode)
 	node.DataType = t.(ast.TypeNode)
 	constraintSlice := assertSlice(cs)
-	node.Constraint = make([]ast.Node, len(constraintSlice))
+	node.Constraint = make([]ast.ColumnConstraintNode, len(constraintSlice))
 	for idx, constraint := range constraintSlice {
-		switch c := constraint.(type) {
+		switch c := constraint.(ast.ColumnConstraintNode).(type) {
 		case *ast.PrimaryOptionNode:
 			node.Constraint[idx] = c
 		case *ast.NotNullOptionNode:
@@ -327,10 +332,10 @@ InsertWithColumnClause
 		node.Column[idx] = columnSlice[idx].(*ast.IdentifierNode)
 	}
 	valueSlice := assertSlice(vs)
-	node.Value = make([][]ast.ExprNode, len(valueSlice)+1)
-	node.Value[0] = v.([]ast.ExprNode)
+	node.Value = make([][]ast.ExprWithDefaultNode, len(valueSlice)+1)
+	node.Value[0] = v.([]ast.ExprWithDefaultNode)
 	for idx := range valueSlice {
-		node.Value[idx+1] = valueSlice[idx].([]ast.ExprNode)
+		node.Value[idx+1] = valueSlice[idx].([]ast.ExprWithDefaultNode)
 	}
 	return node, nil
 }
@@ -513,7 +518,15 @@ MultiExpr
 
 MultiExprWithDefault
 	= x:ExprWithDefault xs:( _ SeparatorToken _ e:ExprWithDefault { return e, nil } )*
-{ return assertExprSlice(prepend(x, assertSlice(xs))), nil }
+{
+	s := assertSlice(xs)
+	es := make([]ast.ExprWithDefaultNode, len(s)+1)
+	es[0] = x.(ast.ExprWithDefaultNode)
+	for idx := range s {
+		es[idx+1] = s[idx].(ast.ExprWithDefaultNode)
+	}
+	return es, nil
+}
 
 Operand
 	= op:UnaryOperator _ s:Operand
@@ -549,14 +562,24 @@ FunctionCall
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	node.Name = i.(*ast.IdentifierNode)
-	if r != nil {
-		node.Args = r.([]ast.ExprNode)
+	switch a := r.(type) {
+	case nil:
+		node.Args = nil
+	case *ast.AnySymbolNode:
+		node.Args = []ast.ExprWithAnyNode{a}
+	case []ast.ExprNode:
+		node.Args = make([]ast.ExprWithAnyNode, len(a))
+		for idx := range a {
+			node.Args[idx] = a[idx]
+		}
+	default:
+		panic(fmt.Sprintf("unexpected function arguments type %T", r))
 	}
 	return node, nil
 }
 
 FunctionArgs
-	= a:AnyLiteral { return []ast.ExprNode{a.(*ast.AnyValueNode)}, nil }
+	= AnyLiteral
 	/ MultiExpr
 
 Assignment
@@ -566,7 +589,7 @@ Assignment
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	node.Column = i.(*ast.IdentifierNode)
-	node.Expr = e.(ast.ExprNode)
+	node.Expr = e.(ast.ExprWithDefaultNode)
 	return node, nil
 }
 
@@ -895,7 +918,7 @@ Value
 AnyLiteral
 	= AnyToken
 {
-	node := &ast.AnyValueNode{}
+	node := &ast.AnySymbolNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	return node, nil
@@ -904,7 +927,7 @@ AnyLiteral
 DefaultLiteral
 	= DefaultToken
 {
-	node := &ast.DefaultValueNode{}
+	node := &ast.DefaultSymbolNode{}
 	node.SetPosition(uint32(c.pos.offset))
 	node.SetLength(uint32(len(c.text)))
 	return node, nil

@@ -28,17 +28,6 @@ func assertSlice(x interface{}) []interface{} {
 	return x.([]interface{})
 }
 
-func assertNodeSlice(x interface{}) []ast.Node {
-	xs := assertSlice(x)
-	ns := make([]ast.Node, len(xs))
-	for i := 0; i < len(xs); i++ {
-		if xs[i] != nil {
-			ns[i] = xs[i].(ast.Node)
-		}
-	}
-	return ns
-}
-
 func assertExprSlice(x interface{}) []ast.ExprNode {
 	xs := assertSlice(x)
 	es := make([]ast.ExprNode, len(xs))
@@ -161,6 +150,7 @@ func joinOperator(x ast.ExprNode, o ast.ExprNode) {
 	case *ast.InOperatorNode:
 		op.Left = o
 	default:
+		_ = "suppress go-sumtype error"
 		panic(fmt.Sprintf("unable to join operators %T and %T", x, o))
 	}
 }

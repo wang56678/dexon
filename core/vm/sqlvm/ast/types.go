@@ -52,10 +52,8 @@ const (
 
 // DataTypeMinor enums.
 const (
-	DataTypeMinorDontCare       DataTypeMinor = 0x00
-	DataTypeMinorSpecialNull    DataTypeMinor = 0x00
-	DataTypeMinorSpecialAny     DataTypeMinor = 0x01
-	DataTypeMinorSpecialDefault DataTypeMinor = 0x02
+	DataTypeMinorDontCare    DataTypeMinor = 0x00
+	DataTypeMinorSpecialNull DataTypeMinor = 0x00
 )
 
 // Special data types which are commonly used.

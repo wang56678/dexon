@@ -377,6 +377,9 @@ func doLint(cmdline []string) {
 	build.MustRun(goTool("get", "gopkg.in/alecthomas/gometalinter.v2"))
 	build.MustRunCommand(filepath.Join(GOBIN, "gometalinter.v2"), "--install")
 
+	// Get go-sumtype.
+	build.MustRun(goTool("get", "github.com/BurntSushi/go-sumtype"))
+
 	// Run fast linters batched together
 	configs := []string{
 		"--vendor",
@@ -398,6 +401,9 @@ func doLint(cmdline []string) {
 		configs = []string{"--vendor", "--tests", "--deadline=10m", "--disable-all", "--enable=" + linter}
 		build.MustRunCommand(filepath.Join(GOBIN, "gometalinter.v2"), append(configs, packages...)...)
 	}
+
+	// Run go-sumtype.
+	build.MustRunCommand(filepath.Join(GOBIN, "go-sumtype"), packages...)
 }
 
 // Release Packaging

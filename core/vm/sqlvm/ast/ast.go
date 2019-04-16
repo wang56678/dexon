@@ -71,18 +71,29 @@ func (n *NodeBase) SetToken(token []byte) {
 // ---------------------------------------------------------------------------
 
 // ExprNode is an interface which should be satisfied all nodes in expressions.
+//go-sumtype:decl ExprNode
 type ExprNode interface {
 	Node
 	IsConstant() bool
 	GetType() DataType
 	SetType(DataType)
+	ˉExprNode()
+	ˉExprWithAnyNode()
+	ˉExprWithDefaultNode()
 }
+
+var _ ExprWithAnyNode = (ExprNode)(nil)
+var _ ExprWithDefaultNode = (ExprNode)(nil)
 
 // UntaggedExprNodeBase is a base struct embedded by nodes whose types can be
 // decided without any context and database schema.
 type UntaggedExprNodeBase struct {
 	NodeBase
 }
+
+func (n *UntaggedExprNodeBase) ˉExprNode()            {}
+func (n *UntaggedExprNodeBase) ˉExprWithAnyNode()     {}
+func (n *UntaggedExprNodeBase) ˉExprWithDefaultNode() {}
 
 // SetType always panics because it is not reasonable to set data type on nodes
 // whose types are already decided.
@@ -97,6 +108,10 @@ type TaggedExprNodeBase struct {
 	Type DataType `print:"-"`
 }
 
+func (n *TaggedExprNodeBase) ˉExprNode()            {}
+func (n *TaggedExprNodeBase) ˉExprWithAnyNode()     {}
+func (n *TaggedExprNodeBase) ˉExprWithDefaultNode() {}
+
 // GetType gets the data type of the node.
 func (n *TaggedExprNodeBase) GetType() DataType {
 	return n.Type
@@ -110,6 +125,8 @@ func (n *TaggedExprNodeBase) SetType(t DataType) {
 // IdentifierDescriptor defines the interface of a descriptor. A descriptor
 // identifies an object in a SQL statement. This interface is intended to be
 // used by IdentifierNode to store the target after the name is resolved.
+// FIXME: IdentifierDescriptor is a sum type, but all implementations are in
+// different packages.
 type IdentifierDescriptor interface {
 	GetDescriptor() uint32
 }
@@ -138,8 +155,10 @@ func (n *IdentifierNode) IsConstant() bool {
 // ---------------------------------------------------------------------------
 
 // Valuer defines the interface of a constant value.
+//go-sumtype:decl Valuer
 type Valuer interface {
-	Value() interface{}
+	ExprNode
+	ˉValuer()
 }
 
 // BoolValueNode is a boolean constant.
@@ -148,7 +167,9 @@ type BoolValueNode struct {
 	V BoolValue
 }
 
-var _ ExprNode = (*BoolValueNode)(nil)
+var _ Valuer = (*BoolValueNode)(nil)
+
+func (n *BoolValueNode) ˉValuer() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *BoolValueNode) GetChildren() []Node {
@@ -165,11 +186,6 @@ func (n *BoolValueNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
 }
 
-// Value returns the value of BoolValueNode.
-func (n *BoolValueNode) Value() interface{} {
-	return n.V
-}
-
 // IntegerValueNode is an integer constant.
 type IntegerValueNode struct {
 	TaggedExprNodeBase
@@ -177,7 +193,9 @@ type IntegerValueNode struct {
 	V         decimal.Decimal
 }
 
-var _ ExprNode = (*IntegerValueNode)(nil)
+var _ Valuer = (*IntegerValueNode)(nil)
+
+func (n *IntegerValueNode) ˉValuer() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *IntegerValueNode) GetChildren() []Node {
@@ -189,18 +207,15 @@ func (n *IntegerValueNode) IsConstant() bool {
 	return true
 }
 
-// Value returns the value of IntegerValueNode.
-func (n *IntegerValueNode) Value() interface{} {
-	return n.V
-}
-
 // DecimalValueNode is a number constant.
 type DecimalValueNode struct {
 	TaggedExprNodeBase
 	V decimal.Decimal
 }
 
-var _ ExprNode = (*DecimalValueNode)(nil)
+var _ Valuer = (*DecimalValueNode)(nil)
+
+func (n *DecimalValueNode) ˉValuer() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *DecimalValueNode) GetChildren() []Node {
@@ -212,18 +227,15 @@ func (n *DecimalValueNode) IsConstant() bool {
 	return true
 }
 
-// Value returns the value of DecimalValueNode.
-func (n *DecimalValueNode) Value() interface{} {
-	return n.V
-}
-
 // BytesValueNode is a dynamic or fixed bytes constant.
 type BytesValueNode struct {
 	TaggedExprNodeBase
 	V []byte
 }
 
-var _ ExprNode = (*BytesValueNode)(nil)
+var _ Valuer = (*BytesValueNode)(nil)
+
+func (n *BytesValueNode) ˉValuer() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *BytesValueNode) GetChildren() []Node {
@@ -235,71 +247,14 @@ func (n *BytesValueNode) IsConstant() bool {
 	return true
 }
 
-// Value returns the value of BytesValueNode.
-func (n *BytesValueNode) Value() interface{} {
-	return n.V
-}
-
-// AnyValueNode is '*' used in SELECT and function call.
-type AnyValueNode struct {
-	UntaggedExprNodeBase
-}
-
-var _ ExprNode = (*AnyValueNode)(nil)
-
-// GetChildren returns a list of child nodes used for traversing.
-func (n *AnyValueNode) GetChildren() []Node {
-	return nil
-}
-
-// IsConstant returns whether a node is a constant.
-func (n *AnyValueNode) IsConstant() bool {
-	return false
-}
-
-// GetType returns the type of '*'.
-func (n *AnyValueNode) GetType() DataType {
-	return ComposeDataType(DataTypeMajorSpecial, DataTypeMinorSpecialAny)
-}
-
-// Value returns itself.
-func (n *AnyValueNode) Value() interface{} {
-	return n
-}
-
-// DefaultValueNode represents the default value used in INSERT and UPDATE.
-type DefaultValueNode struct {
-	UntaggedExprNodeBase
-}
-
-var _ ExprNode = (*DefaultValueNode)(nil)
-
-// GetChildren returns a list of child nodes used for traversing.
-func (n *DefaultValueNode) GetChildren() []Node {
-	return nil
-}
-
-// IsConstant returns whether a node is a constant.
-func (n *DefaultValueNode) IsConstant() bool {
-	return true
-}
-
-// GetType returns the type of 'DEFAULT'.
-func (n *DefaultValueNode) GetType() DataType {
-	return ComposeDataType(DataTypeMajorSpecial, DataTypeMinorSpecialDefault)
-}
-
-// Value returns itself.
-func (n *DefaultValueNode) Value() interface{} {
-	return n
-}
-
 // NullValueNode is NULL.
 type NullValueNode struct {
 	TaggedExprNodeBase
 }
 
-var _ ExprNode = (*NullValueNode)(nil)
+var _ Valuer = (*NullValueNode)(nil)
+
+func (n *NullValueNode) ˉValuer() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *NullValueNode) GetChildren() []Node {
@@ -311,17 +266,62 @@ func (n *NullValueNode) IsConstant() bool {
 	return true
 }
 
-// Value returns itself.
-func (n *NullValueNode) Value() interface{} { return n }
+// ---------------------------------------------------------------------------
+// Symbols
+// ---------------------------------------------------------------------------
+
+// ExprWithAnyNode is a sum type of ExprNode and AnySymbolNode.
+//go-sumtype:decl ExprWithAnyNode
+type ExprWithAnyNode interface {
+	Node
+	ˉExprWithAnyNode()
+}
+
+// AnySymbolNode is '*' used in SELECT and function call.
+type AnySymbolNode struct {
+	NodeBase
+}
+
+var _ ExprWithAnyNode = (*AnySymbolNode)(nil)
+
+func (n *AnySymbolNode) ˉExprWithAnyNode() {}
+
+// GetChildren returns a list of child nodes used for traversing.
+func (n *AnySymbolNode) GetChildren() []Node {
+	return nil
+}
+
+// ExprWithDefaultNode is a sum type of ExprNode and DefaultSymbolNode.
+//go-sumtype:decl ExprWithDefaultNode
+type ExprWithDefaultNode interface {
+	Node
+	ˉExprWithDefaultNode()
+}
+
+// DefaultSymbolNode represents the default value used in INSERT and UPDATE.
+type DefaultSymbolNode struct {
+	NodeBase
+}
+
+var _ ExprWithDefaultNode = (*DefaultSymbolNode)(nil)
+
+func (n *DefaultSymbolNode) ˉExprWithDefaultNode() {}
+
+// GetChildren returns a list of child nodes used for traversing.
+func (n *DefaultSymbolNode) GetChildren() []Node {
+	return nil
+}
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 // TypeNode is an interface which should be satisfied nodes representing types.
+//go-sumtype:decl TypeNode
 type TypeNode interface {
 	Node
 	GetType() (DataType, errors.ErrorCode, string)
+	ˉTypeNode()
 }
 
 // IntTypeNode represents solidity int{X} and uint{X} types.
@@ -332,6 +332,8 @@ type IntTypeNode struct {
 }
 
 var _ TypeNode = (*IntTypeNode)(nil)
+
+func (n *IntTypeNode) ˉTypeNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *IntTypeNode) GetChildren() []Node {
@@ -384,6 +386,8 @@ type FixedTypeNode struct {
 }
 
 var _ TypeNode = (*FixedTypeNode)(nil)
+
+func (n *FixedTypeNode) ˉTypeNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *FixedTypeNode) GetChildren() []Node {
@@ -446,6 +450,8 @@ type DynamicBytesTypeNode struct {
 
 var _ TypeNode = (*DynamicBytesTypeNode)(nil)
 
+func (n *DynamicBytesTypeNode) ˉTypeNode() {}
+
 // GetChildren returns a list of child nodes used for traversing.
 func (n *DynamicBytesTypeNode) GetChildren() []Node {
 	return nil
@@ -464,6 +470,8 @@ type FixedBytesTypeNode struct {
 }
 
 var _ TypeNode = (*FixedBytesTypeNode)(nil)
+
+func (n *FixedBytesTypeNode) ˉTypeNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *FixedBytesTypeNode) GetChildren() []Node {
@@ -497,6 +505,8 @@ type AddressTypeNode struct {
 
 var _ TypeNode = (*AddressTypeNode)(nil)
 
+func (n *AddressTypeNode) ˉTypeNode() {}
+
 // GetChildren returns a list of child nodes used for traversing.
 func (n *AddressTypeNode) GetChildren() []Node {
 	return nil
@@ -515,6 +525,8 @@ type BoolTypeNode struct {
 
 var _ TypeNode = (*BoolTypeNode)(nil)
 
+func (n *BoolTypeNode) ˉTypeNode() {}
+
 // GetChildren returns a list of child nodes used for traversing.
 func (n *BoolTypeNode) GetChildren() []Node {
 	return nil
@@ -531,25 +543,31 @@ func (n *BoolTypeNode) GetType() (DataType, errors.ErrorCode, string) {
 // ---------------------------------------------------------------------------
 
 // UnaryOperator defines the interface of a unary operator.
+//go-sumtype:decl UnaryOperator
 type UnaryOperator interface {
 	ExprNode
 	GetTarget() ExprNode
 	SetTarget(ExprNode)
+	ˉUnaryOperator()
 }
 
 // BinaryOperator defines the interface of a binary operator.
+//go-sumtype:decl BinaryOperator
 type BinaryOperator interface {
 	ExprNode
 	GetObject() ExprNode
 	GetSubject() ExprNode
 	SetObject(ExprNode)
 	SetSubject(ExprNode)
+	ˉBinaryOperator()
 }
 
 // UnaryOperatorNode is a base struct of unary operators.
 type UnaryOperatorNode struct {
 	Target ExprNode
 }
+
+func (n *UnaryOperatorNode) ˉUnaryOperator() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *UnaryOperatorNode) GetChildren() []Node {
@@ -576,6 +594,8 @@ type BinaryOperatorNode struct {
 	Object  ExprNode
 	Subject ExprNode
 }
+
+func (n *BinaryOperatorNode) ˉBinaryOperator() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *BinaryOperatorNode) GetChildren() []Node {
@@ -902,7 +922,7 @@ func (n *CastOperatorNode) GetType() DataType {
 type AssignOperatorNode struct {
 	NodeBase
 	Column *IdentifierNode
-	Expr   ExprNode
+	Expr   ExprWithDefaultNode
 }
 
 var _ Node = (*AssignOperatorNode)(nil)
@@ -961,7 +981,7 @@ func (n *InOperatorNode) IsConstant() bool {
 type FunctionOperatorNode struct {
 	TaggedExprNodeBase
 	Name *IdentifierNode
-	Args []ExprNode
+	Args []ExprWithAnyNode
 }
 
 var _ ExprNode = (*FunctionOperatorNode)(nil)
@@ -1052,14 +1072,23 @@ func (n *LimitOptionNode) GetChildren() []Node {
 	return []Node{n.Value}
 }
 
+// InsertOptionNode is a sum type of all INSERT options.
+//go-sumtype:decl InsertOptionNode
+type InsertOptionNode interface {
+	Node
+	ˉInsertOptionNode()
+}
+
 // InsertWithColumnOptionNode stores columns and values used in INSERT.
 type InsertWithColumnOptionNode struct {
 	NodeBase
 	Column []*IdentifierNode
-	Value  [][]ExprNode
+	Value  [][]ExprWithDefaultNode
 }
 
-var _ Node = (*InsertWithColumnOptionNode)(nil)
+var _ InsertOptionNode = (*InsertWithColumnOptionNode)(nil)
+
+func (n *InsertWithColumnOptionNode) ˉInsertOptionNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *InsertWithColumnOptionNode) GetChildren() []Node {
@@ -1086,11 +1115,20 @@ type InsertWithDefaultOptionNode struct {
 	NodeBase
 }
 
-var _ Node = (*InsertWithDefaultOptionNode)(nil)
+var _ InsertOptionNode = (*InsertWithDefaultOptionNode)(nil)
+
+func (n *InsertWithDefaultOptionNode) ˉInsertOptionNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *InsertWithDefaultOptionNode) GetChildren() []Node {
 	return nil
+}
+
+// ColumnConstraintNode is a sum type of all column constraints.
+//go-sumtype:decl ColumnConstraintNode
+type ColumnConstraintNode interface {
+	Node
+	ˉColumnConstraintNode()
 }
 
 // PrimaryOptionNode is 'PRIMARY KEY' used in CREATE TABLE.
@@ -1098,7 +1136,9 @@ type PrimaryOptionNode struct {
 	NodeBase
 }
 
-var _ Node = (*PrimaryOptionNode)(nil)
+var _ ColumnConstraintNode = (*PrimaryOptionNode)(nil)
+
+func (n *PrimaryOptionNode) ˉColumnConstraintNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *PrimaryOptionNode) GetChildren() []Node {
@@ -1110,7 +1150,9 @@ type NotNullOptionNode struct {
 	NodeBase
 }
 
-var _ Node = (*NotNullOptionNode)(nil)
+var _ ColumnConstraintNode = (*NotNullOptionNode)(nil)
+
+func (n *NotNullOptionNode) ˉColumnConstraintNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *NotNullOptionNode) GetChildren() []Node {
@@ -1122,7 +1164,9 @@ type UniqueOptionNode struct {
 	NodeBase
 }
 
-var _ Node = (*UniqueOptionNode)(nil)
+var _ ColumnConstraintNode = (*UniqueOptionNode)(nil)
+
+func (n *UniqueOptionNode) ˉColumnConstraintNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *UniqueOptionNode) GetChildren() []Node {
@@ -1134,7 +1178,9 @@ type AutoIncrementOptionNode struct {
 	NodeBase
 }
 
-var _ Node = (*AutoIncrementOptionNode)(nil)
+var _ ColumnConstraintNode = (*AutoIncrementOptionNode)(nil)
+
+func (n *AutoIncrementOptionNode) ˉColumnConstraintNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *AutoIncrementOptionNode) GetChildren() []Node {
@@ -1147,7 +1193,9 @@ type DefaultOptionNode struct {
 	Value ExprNode
 }
 
-var _ Node = (*DefaultValueNode)(nil)
+var _ ColumnConstraintNode = (*DefaultOptionNode)(nil)
+
+func (n *DefaultOptionNode) ˉColumnConstraintNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *DefaultOptionNode) GetChildren() []Node {
@@ -1161,7 +1209,9 @@ type ForeignOptionNode struct {
 	Column *IdentifierNode
 }
 
-var _ Node = (*ForeignOptionNode)(nil)
+var _ ColumnConstraintNode = (*ForeignOptionNode)(nil)
+
+func (n *ForeignOptionNode) ˉColumnConstraintNode() {}
 
 // GetChildren returns a list of child nodes used for traversing.
 func (n *ForeignOptionNode) GetChildren() []Node {
@@ -1173,16 +1223,20 @@ func (n *ForeignOptionNode) GetChildren() []Node {
 // ---------------------------------------------------------------------------
 
 // StmtNode defines the interface of a statement.
+//go-sumtype:decl StmtNode
 type StmtNode interface {
 	Node
 	GetVerb() []byte
 	SetVerb([]byte)
+	ˉStmtNode()
 }
 
 // StmtNodeBase is a base struct embedded by statement nodes.
 type StmtNodeBase struct {
 	Verb []byte `print:"-"`
 }
+
+func (n *StmtNodeBase) ˉStmtNode() {}
 
 // GetVerb returns the verb used to identify the statement.
 func (n *StmtNodeBase) GetVerb() []byte {
@@ -1198,7 +1252,7 @@ func (n *StmtNodeBase) SetVerb(verb []byte) {
 type SelectStmtNode struct {
 	NodeBase
 	StmtNodeBase
-	Column []ExprNode
+	Column []ExprWithAnyNode
 	Table  *IdentifierNode
 	Where  *WhereOptionNode
 	Group  []*GroupOptionNode
@@ -1310,7 +1364,7 @@ type InsertStmtNode struct {
 	NodeBase
 	StmtNodeBase
 	Table  *IdentifierNode
-	Insert Node
+	Insert InsertOptionNode
 }
 
 var _ StmtNode = (*InsertStmtNode)(nil)
@@ -1345,7 +1399,7 @@ type ColumnSchemaNode struct {
 	NodeBase
 	Column     *IdentifierNode
 	DataType   TypeNode
-	Constraint []Node
+	Constraint []ColumnConstraintNode
 }
 
 var _ Node = (*ColumnSchemaNode)(nil)
