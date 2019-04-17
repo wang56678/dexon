@@ -57,7 +57,7 @@ func Register(idx uint8, c createFunc) {
 	createFuncs[idx] = c
 }
 
-// NewExecPack creates a ExecPack instance, and create all VM instance.
+// NewExecPack creates a ExecPack instance, and create all VM instances.
 func NewExecPack(context *Context, stateDB StateDB, chainConfig *params.ChainConfig, vmConfigs [NUMS]interface{}) ExecPack {
 	p := ExecPack{
 		Context:     context,
