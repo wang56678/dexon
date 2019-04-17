@@ -2834,5 +2834,53 @@ var testData = &tmplData{
 			},
 		},
 		// -- end of FUNC BITNOT
+		{
+			TestName: "OpFuncOctetLength", OpFunc: "opFunc",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Func octet length",
+					Error: "nil", OpCode: "FUNC",
+					Inputs: []*tmplOp{
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+							},
+							Data: []string{`{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 1},
+							},
+							Data: []string{`{V: 14}`},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+								{Major: "DynamicBytes", Minor: 0},
+							},
+							Data: []string{"{B: {}, B: {1}, B: {1, 2}, B: {1, 2, 3}, B: {1, 2, 3, 4}}"},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "Uint", Minor: 32},
+							{Major: "Uint", Minor: 32},
+							{Major: "Uint", Minor: 32},
+							{Major: "Uint", Minor: 32},
+							{Major: "Uint", Minor: 32},
+						},
+						Data: []string{`{V: 0, V: 1, V: 2, V: 3, V: 4}`},
+					},
+				},
+			},
+		},
+		// -- end of FUNC OCTETLENGTH
 	},
 }

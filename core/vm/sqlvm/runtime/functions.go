@@ -30,6 +30,7 @@ const (
 	BITOR
 	BITXOR
 	BITNOT
+	OCTETLENGTH
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
@@ -50,6 +51,7 @@ var (
 		BITOR:          fnBitOr,
 		BITXOR:         fnBitXor,
 		BITNOT:         fnBitNot,
+		OCTETLENGTH:    fnOctetLength,
 	}
 )
 
@@ -362,12 +364,12 @@ func fnBitXor(ctx *common.Context, ops []*Operand, length uint64) (result *Opera
 type bitUnFunc func(b byte) byte
 
 func fnBitNot(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
-	if len(ops) < 2 {
+	if len(ops) < 1 {
 		err = se.ErrorCodeInvalidOperandNum
 		return
 	}
 
-	op := ops[1]
+	op := ops[0]
 	if !metaAllBitOp(op) {
 		err = se.ErrorCodeInvalidDataType
 		return
@@ -403,5 +405,37 @@ func (r *Raw) bitUnOp(dType ast.DataType, bFn bitUnFunc) (r2 *Raw) {
 
 	r2 = &Raw{}
 	r2.fromBytes(bytes2, dType)
+	return
+}
+
+func fnOctetLength(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	if len(ops) < 1 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+
+	op := ops[0]
+
+	if !metaAllDynBytes(op) {
+		err = se.ErrorCodeInvalidDataType
+		return
+	}
+
+	result = &Operand{
+		Meta: make([]ast.DataType, len(op.Meta)),
+		Data: make([]Tuple, len(op.Data)),
+	}
+
+	uint256Type := ast.ComposeDataType(ast.DataTypeMajorUint, 32)
+	for i := 0; i < len(op.Meta); i++ {
+		result.Meta[i] = uint256Type
+	}
+
+	for i := 0; i < len(op.Data); i++ {
+		result.Data[i] = make(Tuple, len(op.Data[i]))
+		for j := 0; j < len(op.Data[i]); j++ {
+			result.Data[i][j] = &Raw{Value: decimal.New(int64(len(op.Data[i][j].Bytes)), 0)}
+		}
+	}
 	return
 }

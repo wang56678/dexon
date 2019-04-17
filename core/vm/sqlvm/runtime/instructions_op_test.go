@@ -3932,3 +3932,56 @@ func (s *instructionSuite) TestOpFuncBitNot() {
 
 	s.run(testcases, opFunc)
 }
+
+func (s *instructionSuite) TestOpFuncOctetLength() {
+	testcases := []opTestcase{
+		{
+			"Func octet length",
+			Instruction{
+				Op: FUNC,
+				Input: []*Operand{
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(14)}},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0), ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte{}}, &Raw{Bytes: []byte{1}}, &Raw{Bytes: []byte{1, 2}}, &Raw{Bytes: []byte{1, 2, 3}}, &Raw{Bytes: []byte{1, 2, 3, 4}}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorUint, 32), ast.ComposeDataType(ast.DataTypeMajorUint, 32), ast.ComposeDataType(ast.DataTypeMajorUint, 32), ast.ComposeDataType(ast.DataTypeMajorUint, 32), ast.ComposeDataType(ast.DataTypeMajorUint, 32),
+				},
+				[]Tuple{
+					{&Raw{Value: decimal.NewFromFloat(0)}, &Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}, &Raw{Value: decimal.NewFromFloat(3)}, &Raw{Value: decimal.NewFromFloat(4)}},
+				},
+			),
+			nil,
+		},
+	}
+
+	s.run(testcases, opFunc)
+}
