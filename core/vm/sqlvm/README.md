@@ -101,8 +101,8 @@ BITAND(a, b T), T ∈ {uintX, intX, bytesX}
 BITOR(a, b T), T ∈ {uintX, intX, bytesX}
 BITNOT(a T), T ∈ {uintX, intX, bytesX}
 BITXOR(a, b T), T ∈ {uintX, intX, bytesX}
-OCTET_LENGTH(a T) N, T ∈ {bytes, bytesX}, N ∈ {uintX, intX}
-SUBSTRING(str FROM pos FOR len) bytes, str ∈ {bytes}, pos, len ∈ {uintX, intX}
+OCTET_LENGTH(a T) uint64, T ∈ {bytes, bytesX}
+SUBSTRING(str FROM pos FOR len) bytes, str ∈ {bytes}, pos, len ∈ {uint64}
 ```
 
 ### Cross-VM interaction (Internal transactions)
