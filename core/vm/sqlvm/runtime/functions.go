@@ -31,6 +31,7 @@ const (
 	BITXOR
 	BITNOT
 	OCTETLENGTH
+	SUBSTRING
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
@@ -52,6 +53,7 @@ var (
 		BITXOR:         fnBitXor,
 		BITNOT:         fnBitNot,
 		OCTETLENGTH:    fnOctetLength,
+		SUBSTRING:      fnSubString,
 	}
 )
 
@@ -435,6 +437,55 @@ func fnOctetLength(ctx *common.Context, ops []*Operand, length uint64) (result *
 		result.Data[i] = make(Tuple, len(op.Data[i]))
 		for j := 0; j < len(op.Data[i]); j++ {
 			result.Data[i][j] = &Raw{Value: decimal.New(int64(len(op.Data[i][j].Bytes)), 0)}
+		}
+	}
+	return
+}
+
+func fnSubString(ctx *common.Context, ops []*Operand, length uint64) (result *Operand, err error) {
+	if len(ops) < 3 {
+		err = se.ErrorCodeInvalidOperandNum
+		return
+	}
+
+	op := ops[0]
+
+	if !metaAllDynBytes(op) {
+		err = se.ErrorCodeInvalidDataType
+	}
+
+	result = &Operand{
+		Meta: make([]ast.DataType, len(op.Meta)),
+		Data: make([]Tuple, len(op.Data)),
+	}
+
+	dynBytesType := ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0)
+	for i := 0; i < len(op.Meta); i++ {
+		result.Meta[i] = dynBytesType
+	}
+
+	starts, err := ops[1].toUint64()
+	if err == nil && len(starts) != 1 {
+		err = se.ErrorCodeIndexOutOfRange
+	}
+	if err != nil {
+		return
+	}
+
+	lens, err := ops[2].toUint64()
+	if err == nil && len(lens) != 1 {
+		err = se.ErrorCodeIndexOutOfRange
+	}
+	if err != nil {
+		return
+	}
+
+	start, end := starts[0], starts[0]+lens[0]
+
+	for i := 0; i < len(op.Data); i++ {
+		result.Data[i] = make(Tuple, len(op.Data[i]))
+		for j := 0; j < len(op.Data[i]); j++ {
+			result.Data[i][j] = &Raw{Bytes: op.Data[i][j].Bytes[start:end]}
 		}
 	}
 	return

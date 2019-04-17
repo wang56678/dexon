@@ -2882,5 +2882,59 @@ var testData = &tmplData{
 			},
 		},
 		// -- end of FUNC OCTETLENGTH
+		{
+			TestName: "OpFuncSubString", OpFunc: "opFunc",
+			Cases: []*tmplTestCase{
+				{
+					Name:  "Func sub string",
+					Error: "nil", OpCode: "FUNC",
+					Inputs: []*tmplOp{
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 0},
+							},
+							Data: []string{`{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 1},
+							},
+							Data: []string{`{V: 15}`},
+						},
+						{
+							Im: false,
+							Metas: []*tmplOpMeta{
+								{Major: "DynamicBytes", Minor: 0},
+							},
+							Data: []string{"{B: {1, 2, 3, 4, 5, 6, 7, 8, 9}}"},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 7},
+							},
+							Data: []string{`{V: 2}`},
+						},
+						{
+							Im: true,
+							Metas: []*tmplOpMeta{
+								{Major: "Uint", Minor: 7},
+							},
+							Data: []string{`{V: 5}`},
+						},
+					},
+					Output: &tmplOp{
+						Im: false,
+						Metas: []*tmplOpMeta{
+							{Major: "DynamicBytes", Minor: 0},
+						},
+						Data: []string{"{B: {3, 4, 5, 6, 7}}"},
+					},
+				},
+			},
+		},
+		// -- end of FUNC SUBSTRING
 	},
 }

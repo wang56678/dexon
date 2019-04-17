@@ -3985,3 +3985,74 @@ func (s *instructionSuite) TestOpFuncOctetLength() {
 
 	s.run(testcases, opFunc)
 }
+
+func (s *instructionSuite) TestOpFuncSubString() {
+	testcases := []opTestcase{
+		{
+			"Func sub string",
+			Instruction{
+				Op: FUNC,
+				Input: []*Operand{
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(15)}},
+						},
+					),
+					makeOperand(
+						false,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+						},
+						[]Tuple{
+							{&Raw{Bytes: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(2)}},
+						},
+					),
+					makeOperand(
+						true,
+						[]ast.DataType{
+							ast.ComposeDataType(ast.DataTypeMajorUint, 7),
+						},
+						[]Tuple{
+							{&Raw{Value: decimal.NewFromFloat(5)}},
+						},
+					),
+				},
+				Output: 0,
+			},
+			makeOperand(
+				false,
+				[]ast.DataType{
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+				},
+				[]Tuple{
+					{&Raw{Bytes: []byte{3, 4, 5, 6, 7}}},
+				},
+			),
+			nil,
+		},
+	}
+
+	s.run(testcases, opFunc)
+}
