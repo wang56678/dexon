@@ -28,7 +28,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0x7108ec505c66c3735053746697442050175db51753b3f8c721294b3ba15fa598")
 	TestnetGenesisHash = common.HexToHash("0x7d8700a7a731162880adff4f21398a901c0b75d907bec8f4eac51460f94cb846")
-	TaipeiGenesisHash  = common.HexToHash("0x6683de0f330a42990609fc876f3797225fbd2e80f9d32fa443f54ef08b1e93a0")
+	TaipeiGenesisHash  = common.HexToHash("0xec60d7db230458769931f011a3355346aafb6434e476c05bae3875d972b73e0e")
 	YilanGenesisHash   = common.HexToHash("0xdcdafc044c24d728c6149ecfada746d8de6e59fc5d18063caf7950badc1df12e")
 )
 
@@ -125,7 +125,7 @@ var (
 	// TaipeiChainConfig contains the chain parameters to run a node on the Taipei test network.
 	TaipeiChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(239),
-		DMoment:             1554388800,
+		DMoment:             1555553400,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
