@@ -813,7 +813,7 @@ Row steps:
 1. Add new ID to pk
 1. Update auto increment field if in need
 1. Update default field if in need
-1. Check foreign key exists
+1. Check if foreign key exists
 	1. Increase target reference count
 1. Check index
 	1. Create empty index if not existing
@@ -828,7 +828,7 @@ Row steps:
 Row steps:
 1. Get old data by ID
 1. Iterate IDs
-	1. Check foreign key exists
+	1. Check if foreign key exists
 		1. Increase target reference count
 		1. Decrease old target reference count
 	1. Update index
@@ -844,11 +844,11 @@ Row steps:
 1. Get old data by IDs
 1. Iterate IDs
     1. Iterate indices
-        1. If index contains more than 1 keys, remove from list
-        1. If index contains only key
+        1. If index contains more than one key, remove from list
+        1. If index contains only one key
             1. If reference count not zero, return error
             1. Delete key and meta value
-    1. Check foreign key exists
+    1. Check if foreign key exists
         1. Decrease target reference count
 1. Commit
 
