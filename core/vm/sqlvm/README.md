@@ -846,7 +846,7 @@ Row steps:
     1. Iterate indices
         1. If index contains more than one key, remove from list
         1. If index contains only one key
-            1. If reference count not zero, return error
+            1. If reference count is not zero, return error
             1. Delete key and meta value
     1. Check if foreign key exists
         1. Decrease target reference count
