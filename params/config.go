@@ -28,7 +28,7 @@ import (
 var (
 	MainnetGenesisHash = common.HexToHash("0x7108ec505c66c3735053746697442050175db51753b3f8c721294b3ba15fa598")
 	TestnetGenesisHash = common.HexToHash("0x7d8700a7a731162880adff4f21398a901c0b75d907bec8f4eac51460f94cb846")
-	TaipeiGenesisHash  = common.HexToHash("0x5929cb70fe4ba22dce821b2efca737a1874a0f5a34f3ffb9a1e157516622e20b")
+	TaipeiGenesisHash  = common.HexToHash("0x6683de0f330a42990609fc876f3797225fbd2e80f9d32fa443f54ef08b1e93a0")
 	YilanGenesisHash   = common.HexToHash("0xdcdafc044c24d728c6149ecfada746d8de6e59fc5d18063caf7950badc1df12e")
 )
 
@@ -141,15 +141,15 @@ var (
 			MinStake:          new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1e6)),
 			LockupPeriod:      3600 * 2 * 1000,
 			MiningVelocity:    0.1875,
-			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.8e8)),
-			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.6e7)),
+			NextHalvingSupply: new(big.Int).Mul(big.NewInt(1e18), big.NewInt(2.5e9)),
+			LastHalvedAmount:  new(big.Int).Mul(big.NewInt(1e18), big.NewInt(1.5e9)),
 			MinGasPrice:       new(big.Int).Mul(big.NewInt(1e9), big.NewInt(1)),
-			BlockGasLimit:     21000 * 10000,
+			BlockGasLimit:     21000 * 5000,
 			LambdaBA:          250,
 			LambdaDKG:         10000,
 			NotaryParamAlpha:  70.5,
 			NotaryParamBeta:   264,
-			RoundLength:       1200,
+			RoundLength:       2400,
 			MinBlockInterval:  500,
 			FineValues: []*big.Int{
 				new(big.Int).Mul(big.NewInt(1e18), big.NewInt(200)),
