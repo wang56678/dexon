@@ -16,22 +16,22 @@ import (
 
 // function identifier
 const (
-	BLOCKHASH      = "BLOCK_HASH"
-	BLOCKNUMBER    = "BLOCK_NUMBER"
-	BLOCKTIMESTAMP = "BLOCK_TIMESTAMP"
-	BLOCKCOINBASE  = "BLOCK_COINBASE"
-	BLOCKGASLIMIT  = "BLOCK_GAS_LIMIT"
-	MSGSENDER      = "MSG_SENDER"
-	MSGDATA        = "MSG_DATA"
-	TXORIGIN       = "TX_ORIGIN"
-	NOW            = "NOW"
-	RAND           = "RAND"
+	BLOCKHASH uint16 = iota
+	BLOCKNUMBER
+	BLOCKTIMESTAMP
+	BLOCKCOINBASE
+	BLOCKGASLIMIT
+	MSGSENDER
+	MSGDATA
+	TXORIGIN
+	NOW
+	RAND
 )
 
 type fn func(*common.Context, []*Operand, uint64) (*Operand, error)
 
 var (
-	fnTable = map[string]fn{
+	fnTable = []fn{
 		BLOCKHASH:      fnBlockHash,
 		BLOCKNUMBER:    fnBlockNumber,
 		BLOCKTIMESTAMP: fnBlockTimestamp,

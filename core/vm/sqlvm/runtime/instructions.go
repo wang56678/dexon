@@ -1849,23 +1849,28 @@ func opFunc(ctx *common.Context, ops, registers []*Operand, output uint) (err er
 	}
 
 	var (
-		op, funcID = ops[0], ops[1]
-		op2        *Operand
-		length     uint64
+		opLength, opFuncID = ops[0], ops[1]
+		result             *Operand
+		length             uint64
 	)
 
-	if op.IsImmediate {
-		length, err = ast.DecimalToUint64(op.Data[0][0].Value)
+	if opLength.IsImmediate {
+		length, err = ast.DecimalToUint64(opLength.Data[0][0].Value)
 		if err != nil {
 			return
 		}
 	} else {
-		length = uint64(len(op.Data))
+		length = uint64(len(opLength.Data))
 	}
 
-	fn, ok := fnTable[string(funcID.Data[0][0].Bytes)]
-	if !ok {
-		err = se.ErrorCodeNoSuchFunction
+	funcID, err := ast.DecimalToUint64(opFuncID.Data[0][0].Value)
+	if err != nil {
+		return
+	}
+
+	id := uint16(funcID)
+	if uint64(id) != funcID {
+		err = se.ErrorCodeIndexOutOfRange
 		return
 	}
 
@@ -1874,6 +1879,6 @@ func opFunc(ctx *common.Context, ops, registers []*Operand, output uint) (err er
 		return
 	}
 
-	registers[output] = op2
+	registers[output] = result
 	return
 }
