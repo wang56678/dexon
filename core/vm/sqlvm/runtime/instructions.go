@@ -15,6 +15,7 @@ import (
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/common"
 	dec "github.com/dexon-foundation/dexon/core/vm/sqlvm/common/decimal"
 	se "github.com/dexon-foundation/dexon/core/vm/sqlvm/errors"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/schema"
 )
 
 var (
@@ -104,6 +105,7 @@ func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output 
 		return se.ErrorCodeIndexOutOfRange
 	}
 	table := ctx.Storage.Schema[tableIdx]
+	tableRef := schema.TableRef(tableIdx)
 
 	ids, err := input[1].toUint64()
 	if err != nil {
@@ -127,7 +129,7 @@ func opLoad(ctx *common.Context, input []*Operand, registers []*Operand, output 
 	}
 	for i, id := range ids {
 		slotDataCache := make(map[dexCommon.Hash]dexCommon.Hash)
-		head := ctx.Storage.GetRowPathHash(table.Name, id)
+		head := ctx.Storage.GetRowPathHash(tableRef, id)
 		for j := range fields {
 			col := table.Columns[int(fields[j])]
 			byteOffset := col.ByteOffset

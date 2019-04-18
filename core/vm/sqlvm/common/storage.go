@@ -54,6 +54,22 @@ func bytesToUint64(b []byte) uint64 {
 	return bigInt.Uint64()
 }
 
+func uint8ToBytes(i uint8) []byte {
+	return []byte{i}
+}
+
+func tableRefToBytes(t schema.TableRef) []byte {
+	return uint8ToBytes(uint8(t))
+}
+
+func columnRefToBytes(c schema.ColumnRef) []byte {
+	return uint8ToBytes(uint8(c))
+}
+
+func indexRefToBytes(i schema.IndexRef) []byte {
+	return uint8ToBytes(uint8(i))
+}
+
 func hashToAddress(hash common.Hash) common.Address {
 	return common.BytesToAddress(hash.Bytes())
 }
@@ -72,11 +88,11 @@ func (s *Storage) hashPathKey(key [][]byte) (h common.Hash) {
 }
 
 // GetRowPathHash return primary key hash which points to row data.
-func (s *Storage) GetRowPathHash(tableName []byte, rowID uint64) common.Hash {
+func (s *Storage) GetRowPathHash(tableRef schema.TableRef, rowID uint64) common.Hash {
 	// PathKey(["tables", "{table_name}", "primary", uint64({row_id})])
 	key := [][]byte{
 		pathCompTables,
-		tableName,
+		tableRefToBytes(tableRef),
 		pathCompPrimary,
 		uint64ToBytes(rowID),
 	}
@@ -86,14 +102,15 @@ func (s *Storage) GetRowPathHash(tableName []byte, rowID uint64) common.Hash {
 // GetIndexValuesPathHash return the hash address to IndexValues structure
 // which contains all possible values.
 func (s *Storage) GetIndexValuesPathHash(
-	tableName, indexName []byte,
+	tableRef schema.TableRef,
+	indexRef schema.IndexRef,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "indices", "{index_name}"])
 	key := [][]byte{
 		pathCompTables,
-		tableName,
+		tableRefToBytes(tableRef),
 		pathCompIndices,
-		indexName,
+		indexRefToBytes(indexRef),
 	}
 	return s.hashPathKey(key)
 }
@@ -101,12 +118,14 @@ func (s *Storage) GetIndexValuesPathHash(
 // GetIndexEntryPathHash return the hash address to IndexEntry structure for a
 // given value.
 func (s *Storage) GetIndexEntryPathHash(
-	tableName, indexName []byte,
+	tableRef schema.TableRef,
+	indexRef schema.IndexRef,
 	values ...[]byte,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "indices", "{index_name}", field_1, field_2, field_3, ...])
 	key := make([][]byte, 0, 4+len(values))
-	key = append(key, pathCompTables, tableName, pathCompIndices, indexName)
+	key = append(key, pathCompTables, tableRefToBytes(tableRef))
+	key = append(key, pathCompIndices, indexRefToBytes(indexRef))
 	key = append(key, values...)
 	return s.hashPathKey(key)
 }
@@ -114,13 +133,13 @@ func (s *Storage) GetIndexEntryPathHash(
 // GetReverseIndexPathHash return the hash address to IndexRev structure for a
 // row in a table.
 func (s *Storage) GetReverseIndexPathHash(
-	tableName []byte,
+	tableRef schema.TableRef,
 	rowID uint64,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "reverse_indices", "{RowID}"])
 	key := [][]byte{
 		pathCompTables,
-		tableName,
+		tableRefToBytes(tableRef),
 		pathCompReverseIndices,
 		uint64ToBytes(rowID),
 	}
@@ -129,14 +148,14 @@ func (s *Storage) GetReverseIndexPathHash(
 
 // getSequencePathHash return the hash address of a sequence.
 func (s *Storage) getSequencePathHash(
-	tableName []byte, seqIdx uint8,
+	tableRef schema.TableRef, seqIdx uint8,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "sequence", uint8(sequence_idx)])
 	key := [][]byte{
 		pathCompTables,
-		tableName,
+		tableRefToBytes(tableRef),
 		pathCompSequence,
-		{seqIdx}, // TODO(yenlin): use some other encode method on uint8?
+		uint8ToBytes(seqIdx),
 	}
 	return s.hashPathKey(key)
 }
@@ -147,24 +166,24 @@ func (s *Storage) getOwnerPathHash() common.Hash {
 	return s.hashPathKey(key)
 }
 
-func (s *Storage) getTableWritersPathHash(tableName []byte) common.Hash {
+func (s *Storage) getTableWritersPathHash(tableRef schema.TableRef) common.Hash {
 	// PathKey(["tables", "{table_name}", "writers"])
 	key := [][]byte{
 		pathCompTables,
-		tableName,
+		tableRefToBytes(tableRef),
 		pathCompWriters,
 	}
 	return s.hashPathKey(key)
 }
 
 func (s *Storage) getTableWriterRevIdxPathHash(
-	tableName []byte,
+	tableRef schema.TableRef,
 	account common.Address,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "writers", "{addr}"])
 	key := [][]byte{
 		pathCompTables,
-		tableName,
+		tableRefToBytes(tableRef),
 		pathCompWriters,
 		account.Bytes(),
 	}
@@ -257,11 +276,12 @@ type IndexEntry struct {
 // LoadIndexValues load IndexValues struct of a given index.
 func (s *Storage) LoadIndexValues(
 	contract common.Address,
-	tableName, indexName []byte,
+	tableRef schema.TableRef,
+	indexRef schema.IndexRef,
 	onlyHeader bool,
 ) *IndexValues {
 	ret := &IndexValues{}
-	slot := s.GetIndexValuesPathHash(tableName, indexName)
+	slot := s.GetIndexValuesPathHash(tableRef, indexRef)
 	data := s.GetState(contract, slot)
 	ret.Length = bytesToUint64(data[:8])
 	if onlyHeader {
@@ -279,12 +299,13 @@ func (s *Storage) LoadIndexValues(
 // LoadIndexEntry load IndexEntry struct of a given value key on an index.
 func (s *Storage) LoadIndexEntry(
 	contract common.Address,
-	tableName, indexName []byte,
+	tableRef schema.TableRef,
+	indexRef schema.IndexRef,
 	onlyHeader bool,
 	values ...[]byte,
 ) *IndexEntry {
 	ret := &IndexEntry{}
-	slot := s.GetIndexEntryPathHash(tableName, indexName, values...)
+	slot := s.GetIndexEntryPathHash(tableRef, indexRef, values...)
 	data := s.GetState(contract, slot)
 	ret.Length = bytesToUint64(data[:8])
 	ret.IndexToValuesOffset = bytesToUint64(data[8:16])
@@ -415,10 +436,10 @@ func (s *Storage) storeSingleTableWriter(
 // IsTableWriter check if an account is writer to the table.
 func (s *Storage) IsTableWriter(
 	contract common.Address,
-	tableName []byte,
+	tableRef schema.TableRef,
 	account common.Address,
 ) bool {
-	path := s.getTableWriterRevIdxPathHash(tableName, account)
+	path := s.getTableWriterRevIdxPathHash(tableRef, account)
 	rev := s.loadTableWriterRevIdx(contract, path)
 	return rev.Valid()
 }
@@ -426,9 +447,9 @@ func (s *Storage) IsTableWriter(
 // LoadTableWriters load writers of a table.
 func (s *Storage) LoadTableWriters(
 	contract common.Address,
-	tableName []byte,
+	tableRef schema.TableRef,
 ) (ret []common.Address) {
-	path := s.getTableWritersPathHash(tableName)
+	path := s.getTableWritersPathHash(tableRef)
 	writers := s.loadTableWriters(contract, path, false)
 	return writers.Writers
 }
@@ -436,15 +457,15 @@ func (s *Storage) LoadTableWriters(
 // InsertTableWriter insert an account into writer list of the table.
 func (s *Storage) InsertTableWriter(
 	contract common.Address,
-	tableName []byte,
+	tableRef schema.TableRef,
 	account common.Address,
 ) {
-	revPath := s.getTableWriterRevIdxPathHash(tableName, account)
+	revPath := s.getTableWriterRevIdxPathHash(tableRef, account)
 	rev := s.loadTableWriterRevIdx(contract, revPath)
 	if rev.Valid() {
 		return
 	}
-	path := s.getTableWritersPathHash(tableName)
+	path := s.getTableWritersPathHash(tableRef)
 	writers := s.loadTableWriters(contract, path, true)
 	// Store modification.
 	s.storeSingleTableWriter(contract, path, writers.Length, account)
@@ -459,15 +480,15 @@ func (s *Storage) InsertTableWriter(
 // DeleteTableWriter delete an account from writer list of the table.
 func (s *Storage) DeleteTableWriter(
 	contract common.Address,
-	tableName []byte,
+	tableRef schema.TableRef,
 	account common.Address,
 ) {
-	revPath := s.getTableWriterRevIdxPathHash(tableName, account)
+	revPath := s.getTableWriterRevIdxPathHash(tableRef, account)
 	rev := s.loadTableWriterRevIdx(contract, revPath)
 	if !rev.Valid() {
 		return
 	}
-	path := s.getTableWritersPathHash(tableName)
+	path := s.getTableWritersPathHash(tableRef)
 	writers := s.loadTableWriters(contract, path, true)
 
 	// Store modification.
@@ -477,7 +498,7 @@ func (s *Storage) DeleteTableWriter(
 		s.storeSingleTableWriter(contract, path, rev.IndexToValuesOffset-1,
 			lastAcc)
 		s.storeTableWriterRevIdx(contract, s.getTableWriterRevIdxPathHash(
-			tableName, lastAcc), rev)
+			tableRef, lastAcc), rev)
 	}
 	// Delete last.
 	writers.Length--
@@ -489,11 +510,11 @@ func (s *Storage) DeleteTableWriter(
 // IncSequence increment value of sequence by inc and return the old value.
 func (s *Storage) IncSequence(
 	contract common.Address,
-	tableName []byte,
+	tableRef schema.TableRef,
 	seqIdx uint8,
 	inc uint64,
 ) uint64 {
-	seqPath := s.getSequencePathHash(tableName, seqIdx)
+	seqPath := s.getSequencePathHash(tableRef, seqIdx)
 	slot := s.GetState(contract, seqPath)
 	val := bytesToUint64(slot.Bytes())
 	// TODO(yenlin): Check overflow?

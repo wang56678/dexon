@@ -11,6 +11,7 @@ import (
 
 	"github.com/dexon-foundation/dexon/common"
 	"github.com/dexon-foundation/dexon/core/state"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/schema"
 	"github.com/dexon-foundation/dexon/crypto"
 	"github.com/dexon-foundation/dexon/ethdb"
 	"github.com/dexon-foundation/dexon/rlp"
@@ -27,10 +28,10 @@ func (s *StorageTestSuite) TestUint64ToBytes() {
 
 func (s *StorageTestSuite) TestGetRowAddress() {
 	id := uint64(555666)
-	table := []byte("TABLE_A")
+	table := schema.TableRef(1)
 	key := [][]byte{
 		[]byte("tables"),
-		table,
+		{uint8(table)},
 		[]byte("primary"),
 		uint64ToBytes(id),
 	}
@@ -133,8 +134,8 @@ func (s *StorageTestSuite) TestTableWriter() {
 	state, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	storage := NewStorage(state)
 
-	table1 := []byte("table1")
-	table2 := []byte("table2")
+	table1 := schema.TableRef(0)
+	table2 := schema.TableRef(1)
 	contractA := common.BytesToAddress([]byte("A"))
 	contractB := common.BytesToAddress([]byte("B"))
 	addrs := []common.Address{
@@ -192,8 +193,8 @@ func (s *StorageTestSuite) TestSequence() {
 	state, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	storage := NewStorage(state)
 
-	table1 := []byte("table1")
-	table2 := []byte("table2")
+	table1 := schema.TableRef(0)
+	table2 := schema.TableRef(1)
 	contract := common.BytesToAddress([]byte("A"))
 
 	s.Require().Equal(uint64(0), storage.IncSequence(contract, table1, 0, 2))

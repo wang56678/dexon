@@ -211,18 +211,19 @@ type opLoadTestCase struct {
 func (s *opLoadSuite) SetupTest() {
 	s.ctx = &common.Context{}
 	s.ctx.Storage = s.newStorage()
-	s.headHash = s.ctx.Storage.GetRowPathHash([]byte("Table_B"), uint64(123456))
+	targetTableRef := schema.TableRef(1)
+	s.headHash = s.ctx.Storage.GetRowPathHash(targetTableRef, uint64(123456))
 	s.address = dexCommon.HexToAddress("0x6655")
 	s.ctx.Storage.CreateAccount(s.address)
 	s.ctx.Contract = vm.NewContract(vm.AccountRef(s.address),
 		vm.AccountRef(s.address), new(big.Int), 0)
 	s.slotHash, s.raws = setSlotDataInStateDB(s.headHash, s.address, s.ctx.Storage)
 	createSchema(s.ctx.Storage, s.raws)
-	s.setColData("Table_B", 654321)
+	s.setColData(targetTableRef, 654321)
 }
 
-func (s *opLoadSuite) setColData(tableName string, id uint64) {
-	h := s.ctx.Storage.GetRowPathHash([]byte(tableName), id)
+func (s *opLoadSuite) setColData(tableRef schema.TableRef, id uint64) {
+	h := s.ctx.Storage.GetRowPathHash(tableRef, id)
 	setSlotDataInStateDB(h, s.address, s.ctx.Storage)
 }
 
