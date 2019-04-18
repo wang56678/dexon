@@ -212,7 +212,7 @@ notes: \
 TRUE / FALSE: bool
 123 / 1. / 1.2e3 (decimal numbers): int / uint / fixed / ufixed (default to int256 / fixed128x18)
 1.2 / .2 / 1.23e1 (decimal numbers): fixed / ufixed (default to fixed128x18)
-0x12abc (hexadecimal numbers): int / uint (default to uint256)
+0x12abc (hexadecimal numbers): int / uint (default to int256)
 ‘Hello’ (normal strings): bytes / bytes{X} (default bytes)
 hex’abcd1234’ (hexadecimal strings): bytes / bytes{X} (default bytes)
 ```
