@@ -84,7 +84,7 @@ const (
 	maxPullVotePeers = 1
 
 	pullVoteRateLimit  = 3 * time.Second
-	pullBlockRateLimit = 3 * time.Second
+	pullBlockRateLimit = 500 * time.Millisecond
 
 	maxAgreementResultBroadcast = 3
 	maxFinalizedBlockBroadcast  = 3
