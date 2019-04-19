@@ -2658,7 +2658,7 @@ func (g *GovernanceContract) transferNodeOwnership(newOwner common.Address) ([]b
 	}
 
 	node := g.state.Node(offset)
-	g.state.PutNodeOffsets(node, big.NewInt(0))
+	g.state.DeleteNodeOffsets(node)
 
 	node.Owner = newOwner
 	g.state.PutNodeOffsets(node, offset)
@@ -2684,7 +2684,7 @@ func (g *GovernanceContract) replaceNodePublicKey(newPublicKey []byte) ([]byte, 
 		return nil, errExecutionReverted
 	}
 
-	g.state.PutNodeOffsets(node, big.NewInt(0))
+	g.state.DeleteNodeOffsets(node)
 
 	node.PublicKey = newPublicKey
 	g.state.PutNodeOffsets(node, offset)
