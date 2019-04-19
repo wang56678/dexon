@@ -457,7 +457,8 @@ func (s opRepeatPKSuite) getTestCases(storage *common.Storage) []repeatPKTestCas
 		},
 	}
 	for _, t := range testCases {
-		storage.SetPK(t.address, t.tableRef, t.expectedIDs)
+		headerSlot := storage.GetPrimaryPathHash(t.tableRef)
+		storage.SetPK(t.address, headerSlot, t.expectedIDs)
 	}
 	return testCases
 }
