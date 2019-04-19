@@ -480,11 +480,11 @@ type PossibleValues struct {
 	<unused>        uint64
 	<unused>        uint64
 	// Slot 2.
+	<unused>        uint96
 	Addr1           uint160
-	<unused>        12 bytes
 	// Slot 3.
+	<unused>        uint96
 	Addr2           uint160
-	<unused>        12 bytes
 	...
 }
 ```
@@ -863,7 +863,7 @@ This section contains some corner cases found in design stage. Can be used for t
 1. `select random() from table order by - -1;` (it's column reference, not expression)
 1. `select random() from table order by random();` (in sqlite, it is equivalent to 'order by 1')
    1. those two random() are different.
-1. `insert into table (a) values (random()+1) (1) (random());` (expression in insert)
+1. `insert into table (a) values (random()+1), (1), (random());` (expression in insert)
 1. `select * from table where column > random();` (we cannot use index on column as random is in condition)
 
 
@@ -874,7 +874,7 @@ This section contains some corner cases found in design stage. Can be used for t
 * There is a flag to decide to enable flow check or not.
 * It can not transfer token to SQL contract address.
 * Do not support expression default value.
-* AUTO INCR use overall max value, can't auto increment with foreign key, only int/uint can use auto increment, dominate over 'default' setting `
+* AUTOINCREMENT increases in the max value, can't auto increment with foreign key, only int/uint can use auto increment, dominate over 'default' setting `
 * Unique check (in memory check, i.e. rehearsal in memory)`
 * Dynamic Bytes support:
     * `OCTET_LENGTH`
@@ -892,7 +892,7 @@ This section contains some corner cases found in design stage. Can be used for t
 * Fixed bytes do not supports:
     * `SUBSTRING`
     * `… WHERE fixBytesData LIKE XXX`
-      * Do not support it. It should cast to dynamic bytes before LIKE
+        * Do not support it. It should cast to dynamic bytes before LIKE
     * `SELECT fixBytes5Data [+|-|*|/] fixBytes5Data`
         * Solidity does not support arithmetic op for fixed bytes directly. User should cast to uint to do arithmetic op.
 
