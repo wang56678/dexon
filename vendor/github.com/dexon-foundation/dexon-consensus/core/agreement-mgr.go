@@ -291,9 +291,11 @@ func (mgr *agreementMgr) checkProposer(
 
 func (mgr *agreementMgr) processVote(v *types.Vote) (err error) {
 	if !mgr.recv.isNotary {
+		mgr.logger.Debug("Dropping vote: not notary", "vote", v)
 		return nil
 	}
 	if mgr.voteFilter.Filter(v) {
+		mgr.logger.Debug("Dropping vote: filter", "vote", v, "filter", mgr.voteFilter)
 		return nil
 	}
 	if err := mgr.checkProposer(v.Position.Round, v.ProposerID); err != nil {
@@ -302,6 +304,7 @@ func (mgr *agreementMgr) processVote(v *types.Vote) (err error) {
 	if err = mgr.baModule.processVote(v); err == nil {
 		mgr.baModule.updateFilter(mgr.voteFilter)
 		mgr.voteFilter.AddVote(v)
+		mgr.logger.Debug("Adding vote to filter", "vote", v)
 	}
 	if err == ErrSkipButNoError {
 		err = nil

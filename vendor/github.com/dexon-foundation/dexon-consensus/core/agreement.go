@@ -456,6 +456,7 @@ func (a *agreement) processVote(vote *types.Vote) error {
 	if exist {
 		return nil
 	}
+	a.logger.Debug("Processing vote", "vote", vote)
 
 	a.data.lock.Lock()
 	defer a.data.lock.Unlock()
@@ -474,6 +475,7 @@ func (a *agreement) processVote(vote *types.Vote) error {
 			hash != types.SkipBlockHash {
 			if vote.Type == types.VoteFast {
 				if !a.hasVoteFast {
+					a.logger.Debug("VoteFast", "vote", vote, "lockIter", a.data.lockIter)
 					if a.state.state() == stateFast ||
 						a.state.state() == stateFastVote {
 						a.data.recv.ProposeVote(
