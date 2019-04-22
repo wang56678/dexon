@@ -11,6 +11,6 @@ git clone --depth 1 -b master https://github.com/dexon-foundation/governance-abi
 
 # deploy contract
 cd governance-abi
-npm install .
+npm ci
 ./node_modules/.bin/ganache-cli -p 8645 -b 5 $accounts_opt > ../../test/ganache.log 2>&1 &
 ./node_modules/.bin/truffle migrate --network=smoke
