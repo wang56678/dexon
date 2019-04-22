@@ -417,14 +417,6 @@ func (s *opLoadSuite) TestOpLoad() {
 	}
 }
 
-func TestOpLoad(t *testing.T) {
-	suite.Run(t, new(opLoadSuite))
-}
-
-func TestInstructions(t *testing.T) {
-	suite.Run(t, new(instructionSuite))
-}
-
 func makeOperand(im bool, meta []ast.DataType, pTuple []Tuple) (op *Operand) {
 	op = &Operand{IsImmediate: im, Meta: meta, Data: pTuple}
 	return
@@ -478,4 +470,170 @@ func (s *instructionSuite) run(testcases []opTestcase, opfunc OpFunction) {
 			idx, c.In.Op, c.Name, c.Output, result,
 		)
 	}
+}
+
+type autoIncSuite struct {
+	suite.Suite
+	ctx *common.Context
+}
+
+func (s *autoIncSuite) SetupTest() {
+	s.ctx = &common.Context{}
+	s.ctx.Storage = newStorage()
+	address := dexCommon.HexToAddress("0x6655")
+	s.ctx.Storage.CreateAccount(address)
+	s.ctx.Contract = vm.NewContract(vm.AccountRef(address),
+		vm.AccountRef(address), new(big.Int), 0)
+	s.ctx.Storage.Schema = schema.Schema{
+		schema.Table{
+			Name: []byte("normal_case"),
+			Columns: []schema.Column{
+				schema.NewColumn(
+					[]byte("c1"),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+					schema.ColumnAttrHasSequence,
+					nil,
+					0,
+				),
+				schema.NewColumn(
+					[]byte("c2"),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+					0,
+					nil,
+					0,
+				),
+				schema.NewColumn(
+					[]byte("c3"),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+					schema.ColumnAttrHasSequence,
+					nil,
+					1,
+				),
+			},
+		},
+		schema.Table{
+			Name: []byte("overflow_int_case"),
+			Columns: []schema.Column{
+				schema.NewColumn(
+					[]byte("c1"),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+					schema.ColumnAttrHasSequence,
+					nil,
+					0,
+				),
+			},
+		},
+		schema.Table{
+			Name: []byte("overflow_uint_case"),
+			Columns: []schema.Column{
+				schema.NewColumn(
+					[]byte("c1"),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+					schema.ColumnAttrHasSequence,
+					nil,
+					0,
+				),
+			},
+		},
+	}
+	s.SetOverflow(1, 0, ast.ComposeDataType(ast.DataTypeMajorInt, 0))
+	s.SetOverflow(2, 0, ast.ComposeDataType(ast.DataTypeMajorUint, 0))
+	s.ctx.Storage.Schema.SetupColumnOffset()
+}
+
+func (s *autoIncSuite) SetOverflow(tableRef schema.TableRef, seqIdx uint8, dt ast.DataType) {
+	storage := s.ctx.Storage
+	seqPath := storage.GetSequencePathHash(tableRef, seqIdx)
+	newHash := make([]byte, dexCommon.HashLength)
+	_, max, _ := dt.GetMinMax()
+	bs, _ := ast.DecimalEncode(dt, max)
+	copy(newHash[len(newHash)-len(bs):], bs)
+	storage.SetState(s.ctx.Contract.Address(), seqPath, dexCommon.BytesToHash(newHash))
+}
+
+func (s *autoIncSuite) TestAutoInc() {
+	type testcase struct {
+		name     string
+		input    *Operand
+		tableRef schema.TableRef
+		result   []*Operand
+		err      error
+	}
+	tt := []testcase{
+		{
+			name: "normal case",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{
+					{
+						&Raw{
+							Value: decimal.New(1, 0),
+						},
+					},
+				},
+			},
+			tableRef: schema.TableRef(0),
+			result: []*Operand{
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorInt, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Value: decimal.New(1, 0),
+							},
+						},
+					},
+				},
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Value: decimal.New(1, 0),
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "int overflow",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{},
+			},
+			tableRef: schema.TableRef(1),
+			result:   nil,
+			err:      errors.ErrorCodeOverflow,
+		},
+		{
+			name: "unt overflow",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{},
+			},
+			tableRef: schema.TableRef(2),
+			result:   nil,
+			err:      errors.ErrorCodeOverflow,
+		},
+	}
+
+	for _, t := range tt {
+		r, err := t.input.fillAutoInc(s.ctx, t.tableRef)
+		s.Require().Equalf(t.err, err, "testcase %v\n", t.name)
+		if t.err == nil {
+			s.Require().Equalf(len(t.result), len(r), "testcase %v\n", t.name)
+			for i := range r {
+				s.Require().Truef(r[i].Equal(t.result[i]),
+					"testcase: %v, i: %v\n", t.name, i)
+			}
+		}
+	}
+}
+
+func TestInstructions(t *testing.T) {
+	suite.Run(t, new(instructionSuite))
+	suite.Run(t, new(opLoadSuite))
+	suite.Run(t, new(autoIncSuite))
 }

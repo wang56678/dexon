@@ -146,8 +146,8 @@ func (s *Storage) GetReverseIndexPathHash(
 	return s.hashPathKey(key)
 }
 
-// getSequencePathHash return the hash address of a sequence.
-func (s *Storage) getSequencePathHash(
+// GetSequencePathHash return the hash address of a sequence.
+func (s *Storage) GetSequencePathHash(
 	tableRef schema.TableRef, seqIdx uint8,
 ) common.Hash {
 	// PathKey(["tables", "{table_name}", "sequence", uint8(sequence_idx)])
@@ -507,17 +507,20 @@ func (s *Storage) DeleteTableWriter(
 	s.storeTableWriterRevIdx(contract, revPath, &tableWriterRevIdx{})
 }
 
-// IncSequence increment value of sequence by inc and return the old value.
+// IncSequence increment value of sequence by inc and return the new value.
 func (s *Storage) IncSequence(
 	contract common.Address,
 	tableRef schema.TableRef,
 	seqIdx uint8,
 	inc uint64,
-) uint64 {
-	seqPath := s.getSequencePathHash(tableRef, seqIdx)
+) decimal.Decimal {
+	seqPath := s.GetSequencePathHash(tableRef, seqIdx)
 	slot := s.GetState(contract, seqPath)
-	val := bytesToUint64(slot.Bytes())
-	// TODO(yenlin): Check overflow?
-	s.SetState(contract, seqPath, common.BytesToHash(uint64ToBytes(val+inc)))
-	return val
+	b := new(big.Int).SetBytes(slot.Bytes())
+	b.Add(b, new(big.Int).SetUint64(inc))
+	newHash := make([]byte, common.HashLength)
+	bs := b.Bytes()
+	copy(newHash[common.HashLength-len(bs):], bs)
+	s.SetState(contract, seqPath, common.BytesToHash(newHash))
+	return decimal.NewFromBigInt(b, 0)
 }

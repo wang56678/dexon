@@ -1882,3 +1882,63 @@ func opFunc(ctx *common.Context, ops, registers []*Operand, output uint) (err er
 	registers[output] = result
 	return
 }
+
+// fillAutoInc appends autoincrement column reference to receiver and return the
+// corresponding incremented field data array.
+func (op *Operand) fillAutoInc(ctx *common.Context, tableRef schema.TableRef) ([]*Operand, error) {
+	f := func(col schema.Column, r []*Operand) ([]*Operand, error) {
+		if col.Attr == schema.ColumnAttrHasSequence {
+			dVal := ctx.Storage.IncSequence(ctx.Contract.Address(),
+				tableRef, uint8(col.Sequence), 1)
+			_, max, ok := col.Type.GetMinMax()
+			if !ok {
+				return nil, se.ErrorCodeInvalidDataType
+			}
+			if dVal.Cmp(max) > 0 {
+				return nil, se.ErrorCodeOverflow
+			}
+			op1 := &Operand{
+				Meta: []ast.DataType{col.Type},
+				Data: []Tuple{
+					{
+						&Raw{
+							Value: dVal,
+							Bytes: nil,
+						},
+					},
+				},
+			}
+			r = append(r, op1)
+		}
+		return r, nil
+	}
+	return op.fillMissingData(ctx, tableRef, f)
+}
+
+func (op *Operand) fillMissingData(ctx *common.Context,
+	tableRef schema.TableRef,
+	f func(schema.Column, []*Operand) ([]*Operand, error)) ([]*Operand, error) {
+
+	table := ctx.Storage.Schema[tableRef]
+	fields, err := op.toUint8()
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(fields, func(i, j int) bool {
+		return fields[i] < fields[j]
+	})
+	rOp := make([]*Operand, 0)
+	fIdx := 0
+	for i := 0; i < len(table.Columns); i++ {
+		if fIdx < len(fields) && i == int(fields[fIdx]) {
+			fIdx++
+			continue
+		}
+		col := table.Columns[i]
+		rOp, err = f(col, rOp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return rOp, nil
+}
