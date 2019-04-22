@@ -7,7 +7,7 @@ for key in ../test/keystore/test*key; do
     accounts_opt+=" --account=0x`cat $key`,1000000000000000000000"
 done
 
-git clone https://github.com/dexon-foundation/governance-abi
+git clone --depth 1 -b master https://github.com/dexon-foundation/governance-abi
 
 # deploy contract
 cd governance-abi
