@@ -178,7 +178,7 @@ type Column struct {
 
 // NewColumn return a Column instance.
 func NewColumn(Name []byte, Type ast.DataType, Attr ColumnAttr,
-	ForeignKeys []ColumnDescriptor, Sequence SequenceRef) Column {
+	ForeignKeys []ColumnDescriptor, Sequence SequenceRef, def interface{}) Column {
 	c := column{
 		Name:        Name,
 		Type:        Type,
@@ -188,7 +188,8 @@ func NewColumn(Name []byte, Type ast.DataType, Attr ColumnAttr,
 	}
 
 	return Column{
-		column: c,
+		column:  c,
+		Default: def,
 	}
 }
 

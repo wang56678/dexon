@@ -1942,3 +1942,40 @@ func (op *Operand) fillMissingData(ctx *common.Context,
 	}
 	return rOp, nil
 }
+
+// fillDefault appends default column reference to receiver and return the
+// corresponding default field data array.
+func (op *Operand) fillDefault(ctx *common.Context, tableRef schema.TableRef) ([]*Operand, error) {
+	f := func(col schema.Column, rOp []*Operand) ([]*Operand, error) {
+		if col.Attr == schema.ColumnAttrHasDefault {
+			var r Raw
+			major, _ := ast.DecomposeDataType(col.Type)
+			switch major {
+			case ast.DataTypeMajorDynamicBytes, ast.DataTypeMajorAddress:
+				r = Raw{
+					Bytes: col.Default.([]byte),
+				}
+			case ast.DataTypeMajorBool:
+				b := col.Default.(bool)
+				if b {
+					r = Raw{Value: dec.True}
+				} else {
+					r = Raw{Value: dec.False}
+				}
+			default:
+				r = Raw{Value: col.Default.(decimal.Decimal)}
+			}
+			op1 := &Operand{
+				Meta: []ast.DataType{col.Type},
+				Data: []Tuple{
+					{
+						&r,
+					},
+				},
+			}
+			rOp = append(rOp, op1)
+		}
+		return rOp, nil
+	}
+	return op.fillMissingData(ctx, tableRef, f)
+}

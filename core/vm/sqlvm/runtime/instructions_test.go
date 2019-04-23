@@ -55,7 +55,7 @@ func createSchema(storage *common.Storage, raws []*raw) {
 		storage.Schema[1].Columns[i] = schema.NewColumn(
 			[]byte{byte(i)},
 			ast.ComposeDataType(raws[i].major, raws[i].minor),
-			0, nil, 0,
+			0, nil, 0, nil,
 		)
 	}
 	storage.Schema.SetupColumnOffset()
@@ -494,6 +494,7 @@ func (s *autoIncSuite) SetupTest() {
 					schema.ColumnAttrHasSequence,
 					nil,
 					0,
+					nil,
 				),
 				schema.NewColumn(
 					[]byte("c2"),
@@ -501,6 +502,7 @@ func (s *autoIncSuite) SetupTest() {
 					0,
 					nil,
 					0,
+					nil,
 				),
 				schema.NewColumn(
 					[]byte("c3"),
@@ -508,6 +510,7 @@ func (s *autoIncSuite) SetupTest() {
 					schema.ColumnAttrHasSequence,
 					nil,
 					1,
+					nil,
 				),
 			},
 		},
@@ -520,6 +523,7 @@ func (s *autoIncSuite) SetupTest() {
 					schema.ColumnAttrHasSequence,
 					nil,
 					0,
+					nil,
 				),
 			},
 		},
@@ -532,6 +536,7 @@ func (s *autoIncSuite) SetupTest() {
 					schema.ColumnAttrHasSequence,
 					nil,
 					0,
+					nil,
 				),
 			},
 		},
@@ -551,7 +556,7 @@ func (s *autoIncSuite) SetOverflow(tableRef schema.TableRef, seqIdx uint8, dt as
 	storage.SetState(s.ctx.Contract.Address(), seqPath, dexCommon.BytesToHash(newHash))
 }
 
-func (s *autoIncSuite) TestAutoInc() {
+func (s *autoIncSuite) TestFillAutoInc() {
 	type testcase struct {
 		name     string
 		input    *Operand
@@ -632,8 +637,259 @@ func (s *autoIncSuite) TestAutoInc() {
 	}
 }
 
+type setDefaultSuite struct {
+	suite.Suite
+	ctx *common.Context
+}
+
+func (s *setDefaultSuite) SetupTest() {
+	s.ctx = &common.Context{}
+	s.ctx.Storage = newStorage()
+	address := dexCommon.HexToAddress("0x6655")
+	s.ctx.Storage.CreateAccount(address)
+	s.ctx.Contract = vm.NewContract(vm.AccountRef(address),
+		vm.AccountRef(address), new(big.Int), 0)
+	s.ctx.Storage.Schema = schema.Schema{
+		schema.Table{
+			Name: []byte("all default case"),
+			Columns: []schema.Column{
+				schema.NewColumn(
+					[]byte("c1"),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+					schema.ColumnAttrHasDefault,
+					nil,
+					0,
+					decimal.New(127, 0),
+				),
+				schema.NewColumn(
+					[]byte("c2"),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+					schema.ColumnAttrHasDefault,
+					nil,
+					0,
+					[]byte{1, 2, 3, 4},
+				),
+				schema.NewColumn(
+					[]byte("c3"),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+					schema.ColumnAttrHasDefault,
+					nil,
+					1,
+					decimal.New(255, 0),
+				),
+				schema.NewColumn(
+					[]byte("c4"),
+					ast.ComposeDataType(ast.DataTypeMajorAddress, 0),
+					schema.ColumnAttrHasDefault,
+					nil,
+					1,
+					address[:],
+				),
+			},
+		},
+		schema.Table{
+			Name: []byte("no default case"),
+			Columns: []schema.Column{
+				schema.NewColumn(
+					[]byte("c1"),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+					0,
+					nil,
+					0,
+					nil,
+				),
+				schema.NewColumn(
+					[]byte("c2"),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+					0,
+					nil,
+					0,
+					nil,
+				),
+				schema.NewColumn(
+					[]byte("c3"),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+					0,
+					nil,
+					1,
+					nil,
+				),
+				schema.NewColumn(
+					[]byte("c4"),
+					ast.ComposeDataType(ast.DataTypeMajorAddress, 0),
+					0,
+					nil,
+					1,
+					nil,
+				),
+			},
+		},
+		schema.Table{
+			Name: []byte("one default case"),
+			Columns: []schema.Column{
+				schema.NewColumn(
+					[]byte("c1"),
+					ast.ComposeDataType(ast.DataTypeMajorInt, 0),
+					0,
+					nil,
+					0,
+					nil,
+				),
+				schema.NewColumn(
+					[]byte("c2"),
+					ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0),
+					0,
+					nil,
+					0,
+					nil,
+				),
+				schema.NewColumn(
+					[]byte("c3"),
+					ast.ComposeDataType(ast.DataTypeMajorUint, 0),
+					0,
+					nil,
+					1,
+					nil,
+				),
+				schema.NewColumn(
+					[]byte("c4"),
+					ast.ComposeDataType(ast.DataTypeMajorAddress, 0),
+					schema.ColumnAttrHasDefault,
+					nil,
+					1,
+					address[:],
+				),
+			},
+		},
+	}
+	s.ctx.Storage.Schema.SetupColumnOffset()
+}
+
+func (s *setDefaultSuite) TestFillDefault() {
+	type testcase struct {
+		name     string
+		input    *Operand
+		tableRef schema.TableRef
+		result   []*Operand
+		err      error
+	}
+	tt := []testcase{
+		{
+			name: "all default case",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{},
+			},
+			tableRef: schema.TableRef(0),
+			result: []*Operand{
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorInt, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Value: decimal.New(127, 0),
+							},
+						},
+					},
+				},
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorDynamicBytes, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Bytes: []byte{1, 2, 3, 4},
+							},
+						},
+					},
+				},
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Value: decimal.New(255, 0),
+							},
+						},
+					},
+				},
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorAddress, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Bytes: dexCommon.HexToAddress("0x6655").Bytes(),
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "no default case",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{},
+			},
+			tableRef: schema.TableRef(1),
+			result:   []*Operand{},
+			err:      nil,
+		},
+		{
+			name: "one default case",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{},
+			},
+			tableRef: schema.TableRef(2),
+			result: []*Operand{
+				{
+					Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorAddress, 0)},
+					Data: []Tuple{
+						{
+							&Raw{
+								Bytes: dexCommon.HexToAddress("0x6655").Bytes(),
+							},
+						},
+					},
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "skip case",
+			input: &Operand{
+				Meta: []ast.DataType{ast.ComposeDataType(ast.DataTypeMajorUint, 0)},
+				Data: []Tuple{
+					[]*Raw{
+						{
+							Value: decimal.New(3, 0),
+						},
+					},
+				},
+			},
+			tableRef: schema.TableRef(2),
+			result:   []*Operand{},
+			err:      nil,
+		},
+	}
+
+	for _, t := range tt {
+		r, err := t.input.fillDefault(s.ctx, t.tableRef)
+		s.Require().Equalf(t.err, err, "testcase %v\n", t.name)
+		if t.err == nil {
+			s.Require().Equalf(len(t.result), len(r), "testcase %v\n", t.name)
+			for i := range r {
+				s.Require().Truef(r[i].Equal(t.result[i]),
+					"testcase: %v, i: %v\n", t.name, i)
+			}
+		}
+	}
+}
+
 func TestInstructions(t *testing.T) {
 	suite.Run(t, new(instructionSuite))
 	suite.Run(t, new(opLoadSuite))
 	suite.Run(t, new(autoIncSuite))
+	suite.Run(t, new(setDefaultSuite))
 }
