@@ -58,15 +58,42 @@ func (e Error) Error() string {
 // ErrorList is a list of Error.
 type ErrorList []Error
 
-func (e ErrorList) Error() string {
+func (el ErrorList) Error() string {
 	b := strings.Builder{}
-	for i := range e {
+	for i, e := range el {
 		if i > 0 {
 			b.WriteByte('\n')
 		}
-		b.WriteString(e[i].Error())
+		b.WriteString(e.Error())
 	}
 	return b.String()
+}
+
+func (el ErrorList) HasError() bool {
+	for _, e := range el {
+		if e.Severity == ErrorSeverityError {
+			return true
+		}
+	}
+	return false
+}
+
+func (el ErrorList) GetFirstError() (Error, bool) {
+	for _, e := range el {
+		if e.Severity == ErrorSeverityError {
+			return e, true
+		}
+	}
+	return Error{}, false
+}
+
+func (el *ErrorList) Append(e Error, hasError *bool) {
+	*el = append(*el, e)
+	if hasError != nil {
+		if e.Severity == ErrorSeverityError {
+			*hasError = true
+		}
+	}
 }
 
 // ErrorCategory is used to distinguish errors come from different phases.
@@ -77,6 +104,7 @@ const (
 	ErrorCategoryNil ErrorCategory = iota
 	ErrorCategoryLimit
 	ErrorCategoryGrammar
+	ErrorCategoryCommand
 	ErrorCategorySemantic
 	ErrorCategoryRuntime
 )
@@ -84,6 +112,7 @@ const (
 var errorCategoryMap = [...]string{
 	ErrorCategoryLimit:    "limit",
 	ErrorCategoryGrammar:  "grammar",
+	ErrorCategoryCommand:  "command",
 	ErrorCategorySemantic: "semantic",
 	ErrorCategoryRuntime:  "runtime",
 }
@@ -98,8 +127,14 @@ type ErrorCode uint16
 // Error code starts from 1. Zero value is invalid.
 const (
 	ErrorCodeNil ErrorCode = iota
-	ErrorCodeDepthLimitReached
 	ErrorCodeParser
+	ErrorCodeDepthLimitReached
+	ErrorCodeTooManyTables
+	ErrorCodeTooManyColumns
+	ErrorCodeTooManyIndices
+	ErrorCodeTooManyForeignKeys
+	ErrorCodeTooManySequences
+	ErrorCodeTooManySelectColumns
 	ErrorCodeInvalidIntegerSyntax
 	ErrorCodeInvalidNumberSyntax
 	ErrorCodeIntegerOutOfRange
@@ -115,6 +150,26 @@ const (
 	ErrorCodeInvalidUfixedSize
 	ErrorCodeInvalidFixedFractionalDigits
 	ErrorCodeInvalidUfixedFractionalDigits
+	ErrorCodeNoCommand
+	ErrorCodeDisallowedCommand
+	ErrorCodeEmptyTableName
+	ErrorCodeDuplicateTableName
+	ErrorCodeEmptyColumnName
+	ErrorCodeDuplicateColumnName
+	ErrorCodeTableNotFound
+	ErrorCodeColumnNotFound
+	ErrorCodeInvalidColumnDataType
+	ErrorCodeForeignKeyDataTypeMismatch
+	ErrorCodeNullDefaultValue
+	ErrorCodeMultipleDefaultValues
+	ErrorCodeInvalidAutoIncrementDataType
+	ErrorCodeEmptyIndexName
+	ErrorCodeDuplicateIndexName
+	ErrorCodeDuplicateIndexColumn
+	ErrorCodeTypeError
+	ErrorCodeConstantTooLong
+	ErrorCodeNonConstantExpression
+	ErrorCodeInvalidAddressChecksum
 
 	// Runtime Error
 	ErrorCodeInvalidOperandNum
@@ -132,6 +187,12 @@ const (
 
 var errorCodeMap = [...]string{
 	ErrorCodeDepthLimitReached:             "depth limit reached",
+	ErrorCodeTooManyTables:                 "too many tables",
+	ErrorCodeTooManyColumns:                "too many columns",
+	ErrorCodeTooManyIndices:                "too many indices",
+	ErrorCodeTooManyForeignKeys:            "too many foreign keys",
+	ErrorCodeTooManySequences:              "too many sequences",
+	ErrorCodeTooManySelectColumns:          "too many select columns",
 	ErrorCodeParser:                        "parser error",
 	ErrorCodeInvalidIntegerSyntax:          "invalid integer syntax",
 	ErrorCodeInvalidNumberSyntax:           "invalid number syntax",
@@ -148,6 +209,27 @@ var errorCodeMap = [...]string{
 	ErrorCodeInvalidUfixedSize:             "invalid ufixed size",
 	ErrorCodeInvalidFixedFractionalDigits:  "invalid fixed fractional digits",
 	ErrorCodeInvalidUfixedFractionalDigits: "invalid ufixed fractional digits",
+	ErrorCodeNoCommand:                     "no command",
+	ErrorCodeDisallowedCommand:             "disallowed command",
+	ErrorCodeEmptyTableName:                "empty table name",
+	ErrorCodeDuplicateTableName:            "duplicate table name",
+	ErrorCodeEmptyColumnName:               "empty column name",
+	ErrorCodeDuplicateColumnName:           "duplicate column name",
+	ErrorCodeTableNotFound:                 "table not found",
+	ErrorCodeColumnNotFound:                "column not found",
+	ErrorCodeInvalidColumnDataType:         "invalid column data type",
+	ErrorCodeForeignKeyDataTypeMismatch:    "foreign key data type mismatch",
+	ErrorCodeNullDefaultValue:              "null default value",
+	ErrorCodeMultipleDefaultValues:         "multiple default values",
+	ErrorCodeInvalidAutoIncrementDataType:  "invalid auto increment data type",
+	ErrorCodeEmptyIndexName:                "empty index name",
+	ErrorCodeDuplicateIndexName:            "duplicate index name",
+	ErrorCodeDuplicateIndexColumn:          "duplicate index column",
+	ErrorCodeTypeError:                     "type error",
+	ErrorCodeConstantTooLong:               "constant too long",
+	ErrorCodeNonConstantExpression:         "non-constant expression",
+	ErrorCodeInvalidAddressChecksum:        "invalid address checksum",
+
 	// Runtime Error
 	ErrorCodeInvalidOperandNum:  "invalid operand number",
 	ErrorCodeInvalidDataType:    "invalid data type",

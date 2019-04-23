@@ -2,7 +2,10 @@ package schema
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"math"
+	"strings"
 
 	"github.com/dexon-foundation/decimal"
 
@@ -66,20 +69,38 @@ func (a ColumnAttr) GetDerivedFlags() ColumnAttr {
 // FunctionRef defines the type for number of builtin function.
 type FunctionRef uint16
 
+// MaxFunctionRef is the maximum value of FunctionRef.
+const MaxFunctionRef = math.MaxUint16
+
 // TableRef defines the type for table index in Schema.
 type TableRef uint8
+
+// MaxTableRef is the maximum value of TableRef.
+const MaxTableRef = math.MaxUint8
 
 // ColumnRef defines the type for column index in Table.Columns.
 type ColumnRef uint8
 
+// MaxColumnRef is the maximum value of ColumnRef.
+const MaxColumnRef = math.MaxUint8
+
 // IndexRef defines the type for array index of Column.Indices.
 type IndexRef uint8
+
+// MaxIndexRef is the maximum value of IndexRef.
+const MaxIndexRef = math.MaxUint8
 
 // SequenceRef defines the type for sequence index in Table.
 type SequenceRef uint8
 
+// MaxSequenceRef is the maximum value of SequenceRef.
+const MaxSequenceRef = math.MaxUint8
+
 // SelectColumnRef defines the type for column index in SelectStmtNode.Column.
 type SelectColumnRef uint16
+
+// MaxSelectColumnRef is the maximum value of SelectColumnRef.
+const MaxSelectColumnRef = math.MaxUint16
 
 // IndexAttr defines bit flags for describing index attribute.
 type IndexAttr uint16
@@ -114,6 +135,111 @@ func (s Schema) SetupColumnOffset() {
 	for i := range s {
 		s[i].SetupColumnOffset()
 	}
+}
+
+func (s Schema) String() string {
+	b := strings.Builder{}
+	b.WriteString(fmt.Sprintf(
+		"-- DEXON SQLVM database schema dump (%d tables)\n", len(s)))
+	for _, t := range s {
+		b.WriteString("CREATE TABLE ")
+		b.Write(ast.QuoteIdentifierOptional(t.Name))
+		b.WriteString(" (\n")
+		for ci, c := range t.Columns {
+			b.WriteString("    ")
+			b.Write(ast.QuoteIdentifierOptional(c.Name))
+			b.WriteByte(' ')
+			b.WriteString(c.Type.String())
+			comments := []string{
+				fmt.Sprintf("slot %d", c.SlotOffset),
+				fmt.Sprintf("byte %d", c.ByteOffset),
+			}
+			if (c.Attr & ColumnAttrPrimaryKey) != 0 {
+				b.WriteString(" PRIMARY KEY")
+			}
+			if (c.Attr & ColumnAttrNotNull) != 0 {
+				b.WriteString(" NOT NULL")
+			}
+			if (c.Attr & ColumnAttrUnique) != 0 {
+				b.WriteString(" UNIQUE")
+			}
+			if (c.Attr & ColumnAttrHasDefault) != 0 {
+				b.WriteString(" DEFAULT ")
+				switch v := c.Default.(type) {
+				case nil:
+					b.WriteString("NULL")
+				case bool:
+					if v {
+						b.WriteString("TRUE")
+					} else {
+						b.WriteString("FALSE")
+					}
+				case []byte:
+					major, _ := ast.DecomposeDataType(c.Type)
+					if major == ast.DataTypeMajorAddress {
+						b.WriteString(common.BytesToAddress(v).String())
+						break
+					}
+					b.Write(ast.QuoteString(v))
+				case decimal.Decimal:
+					b.WriteString(v.String())
+				default:
+					b.WriteString("<?>")
+				}
+			}
+			if (c.Attr & ColumnAttrHasForeignKey) != 0 {
+				for _, fk := range c.ForeignKeys {
+					b.WriteString(" REFERENCES ")
+					b.Write(ast.QuoteIdentifierOptional(
+						s[fk.Table].Name))
+					b.WriteByte('(')
+					b.Write(ast.QuoteIdentifierOptional(
+						s[fk.Table].Columns[fk.Column].Name))
+					b.WriteByte(')')
+				}
+			}
+			if (c.Attr & ColumnAttrHasSequence) != 0 {
+				b.WriteString(" AUTOINCREMENT")
+				comments = append(comments,
+					fmt.Sprintf("sequence %d", c.Sequence))
+			}
+			if ci < len(t.Columns)-1 {
+				b.WriteByte(',')
+			}
+			b.WriteString(" -- ")
+			b.WriteString(strings.Join(comments, ", "))
+			b.WriteByte('\n')
+		}
+		b.WriteString(");\n")
+		for _, i := range t.Indices {
+			comments := []string{}
+			b.WriteString("CREATE")
+			if (i.Attr & IndexAttrUnique) != 0 {
+				b.WriteString(" UNIQUE")
+			}
+			if (i.Attr & IndexAttrReferenced) != 0 {
+				comments = append(comments, "referenced")
+			}
+			b.WriteString(" INDEX ")
+			b.Write(ast.QuoteIdentifierOptional(i.Name))
+			b.WriteString(" ON ")
+			b.Write(ast.QuoteIdentifierOptional(t.Name))
+			b.WriteByte('(')
+			for ci, c := range i.Columns {
+				b.Write(ast.QuoteIdentifierOptional(t.Columns[c].Name))
+				if ci < len(i.Columns)-1 {
+					b.WriteString(", ")
+				}
+			}
+			b.WriteString(");")
+			if len(comments) > 0 {
+				b.WriteString(" -- ")
+				b.WriteString(strings.Join(comments, ", "))
+			}
+			b.WriteByte('\n')
+		}
+	}
+	return b.String()
 }
 
 // Table defiens sqlvm table struct.
@@ -171,6 +297,10 @@ type column struct {
 	// in it will be overwritten every time EncodeRLP is called.
 	Rest interface{}
 }
+
+// MaxForeignKeys is the maximum number of foreign key constraints which can be
+// defined on a column.
+const MaxForeignKeys = math.MaxUint8
 
 // Column defines sqlvm index struct.
 type Column struct {
@@ -239,6 +369,7 @@ func (c *Column) DecodeRLP(s *rlp.Stream) error {
 		// nil is converted to empty list by encoder, while empty list is
 		// converted to []interface{} by decoder.
 		// So we view this case as nil and skip it.
+		c.Default = nil
 	case []byte:
 		major, _ := ast.DecomposeDataType(c.Type)
 		switch major {
@@ -248,7 +379,9 @@ func (c *Column) DecodeRLP(s *rlp.Stream) error {
 			} else {
 				c.Default = false
 			}
-		case ast.DataTypeMajorFixedBytes, ast.DataTypeMajorDynamicBytes:
+		case ast.DataTypeMajorAddress,
+			ast.DataTypeMajorFixedBytes,
+			ast.DataTypeMajorDynamicBytes:
 			c.Default = rest
 		default:
 			d, ok := ast.DecimalDecode(c.Type, rest)

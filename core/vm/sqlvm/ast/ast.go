@@ -1,7 +1,10 @@
 package ast
 
 import (
+	"bytes"
 	"fmt"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/dexon-foundation/decimal"
 
@@ -64,6 +67,113 @@ func (n *NodeBase) GetToken() []byte {
 // SetToken sets the corresponding token of the node.
 func (n *NodeBase) SetToken(token []byte) {
 	n.Token = token
+}
+
+func safeIdentifierStart(r rune) bool {
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= 0x80)
+}
+
+func safeIdentifierExtend(r rune) bool {
+	return (r >= '0' && r <= '9') || (r == '_')
+}
+
+func safeString(s []byte, quote byte, mustQuote bool) []byte {
+	o := bytes.Buffer{}
+	o.Grow(len(s) + 1)
+	o.WriteByte(quote)
+
+	if len(s) > 0 {
+		for r, i, size := rune(0), 0, 0; i < len(s); i += size {
+			r, size = utf8.DecodeRune(s[i:])
+			if r == utf8.RuneError {
+				switch size {
+				case 0:
+					panic("we should never pass an empty slice to DecodeRune")
+				case 1:
+					mustQuote = true
+					x := fmt.Sprintf(`\x%02x`, s[i])
+					o.WriteString(x)
+					continue
+					// The default case is deliberately omitted here. It is
+					// possible for a valid UTF-8 string to include the code
+					// point utf8.RuneError. If it is the case, the size must
+					// be larger than 1.
+				}
+			}
+			safeIdentifier :=
+				safeIdentifierStart(r) || (i > 0 && safeIdentifierExtend(r))
+			if !safeIdentifier {
+				mustQuote = true
+			}
+			switch r {
+			case '\\':
+				mustQuote = true
+				o.WriteString(`\\`)
+			case '\'':
+				mustQuote = true
+				o.WriteString(`\'`)
+			case '"':
+				mustQuote = true
+				o.WriteString(`\"`)
+			case '\b':
+				mustQuote = true
+				o.WriteString(`\b`)
+			case '\f':
+				mustQuote = true
+				o.WriteString(`\f`)
+			case '\n':
+				mustQuote = true
+				o.WriteString(`\n`)
+			case '\r':
+				mustQuote = true
+				o.WriteString(`\r`)
+			case '\t':
+				mustQuote = true
+				o.WriteString(`\t`)
+			case '\v':
+				mustQuote = true
+				o.WriteString(`\v`)
+			default:
+				if unicode.IsPrint(r) {
+					x := s[i : i+size]
+					o.Write(x)
+				} else {
+					mustQuote = true
+					if r > 0xffff {
+						x := fmt.Sprintf(`\U%08x`, r)
+						o.WriteString(x)
+					} else {
+						x := fmt.Sprintf(`\u%04x`, r)
+						o.WriteString(x)
+					}
+				}
+			}
+		}
+	} else {
+		mustQuote = true
+	}
+
+	if mustQuote {
+		o.WriteByte(quote)
+		return o.Bytes()
+	}
+	return o.Bytes()[1:]
+}
+
+// QuoteIdentifier quotes a string for safely using it as a SQL identifier.
+func QuoteIdentifier(s []byte) []byte {
+	return safeString(s, '"', true)
+}
+
+// QuoteIdentifierOptional is the same as QuoteIdentifier except that it does
+// not quote the string if the string itself can be used safely.
+func QuoteIdentifierOptional(s []byte) []byte {
+	return safeString(s, '"', false)
+}
+
+// QuoteString quotes a string for safely using it as a SQL string literal.
+func QuoteString(s []byte) []byte {
+	return safeString(s, '\'', true)
 }
 
 // ---------------------------------------------------------------------------
@@ -184,6 +294,31 @@ func (n *BoolValueNode) IsConstant() bool {
 // GetType returns the type of 'bool'.
 func (n *BoolValueNode) GetType() DataType {
 	return ComposeDataType(DataTypeMajorBool, DataTypeMinorDontCare)
+}
+
+// AddressValueNode is an address constant.
+type AddressValueNode struct {
+	UntaggedExprNodeBase
+	V []byte
+}
+
+var _ Valuer = (*AddressValueNode)(nil)
+
+func (n *AddressValueNode) ˉValuer() {}
+
+// GetChildren returns a list of child nodes used for traversing.
+func (n *AddressValueNode) GetChildren() []Node {
+	return nil
+}
+
+// IsConstant returns whether a node is a constant.
+func (n *AddressValueNode) IsConstant() bool {
+	return true
+}
+
+// GetType returns the type of 'bool'.
+func (n *AddressValueNode) GetType() DataType {
+	return ComposeDataType(DataTypeMajorAddress, DataTypeMinorDontCare)
 }
 
 // IntegerValueNode is an integer constant.

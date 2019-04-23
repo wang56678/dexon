@@ -59,6 +59,7 @@ const (
 // Special data types which are commonly used.
 const (
 	DataTypePending DataType = (DataType(DataTypeMajorPending) << 8) | DataType(DataTypeMinorDontCare)
+	DataTypeNull    DataType = (DataType(DataTypeMajorSpecial) << 8) | DataType(DataTypeMinorSpecialNull)
 	DataTypeBad     DataType = math.MaxUint16
 )
 
@@ -189,6 +190,136 @@ func (dt DataType) Size() uint8 {
 	}
 }
 
+// Valid checks whether a data type is set to a defined value.
+func (dt DataType) Valid() bool {
+	major, minor := DecomposeDataType(dt)
+	switch major {
+	case DataTypeMajorPending,
+		DataTypeMajorBool,
+		DataTypeMajorAddress,
+		DataTypeMajorDynamicBytes:
+		return true
+	case DataTypeMajorSpecial:
+		switch minor {
+		case DataTypeMinorSpecialNull:
+			return true
+		}
+	case DataTypeMajorInt,
+		DataTypeMajorUint,
+		DataTypeMajorFixedBytes:
+		if minor <= 0x1f {
+			return true
+		}
+	}
+	if (major.IsFixedRange() || major.IsUfixedRange()) && minor <= 80 {
+		return true
+	}
+	return false
+}
+
+// ValidColumn checks whether a data type is a valid column type.
+func (dt DataType) ValidColumn() bool {
+	major, minor := DecomposeDataType(dt)
+	switch major {
+	case DataTypeMajorBool,
+		DataTypeMajorAddress,
+		DataTypeMajorDynamicBytes:
+		return true
+	case DataTypeMajorInt,
+		DataTypeMajorUint,
+		DataTypeMajorFixedBytes:
+		if minor <= 0x1f {
+			return true
+		}
+	}
+	if (major.IsFixedRange() || major.IsUfixedRange()) && minor <= 80 {
+		return true
+	}
+	return false
+}
+
+// ValidExpr checks whether a data type is a valid type of an expression.
+func (dt DataType) ValidExpr() bool {
+	return dt.ValidColumn() || dt == DataTypeNull
+}
+
+// Equal checks whether two data types are equal and valid. If any of them is
+// invalid, false is returned.
+func (dt DataType) Equal(dt2 DataType) bool {
+	// Rename variables.
+	a := dt
+	b := dt2
+	// Process the common case.
+	if a == b {
+		return a.Valid()
+	}
+	// a ≠ b
+	aMajor, _ := DecomposeDataType(a)
+	bMajor, _ := DecomposeDataType(b)
+	if aMajor != bMajor {
+		return false
+	}
+	// a ≠ b, aMajor = bMajor ⇒ aMinor ≠ bMinor
+	switch aMajor {
+	case DataTypeMajorPending,
+		DataTypeMajorBool,
+		DataTypeMajorAddress,
+		DataTypeMajorDynamicBytes:
+		return true
+	default:
+		return false
+	}
+}
+
+func (dt DataType) String() string {
+	major, minor := DecomposeDataType(dt)
+	switch major {
+	case DataTypeMajorPending:
+		return "<PENDING>"
+	case DataTypeMajorSpecial:
+		switch minor {
+		case DataTypeMinorSpecialNull:
+			return "NULL"
+		}
+	case DataTypeMajorBool:
+		return "BOOL"
+	case DataTypeMajorAddress:
+		return "ADDRESS"
+	case DataTypeMajorInt:
+		if minor <= 0x1f {
+			size := (uint32(minor) + 1) * 8
+			return fmt.Sprintf("INT%d", size)
+		}
+	case DataTypeMajorUint:
+		if minor <= 0x1f {
+			size := (uint32(minor) + 1) * 8
+			return fmt.Sprintf("UINT%d", size)
+		}
+	case DataTypeMajorFixedBytes:
+		if minor <= 0x1f {
+			size := uint32(minor) + 1
+			return fmt.Sprintf("BYTES%d", size)
+		}
+	case DataTypeMajorDynamicBytes:
+		return "BYTES"
+	}
+	switch {
+	case major.IsFixedRange():
+		if minor <= 80 {
+			size := (uint32(major-DataTypeMajorFixed) + 1) * 8
+			fractionalDigits := uint32(minor)
+			return fmt.Sprintf("FIXED%dX%d", size, fractionalDigits)
+		}
+	case major.IsUfixedRange():
+		if minor <= 80 {
+			size := (uint32(major-DataTypeMajorUfixed) + 1) * 8
+			fractionalDigits := uint32(minor)
+			return fmt.Sprintf("UFIXED%dX%d", size, fractionalDigits)
+		}
+	}
+	return "<INVALID>"
+}
+
 // GetNode constructs an AST node from a data type.
 func (dt DataType) GetNode() TypeNode {
 	major, minor := DecomposeDataType(dt)
@@ -293,12 +424,39 @@ var decimalMinMaxMap = func() map[DataType]decimalMinMaxPair {
 
 // GetMinMax returns min, max pair according to given data type.
 func (dt DataType) GetMinMax() (decimal.Decimal, decimal.Decimal, bool) {
-	var (
-		pair decimalMinMaxPair
-		ok   bool
-	)
-	pair, ok = decimalMinMaxMap[dt]
-	return pair.Min, pair.Max, ok
+	pair, ok := decimalMinMaxMap[dt]
+	if ok {
+		return pair.Min, pair.Max, true
+	}
+
+	// Compute the range of fixed and ufixed types on demand.
+	major, minor := DecomposeDataType(dt)
+	switch {
+	case major.IsFixedRange():
+		mapInt := ComposeDataType(
+			DataTypeMajorInt, DataTypeMinor(major-DataTypeMajorFixed))
+		pair, ok = decimalMinMaxMap[mapInt]
+		if !ok || minor > 80 {
+			return decimal.Zero, decimal.Zero, false
+		}
+		min := pair.Min.Shift(-int32(minor))
+		max := pair.Max.Shift(-int32(minor))
+		return min, max, true
+
+	case major.IsUfixedRange():
+		mapUint := ComposeDataType(
+			DataTypeMajorUint, DataTypeMinor(major-DataTypeMajorUfixed))
+		pair, ok = decimalMinMaxMap[mapUint]
+		if !ok || minor > 80 {
+			return decimal.Zero, decimal.Zero, false
+		}
+		min := pair.Min.Shift(-int32(minor))
+		max := pair.Max.Shift(-int32(minor))
+		return min, max, true
+
+	default:
+		return decimal.Zero, decimal.Zero, false
+	}
 }
 
 func decimalToBig(d decimal.Decimal) *big.Int {
@@ -318,13 +476,21 @@ func decimalEncode(size int, d decimal.Decimal) []byte {
 
 	if s > 0 {
 		bs := b.Bytes()
-		copy(ret[size-len(bs):], bs)
+		if size >= len(bs) {
+			copy(ret[size-len(bs):], bs)
+		} else {
+			copy(ret, bs[len(bs)-size:])
+		}
 		return ret
 	}
 
 	b.Add(b, bigIntOne)
 	bs := b.Bytes()
-	copy(ret[size-len(bs):], bs)
+	if size >= len(bs) {
+		copy(ret[size-len(bs):], bs)
+	} else {
+		copy(ret, bs[len(bs)-size:])
+	}
 	for idx := range ret {
 		ret[idx] = ^ret[idx]
 	}
