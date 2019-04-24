@@ -243,6 +243,11 @@ func (dt DataType) ValidExpr() bool {
 	return dt.ValidColumn() || dt == DataTypeNull
 }
 
+func (dt DataType) Pending() bool {
+	major, _ := DecomposeDataType(dt)
+	return major == DataTypeMajorPending
+}
+
 // Equal checks whether two data types are equal and valid. If any of them is
 // invalid, false is returned.
 func (dt DataType) Equal(dt2 DataType) bool {

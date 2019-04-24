@@ -303,7 +303,8 @@ func checkCreateTableStmt(n *ast.CreateTableStmtNode, s *schema.Schema,
 					}
 					column.Attr |= schema.ColumnAttrHasDefault
 
-					value := checkExpr(cs.Value, *s, o|CheckWithConstantOnly,
+					value := cs.Value
+					value = checkExpr(cs.Value, *s, o|CheckWithConstantOnly,
 						c, el, 0, newTypeActionAssign(column.Type))
 					if value == nil {
 						innerHasError = true
@@ -353,7 +354,7 @@ func checkCreateTableStmt(n *ast.CreateTableStmtNode, s *schema.Schema,
 						break cs
 
 					default:
-						panic(fmt.Sprintf("unknown constant value type %T", n))
+						panic(unknownValueNodeType(v))
 					}
 
 				case *ast.ForeignOptionNode:
@@ -910,6 +911,21 @@ func checkExpr(n ast.ExprNode,
 	}
 }
 
+func elAppendTypeErrorMismatch(el *errors.ErrorList, n ast.ExprNode,
+	fn string, dtExpected, dtGiven ast.DataType) {
+	el.Append(errors.Error{
+		Position: n.GetPosition(),
+		Length:   n.GetLength(),
+		Category: errors.ErrorCategorySemantic,
+		Code:     errors.ErrorCodeTypeError,
+		Severity: errors.ErrorSeverityError,
+		Prefix:   fn,
+		Message: fmt.Sprintf(
+			"expect %s (%04x), but %s (%04x) is given",
+			dtExpected.String(), uint16(dtExpected),
+			dtGiven.String(), uint16(dtGiven)),
+	}, nil)
+}
 func checkVariable(n *ast.IdentifierNode,
 	s schema.Schema, o CheckOptions, c *schemaCache, el *errors.ErrorList,
 	tr schema.TableRef, ta typeAction) ast.ExprNode {
@@ -955,17 +971,7 @@ func checkVariable(n *ast.IdentifierNode,
 	case typeActionInferWithSize:
 	case typeActionAssign:
 		if !dt.Equal(a.dt) {
-			el.Append(errors.Error{
-				Position: n.GetPosition(),
-				Length:   n.GetLength(),
-				Category: errors.ErrorCategorySemantic,
-				Code:     errors.ErrorCodeTypeError,
-				Severity: errors.ErrorSeverityError,
-				Prefix:   fn,
-				Message: fmt.Sprintf(
-					"expect %s (%04x), but %s (%04x) is given",
-					a.dt.String(), uint16(a.dt), dt.String(), uint16(dt)),
-			}, nil)
+			elAppendTypeErrorMismatch(el, n, fn, a.dt, dt)
 			return nil
 		}
 	}
@@ -973,6 +979,42 @@ func checkVariable(n *ast.IdentifierNode,
 	n.SetType(dt)
 	n.Desc = cd
 	return n
+}
+
+func unknownValueNodeType(n ast.Valuer) string {
+	return fmt.Sprintf("unknown constant type %T", n)
+}
+
+func describeValueNodeType(n ast.Valuer) string {
+	switch n.(type) {
+	case *ast.BoolValueNode:
+		return "boolean constant"
+	case *ast.AddressValueNode:
+		return "address constant"
+	case *ast.IntegerValueNode, *ast.DecimalValueNode:
+		return "number constant"
+	case *ast.BytesValueNode:
+		return "bytes constant"
+	case *ast.NullValueNode:
+		return "null constant"
+	default:
+		panic(unknownValueNodeType(n))
+	}
+}
+
+func elAppendTypeErrorValueNode(el *errors.ErrorList, n ast.Valuer,
+	fn string, dt ast.DataType) {
+	el.Append(errors.Error{
+		Position: n.GetPosition(),
+		Length:   n.GetLength(),
+		Category: errors.ErrorCategorySemantic,
+		Code:     errors.ErrorCodeTypeError,
+		Severity: errors.ErrorSeverityError,
+		Prefix:   fn,
+		Message: fmt.Sprintf(
+			"expect %s (%04x), but %s is given",
+			dt.String(), uint16(dt), describeValueNodeType(n)),
+	}, nil)
 }
 
 func checkBoolValue(n *ast.BoolValueNode,
@@ -986,17 +1028,7 @@ func checkBoolValue(n *ast.BoolValueNode,
 	case typeActionAssign:
 		major, _ := ast.DecomposeDataType(a.dt)
 		if major != ast.DataTypeMajorBool {
-			el.Append(errors.Error{
-				Position: n.GetPosition(),
-				Length:   n.GetLength(),
-				Category: errors.ErrorCategorySemantic,
-				Code:     errors.ErrorCodeTypeError,
-				Severity: errors.ErrorSeverityError,
-				Prefix:   fn,
-				Message: fmt.Sprintf(
-					"expect %s (%04x), but boolean value is given",
-					a.dt.String(), uint16(a.dt)),
-			}, nil)
+			elAppendTypeErrorValueNode(el, n, fn, a.dt)
 			return nil
 		}
 	}
@@ -1014,17 +1046,7 @@ func checkAddressValue(n *ast.AddressValueNode,
 	case typeActionAssign:
 		major, _ := ast.DecomposeDataType(a.dt)
 		if major != ast.DataTypeMajorAddress {
-			el.Append(errors.Error{
-				Position: n.GetPosition(),
-				Length:   n.GetLength(),
-				Category: errors.ErrorCategorySemantic,
-				Code:     errors.ErrorCodeTypeError,
-				Severity: errors.ErrorSeverityError,
-				Prefix:   fn,
-				Message: fmt.Sprintf(
-					"expect %s (%04x), but address value is given",
-					a.dt.String(), uint16(a.dt)),
-			}, nil)
+			elAppendTypeErrorValueNode(el, n, fn, a.dt)
 			return nil
 		}
 	}
@@ -1060,7 +1082,7 @@ func cropDecimal(dt ast.DataType, d decimal.Decimal) decimal.Decimal {
 	return mustDecimalDecode(dt, b)
 }
 
-func elAppendConstantTooLongError(el *errors.ErrorList, n ast.Node,
+func elAppendConstantTooLongError(el *errors.ErrorList, n ast.Valuer,
 	fn string, v decimal.Decimal) {
 	el.Append(errors.Error{
 		Position: n.GetPosition(),
@@ -1075,7 +1097,7 @@ func elAppendConstantTooLongError(el *errors.ErrorList, n ast.Node,
 	}, nil)
 }
 
-func elAppendOverflowError(el *errors.ErrorList, n ast.Node,
+func elAppendOverflowError(el *errors.ErrorList, n ast.Valuer,
 	fn string, dt ast.DataType, v, min, max decimal.Decimal) {
 	el.Append(errors.Error{
 		Position: n.GetPosition(),
@@ -1085,8 +1107,8 @@ func elAppendOverflowError(el *errors.ErrorList, n ast.Node,
 		Severity: errors.ErrorSeverityError,
 		Prefix:   fn,
 		Message: fmt.Sprintf(
-			"number %s (%s) overflow %s (%04x)",
-			v.String(), ast.QuoteString(n.GetToken()),
+			"number %s (%s) overflows %s (%04x)",
+			ast.QuoteString(n.GetToken()), v.String(),
 			dt.String(), uint16(dt)),
 	}, nil)
 	el.Append(errors.Error{
@@ -1102,7 +1124,7 @@ func elAppendOverflowError(el *errors.ErrorList, n ast.Node,
 	}, nil)
 }
 
-func elAppendOverflowWarning(el *errors.ErrorList, n ast.Node,
+func elAppendOverflowWarning(el *errors.ErrorList, n ast.Valuer,
 	fn string, dt ast.DataType, from, to decimal.Decimal) {
 	el.Append(errors.Error{
 		Position: n.GetPosition(),
@@ -1112,8 +1134,8 @@ func elAppendOverflowWarning(el *errors.ErrorList, n ast.Node,
 		Severity: errors.ErrorSeverityWarning,
 		Prefix:   fn,
 		Message: fmt.Sprintf(
-			"number %s (%s) overflow %s (%04x), converted to %s",
-			from.String(), ast.QuoteString(n.GetToken()),
+			"number %s (%s) overflows %s (%04x), converted to %s",
+			ast.QuoteString(n.GetToken()), from.String(),
 			dt.String(), uint16(dt), to.String()),
 	}, nil)
 }
@@ -1202,7 +1224,7 @@ func checkIntegerValue(n *ast.IntegerValueNode,
 					Severity: errors.ErrorSeverityError,
 					Prefix:   fn,
 					Message: fmt.Sprintf(
-						"expect %s (%04x), but %s has invalid checksum",
+						"expect %s (%04x), but %s is not an address constant",
 						dt.String(), uint16(dt), n.GetToken()),
 				}, nil)
 				return nil
@@ -1233,22 +1255,12 @@ func checkIntegerValue(n *ast.IntegerValueNode,
 			}
 
 		default:
-			el.Append(errors.Error{
-				Position: n.GetPosition(),
-				Length:   n.GetLength(),
-				Category: errors.ErrorCategorySemantic,
-				Code:     errors.ErrorCodeTypeError,
-				Severity: errors.ErrorSeverityError,
-				Prefix:   fn,
-				Message: fmt.Sprintf(
-					"expect %s (%04x), but number value is given",
-					dt.String(), uint16(dt)),
-			}, nil)
+			elAppendTypeErrorValueNode(el, n, fn, dt)
 			return nil
 		}
 	}
 
-	if dt != ast.DataTypePending {
+	if !dt.Pending() {
 		n.SetType(dt)
 	}
 	return n
@@ -1271,6 +1283,7 @@ func checkDecimalValue(n *ast.DecimalValueNode,
 		intNode.SetPosition(n.GetPosition())
 		intNode.SetLength(n.GetLength())
 		intNode.SetToken(n.GetToken())
+		intNode.SetType(n.GetType())
 		intNode.IsAddress = false
 		intNode.V = n.V
 		return checkIntegerValue(intNode, o, el, ta)
@@ -1368,22 +1381,12 @@ func checkDecimalValue(n *ast.DecimalValueNode,
 			return nil
 
 		default:
-			el.Append(errors.Error{
-				Position: n.GetPosition(),
-				Length:   n.GetLength(),
-				Category: errors.ErrorCategorySemantic,
-				Code:     errors.ErrorCodeTypeError,
-				Severity: errors.ErrorSeverityError,
-				Prefix:   fn,
-				Message: fmt.Sprintf(
-					"expect %s (%04x), but number value is given",
-					dt.String(), uint16(dt)),
-			}, nil)
+			elAppendTypeErrorValueNode(el, n, fn, dt)
 			return nil
 		}
 	}
 
-	if dt != ast.DataTypePending {
+	if !dt.Pending() {
 		n.SetType(dt)
 		_, minor := ast.DecomposeDataType(dt)
 		fractionalDigits := int32(minor)
@@ -1399,18 +1402,23 @@ func checkBytesValue(n *ast.BytesValueNode,
 	fn := "CheckBytesValue"
 
 	dt := ast.DataTypePending
+
+executeTypeAction:
 	switch a := ta.(type) {
 	case typeActionInferDefault:
 		// Default to bytes.
 		major := ast.DataTypeMajorDynamicBytes
 		minor := ast.DataTypeMinorDontCare
 		dt = ast.ComposeDataType(major, minor)
+		ta = newTypeActionAssign(dt)
+		goto executeTypeAction
 
 	case typeActionInferWithSize:
-		// Still default to bytes. The size hint does not matter at all.
-		major := ast.DataTypeMajorDynamicBytes
-		minor := ast.DataTypeMinorDontCare
+		major := ast.DataTypeMajorFixedBytes
+		minor := ast.DataTypeMinor(a.size - 1)
 		dt = ast.ComposeDataType(major, minor)
+		ta = newTypeActionAssign(dt)
+		goto executeTypeAction
 
 	case typeActionAssign:
 		dt = a.dt
@@ -1439,22 +1447,12 @@ func checkBytesValue(n *ast.BytesValueNode,
 			}
 
 		default:
-			el.Append(errors.Error{
-				Position: n.GetPosition(),
-				Length:   n.GetLength(),
-				Category: errors.ErrorCategorySemantic,
-				Code:     errors.ErrorCodeTypeError,
-				Severity: errors.ErrorSeverityError,
-				Prefix:   fn,
-				Message: fmt.Sprintf(
-					"expect %s (%04x), but bytes value is given",
-					dt.String(), uint16(dt)),
-			}, nil)
+			elAppendTypeErrorValueNode(el, n, fn, dt)
 			return nil
 		}
 	}
 
-	if dt != ast.DataTypePending {
+	if !dt.Pending() {
 		n.SetType(dt)
 	}
 	return n
@@ -1473,24 +1471,109 @@ func checkNullValue(n *ast.NullValueNode,
 		dt = a.dt
 	}
 
-	if dt != ast.DataTypePending {
+	if !dt.Pending() {
 		n.SetType(dt)
 	}
 	return n
+}
+
+func elAppendTypeErrorOperatorValueNode(el *errors.ErrorList, n ast.Valuer,
+	fn string, op string) {
+	el.Append(errors.Error{
+		Position: n.GetPosition(),
+		Length:   n.GetLength(),
+		Category: errors.ErrorCategorySemantic,
+		Code:     errors.ErrorCodeTypeError,
+		Severity: errors.ErrorSeverityError,
+		Prefix:   fn,
+		Message: fmt.Sprintf("%s is not defined for %s",
+			op, describeValueNodeType(n)),
+	}, nil)
+}
+
+func elAppendTypeErrorOperatorDataType(el *errors.ErrorList, n ast.ExprNode,
+	fn string, op string) {
+	dt := n.GetType()
+	el.Append(errors.Error{
+		Position: n.GetPosition(),
+		Length:   n.GetLength(),
+		Category: errors.ErrorCategorySemantic,
+		Code:     errors.ErrorCodeTypeError,
+		Severity: errors.ErrorSeverityError,
+		Prefix:   fn,
+		Message: fmt.Sprintf("%s is not defined for %s (%04x)",
+			op, dt.String(), uint16(dt)),
+	}, nil)
 }
 
 func checkPosOperator(n *ast.PosOperatorNode,
 	s schema.Schema, o CheckOptions, c *schemaCache, el *errors.ErrorList,
 	tr schema.TableRef, ta typeAction) ast.ExprNode {
 
-	/*
-		fn := "CheckPosOperator"
+	fn := "CheckPosOperator"
+	op := "unary operator +"
 
+	target := n.GetTarget()
+	target = checkExpr(target, s, o, c, el, tr, nil)
+	if target == nil {
+		return nil
+	}
+
+	if v, ok := target.(ast.Valuer); ok {
+		switch v := v.(type) {
+		case *ast.IntegerValueNode:
+			// Clone the node to reset IsAddress to false.
+			if v.IsAddress {
+				result := &ast.IntegerValueNode{}
+				result.SetPosition(v.GetPosition())
+				result.SetLength(v.GetLength())
+				result.SetToken(v.GetToken())
+				result.SetType(v.GetType())
+				result.IsAddress = false
+				result.V = v.V
+				target = result
+			}
+		case *ast.DecimalValueNode:
+			// Do nothing because the result is the same as the input.
+		case *ast.BoolValueNode:
+			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+			return nil
+		case *ast.AddressValueNode:
+			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+			return nil
+		case *ast.BytesValueNode:
+			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+			return nil
+		case *ast.NullValueNode:
+			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+			return nil
+		default:
+			panic(unknownValueNodeType(v))
+		}
+	}
+
+	dt := target.GetType()
+	if dt.Pending() {
+		target = checkExpr(target, s, o, c, el, tr, ta)
+	} else {
+		major, _ := ast.DecomposeDataType(dt)
+		switch {
+		case major == ast.DataTypeMajorInt,
+			major == ast.DataTypeMajorUint,
+			major.IsFixedRange(),
+			major.IsUfixedRange():
+		default:
+			elAppendTypeErrorOperatorDataType(el, target, fn, op)
+			return nil
+		}
 		switch a := ta.(type) {
 		case typeActionInferDefault:
 		case typeActionInferWithSize:
 		case typeActionAssign:
+			if !dt.Equal(a.dt) {
+				elAppendTypeErrorMismatch(el, n, fn, a.dt, dt)
+			}
 		}
-	*/
-	return n
+	}
+	return target
 }
