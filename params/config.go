@@ -29,7 +29,7 @@ var (
 	MainnetGenesisHash = common.HexToHash("0x7108ec505c66c3735053746697442050175db51753b3f8c721294b3ba15fa598")
 	TestnetGenesisHash = common.HexToHash("0x7d8700a7a731162880adff4f21398a901c0b75d907bec8f4eac51460f94cb846")
 	TaipeiGenesisHash  = common.HexToHash("0x5929cb70fe4ba22dce821b2efca737a1874a0f5a34f3ffb9a1e157516622e20b")
-	YilanGenesisHash   = common.HexToHash("0xdcdafc044c24d728c6149ecfada746d8de6e59fc5d18063caf7950badc1df12e")
+	YilanGenesisHash   = common.HexToHash("0x0025382ec3bf6797f46b4a07778fb4d62cf2cc7a185468993a06cdd65ef70512")
 )
 
 var (
@@ -169,7 +169,7 @@ var (
 	// YilanChainConfig contains the chain parameters to run a node on the Yilan test network.
 	YilanChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(240),
-		DMoment:             1550802900,
+		DMoment:             1556090400,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,

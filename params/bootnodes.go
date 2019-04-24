@@ -40,7 +40,7 @@ var TaipeiBootnodes = []string{
 // YilanBootnodes are the enode URLs of the P2P bootstrap nodes running on the
 // Yilan test network.
 var YilanBootnodes = []string{
-	"enode://242df07a1fa3c337b50c0d0f4d7d305c00f2610383a8e468567dba53d77c5e67213e85f00d884baef96dfc726da5f5a4de7c4ef3e295fceb543c8ed4337b599f@34.80.4.56:30301",
+	"enode://242df07a1fa3c337b50c0d0f4d7d305c00f2610383a8e468567dba53d77c5e67213e85f00d884baef96dfc726da5f5a4de7c4ef3e295fceb543c8ed4337b599f@34.80.206.22:30301",
 }
 
 // DiscoveryV5Bootnodes are the enode URLs of the P2P bootstrap nodes for the
