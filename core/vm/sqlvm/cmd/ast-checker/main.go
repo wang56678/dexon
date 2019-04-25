@@ -7,18 +7,18 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/dexon-foundation/dexon/core/vm/sqlvm/checkers"
+	"github.com/dexon-foundation/dexon/core/vm/sqlvm/checker"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/parser"
 	"github.com/dexon-foundation/dexon/core/vm/sqlvm/schema"
 	"github.com/dexon-foundation/dexon/rlp"
 )
 
-func create(sql string, o checkers.CheckOptions) int {
+func create(sql string, o checker.CheckOptions) int {
 	n, parseErr := parser.Parse([]byte(sql))
 	if parseErr != nil {
 		fmt.Fprintf(os.Stderr, "Parse error:\n%+v\n", parseErr)
 	}
-	s, checkErr := checkers.CheckCreate(n, o)
+	s, checkErr := checker.CheckCreate(n, o)
 	if checkErr != nil {
 		fmt.Fprintf(os.Stderr, "Check error:\n%+v\n", checkErr)
 	}
@@ -52,42 +52,49 @@ func decode(ss string) int {
 	return 0
 }
 
-func query(ss, sql string, o checkers.CheckOptions) int {
+func query(ss, sql string, o checker.CheckOptions) int {
 	fmt.Fprintln(os.Stderr, "Function not implemented")
 	return 1
 }
 
-func exec(ss, sql string, o checkers.CheckOptions) int {
+func exec(ss, sql string, o checker.CheckOptions) int {
 	fmt.Fprintln(os.Stderr, "Function not implemented")
 	return 1
 }
 
 func main() {
-	var noSafeMath bool
-	var noSafeCast bool
-	flag.BoolVar(&noSafeMath, "no-safe-math", false, "disable safe math")
-	flag.BoolVar(&noSafeCast, "no-safe-cast", false, "disable safe cast")
+	var safeMath bool
+	var safeCast bool
+	var constantOnly bool
+	flag.BoolVar(&safeMath, "safe-math", true, "")
+	flag.BoolVar(&safeCast, "safe-cast", true, "")
+	flag.BoolVar(&constantOnly, "constant-only", false, " (default false)")
 
 	flag.Parse()
 
 	if flag.NArg() < 1 {
 		fmt.Fprintf(os.Stderr,
-			"Usage: %s <action> <arguments>\n"+
+			"Usage: %s [options] <action> <arguments>\n"+
+				"Options:\n"+
+				"  -help    Show options\n"+
 				"Actions:\n"+
-				"  create <SQL>           returns schema\n"+
-				"  decode <schema>        returns SQL\n"+
-				"  query  <schema> <SQL>  returns AST\n"+
-				"  exec   <schema> <SQL>  returns AST\n",
+				"  create   (SQL) -> schema\n"+
+				"  decode   (schema) -> SQL\n"+
+				"  query    (schema, SQL) -> AST\n"+
+				"  exec     (schema, SQL) -> AST\n",
 			os.Args[0])
 		os.Exit(1)
 	}
 
-	o := checkers.CheckWithSafeMath | checkers.CheckWithSafeCast
-	if noSafeMath {
-		o &= ^(checkers.CheckWithSafeMath)
+	var o checker.CheckOptions
+	if safeMath {
+		o |= checker.CheckWithSafeMath
 	}
-	if noSafeCast {
-		o &= ^(checkers.CheckWithSafeCast)
+	if safeCast {
+		o |= checker.CheckWithSafeCast
+	}
+	if constantOnly {
+		o |= checker.CheckWithConstantOnly
 	}
 
 	action := flag.Arg(0)

@@ -1,4 +1,4 @@
-package checkers
+package checker
 
 import (
 	"fmt"
@@ -841,7 +841,7 @@ func checkExpr(n ast.ExprNode,
 		return checkPosOperator(n, s, o, c, el, tr, ta)
 
 	case *ast.NegOperatorNode:
-		return n
+		return checkNegOperator(n, s, o, c, el, tr, ta)
 
 	case *ast.NotOperatorNode:
 		return n
@@ -947,7 +947,7 @@ func checkVariable(n *ast.IdentifierNode,
 	}
 
 	cn := string(n.Name)
-	cd, found := c.FindColumnInBase(tr, cn)
+	cd, found := c.FindColumnInBaseWithFallback(tr, cn, s)
 	if !found {
 		el.Append(errors.Error{
 			Position: n.GetPosition(),
@@ -1492,8 +1492,7 @@ func elAppendTypeErrorOperatorValueNode(el *errors.ErrorList, n ast.Valuer,
 }
 
 func elAppendTypeErrorOperatorDataType(el *errors.ErrorList, n ast.ExprNode,
-	fn string, op string) {
-	dt := n.GetType()
+	fn string, op string, dt ast.DataType) {
 	el.Append(errors.Error{
 		Position: n.GetPosition(),
 		Length:   n.GetLength(),
@@ -1518,23 +1517,56 @@ func checkPosOperator(n *ast.PosOperatorNode,
 	if target == nil {
 		return nil
 	}
+	r := ast.ExprNode(target)
 
-	if v, ok := target.(ast.Valuer); ok {
-		switch v := v.(type) {
+	dtTarget := target.GetType()
+	if !dtTarget.Pending() {
+		major, _ := ast.DecomposeDataType(dtTarget)
+		switch {
+		case major == ast.DataTypeMajorInt,
+			major == ast.DataTypeMajorUint,
+			major.IsFixedRange(),
+			major.IsUfixedRange():
+		default:
+			elAppendTypeErrorOperatorDataType(el, target, fn, op, dtTarget)
+			return nil
+		}
+	}
+	dt := dtTarget
+
+	if target, ok := target.(ast.Valuer); ok {
+		switch v := target.(type) {
 		case *ast.IntegerValueNode:
-			// Clone the node to reset IsAddress to false.
-			if v.IsAddress {
-				result := &ast.IntegerValueNode{}
-				result.SetPosition(v.GetPosition())
-				result.SetLength(v.GetLength())
-				result.SetToken(v.GetToken())
-				result.SetType(v.GetType())
-				result.IsAddress = false
-				result.V = v.V
-				target = result
-			}
+			node := &ast.IntegerValueNode{}
+			node.SetPosition(n.GetPosition())
+			node.SetLength(n.GetLength())
+			node.SetToken(n.GetToken())
+			node.SetType(dt)
+			node.IsAddress = false
+			node.V = v.V
+			r = node
+
 		case *ast.DecimalValueNode:
-			// Do nothing because the result is the same as the input.
+			node := &ast.DecimalValueNode{}
+			node.SetPosition(n.GetPosition())
+			node.SetLength(n.GetLength())
+			node.SetToken(n.GetToken())
+			node.SetType(dt)
+			node.V = v.V
+			r = node
+
+		case *ast.NullValueNode:
+			if dt.Pending() {
+				elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+				return nil
+			}
+			node := &ast.NullValueNode{}
+			node.SetPosition(n.GetPosition())
+			node.SetLength(n.GetLength())
+			node.SetToken(n.GetToken())
+			node.SetType(dt)
+			r = node
+
 		case *ast.BoolValueNode:
 			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
 			return nil
@@ -1544,7 +1576,120 @@ func checkPosOperator(n *ast.PosOperatorNode,
 		case *ast.BytesValueNode:
 			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
 			return nil
+		default:
+			panic(unknownValueNodeType(v))
+		}
+	}
+
+	if dt.Pending() {
+		r = checkExpr(r, s, o, c, el, tr, ta)
+	} else {
+		switch a := ta.(type) {
+		case typeActionInferDefault:
+		case typeActionInferWithSize:
+		case typeActionAssign:
+			if !dt.Equal(a.dt) {
+				elAppendTypeErrorMismatch(el, n, fn, a.dt, dt)
+				return nil
+			}
+		}
+	}
+	return r
+}
+
+func checkNegOperator(n *ast.NegOperatorNode,
+	s schema.Schema, o CheckOptions, c *schemaCache, el *errors.ErrorList,
+	tr schema.TableRef, ta typeAction) ast.ExprNode {
+
+	fn := "CheckNegOperator"
+	op := "unary operator -"
+
+	target := n.GetTarget()
+	target = checkExpr(target, s, o, c, el, tr, nil)
+	if target == nil {
+		return nil
+	}
+	n.SetTarget(target)
+	r := ast.ExprNode(n)
+
+	dtTarget := target.GetType()
+	if !dtTarget.Pending() {
+		major, _ := ast.DecomposeDataType(dtTarget)
+		switch {
+		case major == ast.DataTypeMajorInt,
+			major == ast.DataTypeMajorUint,
+			major.IsFixedRange(),
+			major.IsUfixedRange():
+		default:
+			elAppendTypeErrorOperatorDataType(el, target, fn, op, dtTarget)
+			return nil
+		}
+	}
+	dt := dtTarget
+
+	eval := func(n ast.Valuer, v decimal.Decimal) (decimal.Decimal, bool) {
+		r := v.Neg()
+		if !dt.Pending() {
+			min, max := mustGetMinMax(dt)
+			if r.LessThan(min) || r.GreaterThan(max) {
+				if (o & CheckWithSafeMath) != 0 {
+					elAppendOverflowError(el, n, fn, dt, r, min, max)
+					return r, false
+				}
+				cropped := cropDecimal(dt, r)
+				elAppendOverflowWarning(el, n, fn, dt, r, cropped)
+				r = cropped
+			}
+		}
+		normalizeDecimal(&r)
+		return r, true
+	}
+	if target, ok := target.(ast.Valuer); ok {
+		switch v := target.(type) {
+		case *ast.IntegerValueNode:
+			node := &ast.IntegerValueNode{}
+			node.SetPosition(n.GetPosition())
+			node.SetLength(n.GetLength())
+			node.SetToken(n.GetToken())
+			node.SetType(dt)
+			node.IsAddress = false
+			node.V, ok = eval(node, v.V)
+			if !ok {
+				return nil
+			}
+			r = node
+
+		case *ast.DecimalValueNode:
+			node := &ast.DecimalValueNode{}
+			node.SetPosition(n.GetPosition())
+			node.SetLength(n.GetLength())
+			node.SetToken(n.GetToken())
+			node.SetType(dt)
+			node.V, ok = eval(node, v.V)
+			if !ok {
+				return nil
+			}
+			r = node
+
 		case *ast.NullValueNode:
+			if dt.Pending() {
+				elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+				return nil
+			}
+			node := &ast.NullValueNode{}
+			node.SetPosition(n.GetPosition())
+			node.SetLength(n.GetLength())
+			node.SetToken(n.GetToken())
+			node.SetType(dt)
+			r = node
+
+		case *ast.BoolValueNode:
+			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+			return nil
+		case *ast.AddressValueNode:
+			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
+			return nil
+		case *ast.BytesValueNode:
 			elAppendTypeErrorOperatorValueNode(el, v, fn, op)
 			return nil
 		default:
@@ -1552,28 +1697,18 @@ func checkPosOperator(n *ast.PosOperatorNode,
 		}
 	}
 
-	dt := target.GetType()
 	if dt.Pending() {
-		target = checkExpr(target, s, o, c, el, tr, ta)
+		r = checkExpr(r, s, o, c, el, tr, ta)
 	} else {
-		major, _ := ast.DecomposeDataType(dt)
-		switch {
-		case major == ast.DataTypeMajorInt,
-			major == ast.DataTypeMajorUint,
-			major.IsFixedRange(),
-			major.IsUfixedRange():
-		default:
-			elAppendTypeErrorOperatorDataType(el, target, fn, op)
-			return nil
-		}
 		switch a := ta.(type) {
 		case typeActionInferDefault:
 		case typeActionInferWithSize:
 		case typeActionAssign:
 			if !dt.Equal(a.dt) {
 				elAppendTypeErrorMismatch(el, n, fn, a.dt, dt)
+				return nil
 			}
 		}
 	}
-	return target
+	return r
 }

@@ -1,4 +1,4 @@
-package checkers
+package checker
 
 import (
 	"github.com/dexon-foundation/decimal"
@@ -52,6 +52,9 @@ func safeDecimalRange(d decimal.Decimal) bool {
 	return d.GreaterThanOrEqual(MinConstant) && d.LessThanOrEqual(MaxConstant)
 }
 
+// schemaCache is a multi-layer symbol table used to support the checker.
+// It allows changes to be easily rolled back by keeping modifications in a
+// separate layer, providing an experience similar to a database transaction.
 type schemaCache struct {
 	base   schemaCacheBase
 	scopes []schemaCacheScope
@@ -401,6 +404,8 @@ func (c *schemaCache) DeleteColumn(tr schema.TableRef, n string) bool {
 	return true
 }
 
+// columnRefSlice implements sort.Interface. It allows sorting a slice of
+// schema.ColumnRef while keeping references to AST nodes they originate from.
 type columnRefSlice struct {
 	columns []schema.ColumnRef
 	nodes   []uint8
@@ -431,11 +436,20 @@ func (s columnRefSlice) Swap(i, j int) {
 	s.nodes[i], s.nodes[j] = s.nodes[j], s.nodes[i]
 }
 
+// typeAction represents an action on type inference requested from the parent
+// node. An action is usually only applied on a single node. It is seldom
+// propagated to child nodes because we want to delay the assignment of types
+// until it is necessary, making constant operations easier to use without
+// being restricted by data types.
 //go-sumtype:decl typeAction
 type typeAction interface {
 	ˉtypeAction()
 }
 
+// typeActionInferDefault requests the node to infer the type using its default
+// rule. It usually means that the parent node does not care the data type,
+// such as the select list in a SELECT statement. It is an advisory request.
+// If the type of the node is already determined, it should ignore the request.
 type typeActionInferDefault struct{}
 
 func newTypeActionInferDefaultSize() typeActionInferDefault {
@@ -446,6 +460,11 @@ var _ typeAction = typeActionInferDefault{}
 
 func (typeActionInferDefault) ˉtypeAction() {}
 
+// typeActionInferWithSize requests the node to infer the type with size
+// requirement. The size is measured in bytes. It is indented to be used in
+// CAST to support conversion between integer and fixed-size bytes types.
+// It is an advisory request. If the type is already determined, the request is
+// ignored and the parent node should be able to handle the problem by itself.
 type typeActionInferWithSize struct {
 	size int
 }
@@ -462,6 +481,9 @@ type typeActionAssign struct {
 	dt ast.DataType
 }
 
+// newTypeActionAssign requests the node to have a specific type. It is a
+// mandatory request. If the node is unable to meet the requirement, it should
+// throw an error. It is not allowed to ignore the request.
 func newTypeActionAssign(expected ast.DataType) typeActionAssign {
 	return typeActionAssign{dt: expected}
 }
