@@ -137,8 +137,8 @@ var testData = &tmplData{
 					Output: &tmplOp{},
 				},
 				{
-					Name:  "Underflow - Immediate",
-					Error: "errors.ErrorCodeUnderflow", OpCode: "ADD",
+					Name:  "Overflow - Immediate",
+					Error: "errors.ErrorCodeOverflow", OpCode: "ADD",
 					Inputs: []*tmplOp{
 						{
 							Im:    false,
@@ -154,8 +154,8 @@ var testData = &tmplData{
 					Output: &tmplOp{},
 				},
 				{
-					Name:  "Underflow None Immediate",
-					Error: "errors.ErrorCodeUnderflow", OpCode: "ADD",
+					Name:  "Overflow None Immediate",
+					Error: "errors.ErrorCodeOverflow", OpCode: "ADD",
 					Inputs: []*tmplOp{
 						{
 							Im:    false,
@@ -297,8 +297,8 @@ var testData = &tmplData{
 					Output: &tmplOp{},
 				},
 				{
-					Name:  "Underflow - Immediate",
-					Error: "errors.ErrorCodeUnderflow", OpCode: "SUB",
+					Name:  "Overflow - Immediate",
+					Error: "errors.ErrorCodeOverflow", OpCode: "SUB",
 					Inputs: []*tmplOp{
 						{
 							Im:    false,
@@ -314,8 +314,8 @@ var testData = &tmplData{
 					Output: &tmplOp{},
 				},
 				{
-					Name:  "Underflow None Immediate",
-					Error: "errors.ErrorCodeUnderflow", OpCode: "SUB",
+					Name:  "Overflow None Immediate",
+					Error: "errors.ErrorCodeOverflow", OpCode: "SUB",
 					Inputs: []*tmplOp{
 						{
 							Im:    false,
@@ -454,8 +454,8 @@ var testData = &tmplData{
 					Output: &tmplOp{},
 				},
 				{
-					Name:  "Underflow - Immediate",
-					Error: "errors.ErrorCodeUnderflow", OpCode: "MUL",
+					Name:  "Overflow - Immediate",
+					Error: "errors.ErrorCodeOverflow", OpCode: "MUL",
 					Inputs: []*tmplOp{
 						{
 							Im:    false,
@@ -471,8 +471,8 @@ var testData = &tmplData{
 					Output: &tmplOp{},
 				},
 				{
-					Name:  "Underflow None Immediate",
-					Error: "errors.ErrorCodeUnderflow", OpCode: "MUL",
+					Name:  "Overflow None Immediate",
+					Error: "errors.ErrorCodeOverflow", OpCode: "MUL",
 					Inputs: []*tmplOp{
 						{
 							Im:    false,

@@ -399,10 +399,8 @@ func flowCheck(ctx *common.Context, v decimal.Decimal, dType ast.DataType) (err 
 		return
 	}
 
-	if v.Cmp(max) > 0 {
+	if v.Cmp(max) > 0 || v.Cmp(min) < 0 {
 		err = se.ErrorCodeOverflow
-	} else if v.Cmp(min) < 0 {
-		err = se.ErrorCodeUnderflow
 	}
 	return
 }
@@ -1625,21 +1623,22 @@ func (r *Raw) castInt(ctx *common.Context, origin, target ast.DataType) (err err
 	case ast.DataTypeMajorInt, ast.DataTypeMajorUint:
 		err = r.castValue(ctx, origin, target, int(tMinor)+1, signed, false)
 	case ast.DataTypeMajorAddress:
-		r.Bytes, err = ast.DecimalEncode(origin, r.Value)
+		var mockDt ast.DataType
+		if signed {
+			mockDt = ast.ComposeDataType(ast.DataTypeMajorInt, 19)
+		} else {
+			mockDt = ast.ComposeDataType(ast.DataTypeMajorUint, 19)
+		}
+
+		if ctx.Opt.SafeMath && flowCheck(ctx, r.Value, mockDt) != nil {
+			err = se.ErrorCodeOverflow
+			return
+		}
+
+		r.Bytes, err = ast.DecimalEncode(mockDt, r.Value)
 		if err != nil {
 			return
 		}
-
-		if len(r.Bytes) > dexCommon.AddressLength {
-			if r.Bytes[0]&0x80 != 0 && signed {
-				err = se.ErrorCodeUnderflow
-			} else {
-				err = se.ErrorCodeOverflow
-			}
-			return
-		}
-
-		r.Bytes = r.shiftBytes(r.Bytes, dexCommon.AddressLength, signed, false)
 		r.Value = decimal.Zero
 	case ast.DataTypeMajorFixedBytes:
 		if tMinor != oMinor {

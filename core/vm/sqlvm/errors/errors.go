@@ -115,7 +115,6 @@ const (
 	ErrorCodeInvalidOperandNum
 	ErrorCodeInvalidDataType
 	ErrorCodeOverflow
-	ErrorCodeUnderflow
 	ErrorCodeIndexOutOfRange
 	ErrorCodeInvalidCastType
 	ErrorCodeDividedByZero
@@ -150,7 +149,6 @@ var errorCodeMap = [...]string{
 	ErrorCodeInvalidOperandNum:  "invalid operand number",
 	ErrorCodeInvalidDataType:    "invalid data type",
 	ErrorCodeOverflow:           "overflow",
-	ErrorCodeUnderflow:          "underflow",
 	ErrorCodeIndexOutOfRange:    "index out of range",
 	ErrorCodeInvalidCastType:    "invalid cast type",
 	ErrorCodeDividedByZero:      "divide by zero",

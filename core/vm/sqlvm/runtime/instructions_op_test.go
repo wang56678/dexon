@@ -210,7 +210,7 @@ func (s *instructionSuite) TestOpAdd() {
 			errors.ErrorCodeOverflow,
 		},
 		{
-			"Underflow - Immediate",
+			"Overflow - Immediate",
 			Instruction{
 				Op: ADD,
 				Input: []*Operand{
@@ -242,10 +242,10 @@ func (s *instructionSuite) TestOpAdd() {
 				[]ast.DataType{},
 				[]Tuple{},
 			),
-			errors.ErrorCodeUnderflow,
+			errors.ErrorCodeOverflow,
 		},
 		{
-			"Underflow None Immediate",
+			"Overflow None Immediate",
 			Instruction{
 				Op: ADD,
 				Input: []*Operand{
@@ -277,7 +277,7 @@ func (s *instructionSuite) TestOpAdd() {
 				[]ast.DataType{},
 				[]Tuple{},
 			),
-			errors.ErrorCodeUnderflow,
+			errors.ErrorCodeOverflow,
 		},
 	}
 
@@ -485,7 +485,7 @@ func (s *instructionSuite) TestOpSub() {
 			errors.ErrorCodeOverflow,
 		},
 		{
-			"Underflow - Immediate",
+			"Overflow - Immediate",
 			Instruction{
 				Op: SUB,
 				Input: []*Operand{
@@ -517,10 +517,10 @@ func (s *instructionSuite) TestOpSub() {
 				[]ast.DataType{},
 				[]Tuple{},
 			),
-			errors.ErrorCodeUnderflow,
+			errors.ErrorCodeOverflow,
 		},
 		{
-			"Underflow None Immediate",
+			"Overflow None Immediate",
 			Instruction{
 				Op: SUB,
 				Input: []*Operand{
@@ -552,7 +552,7 @@ func (s *instructionSuite) TestOpSub() {
 				[]ast.DataType{},
 				[]Tuple{},
 			),
-			errors.ErrorCodeUnderflow,
+			errors.ErrorCodeOverflow,
 		},
 	}
 
@@ -756,7 +756,7 @@ func (s *instructionSuite) TestOpMul() {
 			errors.ErrorCodeOverflow,
 		},
 		{
-			"Underflow - Immediate",
+			"Overflow - Immediate",
 			Instruction{
 				Op: MUL,
 				Input: []*Operand{
@@ -788,10 +788,10 @@ func (s *instructionSuite) TestOpMul() {
 				[]ast.DataType{},
 				[]Tuple{},
 			),
-			errors.ErrorCodeUnderflow,
+			errors.ErrorCodeOverflow,
 		},
 		{
-			"Underflow None Immediate",
+			"Overflow None Immediate",
 			Instruction{
 				Op: MUL,
 				Input: []*Operand{
@@ -823,7 +823,7 @@ func (s *instructionSuite) TestOpMul() {
 				[]ast.DataType{},
 				[]Tuple{},
 			),
-			errors.ErrorCodeUnderflow,
+			errors.ErrorCodeOverflow,
 		},
 	}
 
@@ -3560,7 +3560,7 @@ func (s *instructionSuite) TestOpRange() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 7), ast.ComposeDataType(ast.DataTypeMajorUint, 7),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(2)}},
@@ -3599,7 +3599,7 @@ func (s *instructionSuite) TestOpRange() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 7), ast.ComposeDataType(ast.DataTypeMajorUint, 7),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(1)}, &Raw{Value: decimal.NewFromFloat(0)}},
@@ -3635,7 +3635,7 @@ func (s *instructionSuite) TestOpRange() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 7),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(20)}},
@@ -3671,7 +3671,7 @@ func (s *instructionSuite) TestOpRange() {
 					makeOperand(
 						true,
 						[]ast.DataType{
-							ast.ComposeDataType(ast.DataTypeMajorUint, 1), ast.ComposeDataType(ast.DataTypeMajorUint, 1),
+							ast.ComposeDataType(ast.DataTypeMajorUint, 7), ast.ComposeDataType(ast.DataTypeMajorUint, 7),
 						},
 						[]Tuple{
 							{&Raw{Value: decimal.NewFromFloat(20)}, &Raw{Value: decimal.NewFromFloat(10)}},
