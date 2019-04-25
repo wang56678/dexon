@@ -215,18 +215,6 @@ func (s *StorageTestSuite) TestPKHeaderEncodeDecode() {
 	s.Require().Equal(rowCount, newRowCount)
 }
 
-func (s *StorageTestSuite) TestUpdateHash() {
-	m := map[common.Hash]common.Hash{
-		common.BytesToHash([]byte("hello world")): common.BytesToHash([]byte("hello SQLVM")),
-		common.BytesToHash([]byte("bye world")):   common.BytesToHash([]byte("bye SQLVM")),
-	}
-	s.storage.UpdateHash(m, s.address)
-	for key, val := range m {
-		rVal := s.storage.GetState(s.address, key)
-		s.Require().Equal(val, rVal)
-	}
-}
-
 func (s *StorageTestSuite) TestRepeatPK() {
 	type testCase struct {
 		address   common.Address

@@ -534,13 +534,6 @@ func (s *Storage) IncSequence(
 	return val
 }
 
-// UpdateHash updates hash to stateDB.
-func (s *Storage) UpdateHash(m map[common.Hash]common.Hash, address common.Address) {
-	for key, val := range m {
-		s.SetState(address, key, val)
-	}
-}
-
 func setBit(n byte, pos uint) byte {
 	n |= (1 << pos)
 	return n
@@ -570,8 +563,10 @@ func (s *Storage) RepeatPK(address common.Address, tableRef schema.TableRef) []u
 }
 
 // IncreasePK increases the primary ID and return it.
-func (s *Storage) IncreasePK(address common.Address,
-	tableRef schema.TableRef) uint64 {
+func (s *Storage) IncreasePK(
+	address common.Address,
+	tableRef schema.TableRef,
+) uint64 {
 	hash := s.GetPrimaryPathHash(tableRef)
 	bm := newBitMap(hash, address, s)
 	return bm.increasePK()
