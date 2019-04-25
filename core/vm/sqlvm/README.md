@@ -875,6 +875,7 @@ This section contains some corner cases found in design stage. Can be used for t
 * It can not transfer token to SQL contract address.
 * Do not support expression default value.
 * AUTOINCREMENT increases in the max value, can't auto increment with foreign key, only int/uint can use auto increment, dominate over 'default' setting `
+* AUTOINCREMENT starts from 1.
 * Unique check (in memory check, i.e. rehearsal in memory)`
 * Dynamic Bytes support:
     * `OCTET_LENGTH`
