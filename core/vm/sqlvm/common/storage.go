@@ -566,28 +566,14 @@ func getOffset(d common.Hash) (offset []uint64) {
 func (s *Storage) RepeatPK(address common.Address, tableRef schema.TableRef) []uint64 {
 	hash := s.GetPrimaryPathHash(tableRef)
 	bm := newBitMap(hash, address, s)
-	lastRowID, rowCount := bm.decodeHeader()
-	maxSlotNum := lastRowID/256 + 1
-	result := make([]uint64, rowCount)
-	ptr := 0
-	for slotNum := uint64(0); slotNum < maxSlotNum; slotNum++ {
-		slotHash := s.ShiftHashUint64(hash, slotNum+1)
-		slotData := s.GetState(address, slotHash)
-		offsets := getOffset(slotData)
-		for i, o := range offsets {
-			result[i+ptr] = o + slotNum*256
-		}
-		ptr += len(offsets)
-	}
-	return result
+	return bm.loadPK()
 }
 
 // IncreasePK increases the primary ID and return it.
 func (s *Storage) IncreasePK(address common.Address,
 	tableRef schema.TableRef) uint64 {
 	hash := s.GetPrimaryPathHash(tableRef)
-	headerSlot := s.GetState(address, hash)
-	bm := newBitMap(headerSlot, address, s)
+	bm := newBitMap(hash, address, s)
 	return bm.increasePK()
 }
 
@@ -630,7 +616,6 @@ func (bm *bitMap) increasePK() uint64 {
 	data[byteShift] |= 1 << (lastRowID & 7)
 	bm.dirtySlot[shift] = data
 	bm.storeDirtySlot()
-	bm.storeHeader()
 	return lastRowID
 }
 
@@ -644,6 +629,7 @@ func (bm *bitMap) storeDirtySlot() {
 		bm.storage.SetState(bm.address, slot, v)
 	}
 	bm.storeHeader()
+	bm.dirtySlot = make(map[uint64]common.Hash)
 }
 
 func (bm *bitMap) setPK(IDs []uint64) {
@@ -668,6 +654,23 @@ func (bm *bitMap) setPK(IDs []uint64) {
 	}
 	bm.encodeHeader(lastRowID, rowCount)
 	bm.storeDirtySlot()
+}
+
+func (bm *bitMap) loadPK() []uint64 {
+	lastRowID, rowCount := bm.decodeHeader()
+	maxSlotNum := lastRowID/256 + 1
+	result := make([]uint64, rowCount)
+	ptr := 0
+	for slotNum := uint64(0); slotNum < maxSlotNum; slotNum++ {
+		slotHash := bm.storage.ShiftHashUint64(bm.headerSlot, slotNum+1)
+		slotData := bm.storage.GetState(bm.address, slotHash)
+		offsets := getOffset(slotData)
+		for i, o := range offsets {
+			result[i+ptr] = o + slotNum*256
+		}
+		ptr += len(offsets)
+	}
+	return result
 }
 
 func newBitMap(headerSlot common.Hash, address common.Address, s *Storage) *bitMap {
